@@ -1256,7 +1256,8 @@ Speak with confidence. Use numbers when relevant.
       });
 
       const data = await response.json();
-      const atlasReply = data.content[0].text;
+      console.log('API response:', JSON.stringify(data));
+      const atlasReply = data.content && data.content[0] ? data.content[0].text : (data.error ? 'API Error: ' + (data.error.message || JSON.stringify(data.error)) : 'Unexpected response format');
 
       conversationHistory.push({ role: 'assistant', content: atlasReply });
       removeTypingIndicator();
