@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const TOKEN = process.env.CLOVER_API_TOKEN;
   const MID = process.env.CLOVER_MERCHANT_ID;
   const BASE = `https://api.clover.com/v3/merchants/${MID}`;
-  const HEADERS = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+  const HEADERS = { 'Authorization': `Token ${TOKEN}`, 'Content-Type': 'application/json' };
 
   const { type } = req.query;
 
