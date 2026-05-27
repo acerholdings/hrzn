@@ -200,23 +200,25 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     </div>
 
     <!-- AI INSIGHTS -->
-    <div class="card fade-4">
+    <div class="card fade-4" id="insightsCard">
       <div class="card-header">
         <div class="card-title">AI Insights — Based on Your Real Data</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>Live</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
-        <div style="padding:18px;border-right:1px solid var(--border);">
-          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">💡 DoorDash is underperforming</div>
-          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">DoorDash is only <strong style="color:var(--text);">3.6%</strong> of revenue — well below the restaurant average of 15–20%. Either lean into delivery or cut it and save on fees.</div>
-        </div>
-        <div style="padding:18px;border-right:1px solid var(--border);">
-          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">📉 Discounts eating margin</div>
-          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;"><strong style="color:var(--text);">$1,037</strong> in discounts over 30 days is 3.1% of gross sales. Review which items are being discounted and whether promos are converting.</div>
-        </div>
-        <div style="padding:18px;">
-          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">💳 93.5% card payments</div>
-          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">Almost all revenue is card-based, which is great for tracking but means <strong style="color:var(--text);">~2.5–3%</strong> goes to processing fees. Worth negotiating with your processor.</div>
+      <div id="insightsContainer">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+          <div style="padding:18px;border-right:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">💡 DoorDash is underperforming</div>
+            <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">DoorDash is only <strong style="color:var(--text);">3.6%</strong> of revenue — well below the restaurant average of 15–20%. Either lean into delivery or cut it and save on fees.</div>
+          </div>
+          <div style="padding:18px;border-right:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">📉 Discounts eating margin</div>
+            <div style="font-size:11px;color:var(--text-mid);line-height:1.6;"><strong style="color:var(--text);">$1,037</strong> in discounts over 30 days is 3.1% of gross sales. Review which items are being discounted and whether promos are converting.</div>
+          </div>
+          <div style="padding:18px;">
+            <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">💳 93.5% card payments</div>
+            <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">Almost all revenue is card-based, which is great for tracking but means <strong style="color:var(--text);">~2.5–3%</strong> goes to processing fees. Worth negotiating with your processor.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -232,6 +234,15 @@ function navigate(page){window.location.href=page;}
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(getTheme());
   
+  // Auto-generate insights on page load with current Sama data
+  generateInsights({
+    period: 'Apr 28 – May 27, 2026',
+    grossSales: 33271, discounts: 1037.38, discountPct: 3.1,
+    netSales: 32233.62, taxes: 3143.14, tips: 5531.74,
+    amountCollected: 40971.32, itemsSold: 2631, avgCheck: 12.25,
+    tenders: { creditCard: 29551.02, debitCard: 8748.98, doorDash: 1494.57, cash: 1176.75, doorDashPct: 3.6 }
+  });
+
   const zone = document.getElementById('uploadZone');
   const input = document.getElementById('csvInput');
   const status = document.getElementById('uploadStatus');
@@ -278,6 +289,73 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('val-debit', fmt(d.tenders.debitCard));
     set('val-period', d.period);
     set('val-discount-pct', d.discountPct+'%');
+    // Generate AI insights from real data
+    generateInsights(d);
+  }
+
+  async function generateInsights(d){
+    const container = document.getElementById('insightsContainer');
+    if(!container) return;
+    
+    // Show loading state
+    container.innerHTML = `<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your data...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>`;
+
+    const prompt = `You are HRZN, an elite AI business operator for restaurants. Analyze this real sales data and provide exactly 6 specific, actionable insights. Each insight must reference the actual numbers.
+
+SALES DATA:
+- Period: ${d.period}
+- Gross Sales: $${Math.round(d.grossSales).toLocaleString()}
+- Discounts: $${Math.round(d.discounts).toLocaleString()} (${d.discountPct}% of gross)
+- Net Sales: $${Math.round(d.netSales).toLocaleString()}
+- Tips: $${Math.round(d.tips).toLocaleString()}
+- Taxes & Fees: $${Math.round(d.taxes).toLocaleString()}
+- Total Collected: $${Math.round(d.amountCollected).toLocaleString()}
+- Items Sold: ${d.itemsSold.toLocaleString()}
+- Avg Check per Item: $${d.avgCheck}
+- Credit Card: $${Math.round(d.tenders.creditCard).toLocaleString()}
+- Debit Card: $${Math.round(d.tenders.debitCard).toLocaleString()}
+- DoorDash: $${Math.round(d.tenders.doorDash).toLocaleString()} (${d.tenders.doorDashPct}% of revenue)
+- Cash: $${Math.round(d.tenders.cash).toLocaleString()}
+
+Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation, just the JSON array.
+Each object must have: "emoji" (1 emoji), "title" (5-8 words), "insight" (2-3 sentences with specific numbers and a clear action).
+Example format: [{"emoji":"💡","title":"Your title here","insight":"Your insight here."}]`;
+
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1500,
+          system: 'You are a restaurant business analyst. Always respond with pure JSON only, no markdown.',
+          messages: [{role:'user', content: prompt}]
+        })
+      });
+      const data = await r.json();
+      const text = data.content?.[0]?.text || '[]';
+      
+      // Parse JSON response
+      const clean = text.replace(/```json|```/g,'').trim();
+      const insights = JSON.parse(clean);
+      
+      // Render insights in a grid
+      const cols = insights.length <= 3 ? insights.length : 3;
+      let html = `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:0;">`;
+      insights.forEach((ins, i) => {
+        const border = (i % cols !== cols - 1) ? 'border-right:1px solid var(--border);' : '';
+        const topBorder = i >= cols ? 'border-top:1px solid var(--border);' : '';
+        html += `<div style="padding:18px;${border}${topBorder}">
+          <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">${ins.emoji} ${ins.title}</div>
+          <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.insight}</div>
+        </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+
+    } catch(e) {
+      container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Error generating insights: '+e.message+'</div>';
+    }
   }
 });
 </script>
