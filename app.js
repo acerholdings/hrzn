@@ -33,6 +33,23 @@ function toggleTheme() {
   applyTheme(next);
 }
 
+// Apply theme immediately on script load to prevent flash
+(function() {
+  const saved = localStorage.getItem('hrzn-theme') || 'dark';
+  if (saved === 'light') {
+    document.body.classList.add('light');
+  }
+  // Remove the early-init class now that JS has taken over
+  document.documentElement.classList.remove('light-init');
+})();
+
+function toggleTheme() {
+  const current = getTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
 // ── NAVIGATION ───────────────────────────────────────────
 function navigate(page) {
   window.location.href = page;

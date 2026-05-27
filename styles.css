@@ -365,3 +365,13 @@ body {
 .fade-3 { animation: fadeUp 0.4s ease 0.16s both; }
 .fade-4 { animation: fadeUp 0.4s ease 0.24s both; }
 .fade-5 { animation: fadeUp 0.4s ease 0.32s both; }
+
+/* Apply light mode immediately before JS loads to prevent flash */
+html.light-init body,
+html.light-init .sidebar,
+html.light-init .topbar,
+html.light-init .card,
+html.light-init .kpi-card {
+  background-color: #ffffff;
+  color: #111111;
+}
