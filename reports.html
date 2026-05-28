@@ -294,43 +294,62 @@ function applyTheme(theme){const body=document.body,track=document.getElementByI
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(page){window.location.href=page;}
 
-const RC = `You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
+function getRC(){
+  let salesData = {};
+  try {
+    const saved = localStorage.getItem('hrzn-sales-data');
+    if(saved) salesData = JSON.parse(saved);
+  } catch(e){}
 
-REAL BUSINESS DATA (from Clover POS, Jan 1 – May 28, 2026):
-- Net Sales: $211,844 over 4.8 months
-- Monthly Average Revenue: ~$44,134/month
-- Weekly Average Revenue: ~$10,193/week
-- Daily Average Revenue: ~$1,456/day
-- Items Sold: 9,219 total (avg ~1,920/month)
-- Avg Check per Item: $12.25
-- Gross Sales: $217,613
-- Discounts: $3,544 (3.1% of gross — very low, good pricing discipline)
-- Tips: $18,038 (8.5% of net sales)
-- Taxes & Fees: $20,657
-- Total Collected: $268,466
-- Credit Card: $199,893 (74.5% of collected)
-- Debit Card: $48,860 (18.2%)
-- DoorDash: $9,807 (3.7% of revenue — well below industry avg of 15-20%)
-- Cash: $9,906 (3.7%)
+  const netSales = salesData.netSales || 211844;
+  const grossSales = salesData.grossSales || 217613;
+  const amountCollected = salesData.amountCollected || 268466;
+  const tips = salesData.tips || 18038;
+  const discounts = salesData.discounts || 3544;
+  const taxes = salesData.taxes || 20657;
+  const itemsSold = salesData.itemsSold || 9219;
+  const avgCheck = salesData.avgCheck || 12.25;
+  const period = salesData.period || 'Jan 1 – May 28, 2026';
+  const creditCard = (salesData.tenders||{}).creditCard || 199893;
+  const debitCard = (salesData.tenders||{}).debitCard || 48860;
+  const doorDash = (salesData.tenders||{}).doorDash || 9807;
+  const cash = (salesData.tenders||{}).cash || 9906;
+  const doorDashPct = (salesData.tenders||{}).doorDashPct || 3.7;
+  const discountPct = salesData.discountPct || 3.1;
+  const tipsPct = netSales > 0 ? (tips/netSales*100).toFixed(1) : 8.5;
 
-LABOR (estimated weekly):
-- Avg Labor Cost: ~32% of revenue (target is 28%)
-- Tuesday tends to be overstaffed
-- Friday is most efficient day
-- ~21 staff total
+  // Calculate derived metrics
+  const months = 4.8;
+  const monthlyAvg = Math.round(netSales / months);
+  const weeklyAvg = Math.round(monthlyAvg / 4.33);
+  const cardPct = amountCollected > 0 ? ((creditCard+debitCard)/amountCollected*100).toFixed(1) : 92.7;
 
-MENU (estimated performance):
-- Top items: Toro Handroll, Salmon Handroll, Yellowtail
-- Lowest margin: Crab Handroll, Miso Soup
-- Upsell opportunity: Edamame (high margin, low penetration)
+  return `You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
 
-ALERTS:
-- Labor above target at ~32% (target 28%)
-- DoorDash underutilized at 3.7%
-- Discount rate healthy at 3.1%
-- Tips below restaurant average (8.5% vs typical 15-18% — note: this may be because avg check is per item not per table)
+REAL BUSINESS DATA (from Clover POS, ${period}):
+- Gross Sales: $${Math.round(grossSales).toLocaleString()}
+- Discounts: $${Math.round(discounts).toLocaleString()} (${discountPct}% of gross — healthy pricing discipline)
+- Net Sales: $${Math.round(netSales).toLocaleString()}
+- Tips: $${Math.round(tips).toLocaleString()} (${tipsPct}% of net sales)
+- Taxes & Fees: $${Math.round(taxes).toLocaleString()}
+- Total Collected: $${Math.round(amountCollected).toLocaleString()}
+- Items Sold: ${itemsSold.toLocaleString()}
+- Avg Check per Item: $${avgCheck}
+- Monthly Average Revenue: ~$${monthlyAvg.toLocaleString()}/month
+- Weekly Average Revenue: ~$${weeklyAvg.toLocaleString()}/week
 
-Be specific, reference real numbers, give concrete action steps. Be concise but thorough.`;
+PAYMENT METHODS:
+- Credit Card: $${Math.round(creditCard).toLocaleString()} (${((creditCard/amountCollected)*100).toFixed(1)}%)
+- Debit Card: $${Math.round(debitCard).toLocaleString()} (${((debitCard/amountCollected)*100).toFixed(1)}%)
+- DoorDash: $${Math.round(doorDash).toLocaleString()} (${doorDashPct}% — well below industry avg of 15-20%)
+- Cash: $${Math.round(cash).toLocaleString()} (${((cash/amountCollected)*100).toFixed(1)}%)
+
+LABOR (estimated): Avg ~32% of revenue. Target is 28%. Tuesday tends to be overstaffed. ~21 staff total.
+MENU (Sama Handroll items): Toro Handroll, Salmon Handroll, Yellowtail Handroll, Spicy Tuna Handroll, Wagyu Handroll, Shrimp Handroll, Crab Handroll, Edamame, Miso Soup.
+
+Be specific, reference real numbers from the data above, give concrete action steps.`;
+}
+const RC = getRC();
 
 const reportPrompts = {
   weekly: `Write a comprehensive weekly business summary report for Sama Handroll LA. Use this real data: Monthly avg revenue $44,134, Weekly avg ~$10,193, Items sold 9,219 over 4.8 months, Avg check $12.25, Tips $18,038, DoorDash only 3.7% of revenue, Labor ~32% (target 28%), Discounts $3,544 (3.1% — healthy). Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
@@ -341,53 +360,75 @@ const reportPrompts = {
 };
 
 function renderMarkdown(text){
-  // Escape HTML first
   let html = text
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
-  
-  // Process line by line
+
   const lines = html.split('\n');
   const out = [];
-  
+  let inTable = false;
+  let tableRows = [];
+
+  function flushTable(){
+    if(tableRows.length < 2) return;
+    let thtml = '<div style="overflow-x:auto;margin:12px 0;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    tableRows.forEach((row, i) => {
+      if(i === 1) return; // skip separator row
+      const cells = row.split('|').filter(c => c.trim() !== '');
+      const tag = i === 0 ? 'th' : 'td';
+      const style = i === 0
+        ? 'padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.1);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);text-align:left;font-weight:400;'
+        : 'padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:var(--text);';
+      thtml += '<tr>' + cells.map(c => {
+        const formatted = c.trim().replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
+        return `<${tag} style="${style}">${formatted}</${tag}>`;
+      }).join('') + '</tr>';
+    });
+    thtml += '</table></div>';
+    out.push(thtml);
+    tableRows = [];
+    inTable = false;
+  }
+
   for(let i=0; i<lines.length; i++){
     let line = lines[i];
-    
-    // Headers
+
+    // Detect table rows
+    if(line.trim().startsWith('|') && line.trim().endsWith('|')){
+      inTable = true;
+      tableRows.push(line.trim());
+      continue;
+    } else if(inTable){
+      flushTable();
+    }
+
     if(line.startsWith('# ') && !line.startsWith('## ')){
       out.push('<div style="font-size:18px;font-weight:500;color:var(--text);margin:8px 0 16px;">'+line.slice(2)+'</div>');
     } else if(line.startsWith('### ')){
       out.push('<div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 6px;">'+line.slice(4)+'</div>');
     } else if(line.startsWith('## ')){
       out.push('<div style="font-size:15px;font-weight:600;color:var(--gold);margin:20px 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">'+line.slice(3)+'</div>');
-    }
-    // Horizontal rule
-    else if(/^---+$/.test(line.trim())){
+    } else if(/^---+$/.test(line.trim())){
       out.push('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:12px 0;"/>');
-    }
-    // Bullet points
-    else if(line.startsWith('- ')){
-      const content = line.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
-      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;">•</span><span>'+content+'</span></div>');
-    }
-    // Numbered list
-    else if(/^\d+\. /.test(line)){
+    } else if(line.startsWith('- ') || line.startsWith('• ')){
+      const cnt = line.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
+      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;">•</span><span>'+cnt+'</span></div>');
+    } else if(/^\d+\. /.test(line)){
       const num = line.match(/^(\d+)\. /)[1];
-      const content = line.slice(num.length+2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
-      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;min-width:16px;">'+num+'.</span><span>'+content+'</span></div>');
-    }
-    // Empty line
-    else if(line.trim() === ''){
-      out.push('<div style="height:8px;"></div>');
-    }
-    // Regular paragraph
-    else {
-      const formatted = line.replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+      const cnt = line.slice(num.length+2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
+      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;min-width:16px;">'+num+'.</span><span>'+cnt+'</span></div>');
+    } else if(line.trim() === ''){
+      out.push('<div style="height:6px;"></div>');
+    } else {
+      const formatted = line
+        .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em style="color:var(--text-mid);">$1</em>')
+        .replace(/^&gt; (.+)$/,'<div style="border-left:2px solid var(--gold);padding-left:12px;color:var(--text-mid);font-style:italic;">$1</div>');
       out.push('<div style="margin-bottom:8px;line-height:1.7;">'+formatted+'</div>');
     }
   }
-  
+  if(inTable) flushTable();
   return out.join('');
 }
 
@@ -422,7 +463,7 @@ async function generateSpecificReport(type) {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:2000,
-        system: RC,
+        system: getRC(),
         messages: [{role:'user', content: reportPrompts[type]}]
       })
     });
@@ -455,7 +496,7 @@ async function generateCustomReport() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:2000,
-        system: RC,
+        system: getRC(),
         messages: [{role:'user', content: 'Write a detailed business report about the following: ' + prompt + '\n\nUse real data, be specific, and format with clear sections.'}]
       })
     });
