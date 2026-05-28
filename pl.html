@@ -127,7 +127,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="kpi-card">
         <div class="kpi-label">Net Sales Revenue</div>
         <div class="kpi-value" id="kpi-revenue">$112,599</div>
-        <div class="kpi-sub">From Clover Sales Report</div>
+        <div class="kpi-sub" id="revenue-source">From Sales Report</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Gross Profit</div>
@@ -278,11 +278,21 @@ function savePLData(data){
 }
 
 function getDefaultPL(){
+  // Pull revenue from Sales Report CSV if available
+  let revenue = 112599;
+  try {
+    const salesData = localStorage.getItem('hrzn-sales-data');
+    if(salesData){
+      const parsed = JSON.parse(salesData);
+      if(parsed.netSales) revenue = parsed.netSales;
+    }
+  } catch(e){}
+
   return {
     period: 'May 2026',
-    revenue: 112599,
-    cogs: 36032,      // ~32% food cost
-    labor: 36032,     // ~32% labor
+    revenue: revenue,
+    cogs: Math.round(revenue * 0.32),
+    labor: Math.round(revenue * 0.32),
     rent: 8500,
     utilities: 1200,
     insurance: 800,
@@ -307,6 +317,17 @@ function calcAndRender(){
   // Update KPIs
   const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
   set('kpi-revenue', fmt(d.revenue));
+  // Show where revenue came from
+  try {
+    const salesData = localStorage.getItem('hrzn-sales-data');
+    if(salesData){
+      const parsed = JSON.parse(salesData);
+      if(parsed._filename){
+        const src = document.getElementById('revenue-source');
+        if(src) src.textContent = 'From '+parsed._filename;
+      }
+    }
+  } catch(e){}
   set('kpi-gross-profit', fmt(grossProfit));
   set('kpi-gross-margin', grossMarginPct+'%');
   set('kpi-net-profit', fmt(operatingProfit));

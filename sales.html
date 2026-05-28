@@ -204,9 +204,12 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="card fade-4" id="insightsCard">
       <div class="card-header">
         <div class="card-title">AI Insights — Based on Your Real Data</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button id="moreInsightsBtn" onclick="generateMoreInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Generate More</button>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
+        </div>
       </div>
-      <div id="insightsContainer">
+      <div id="insightsContainer" style="max-height:600px;overflow-y:auto;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
           <div style="padding:18px;border-right:1px solid var(--border);">
             <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">💡 DoorDash is underperforming</div>
@@ -232,6 +235,87 @@ function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(page){window.location.href=page;}
+async function generateMoreInsights(){
+  const btn = document.getElementById('moreInsightsBtn');
+  if(btn){ btn.textContent='Generating...'; btn.disabled=true; }
+
+  // Get current data from localStorage or use defaults
+  let d;
+  try {
+    const saved = localStorage.getItem('hrzn-sales-data');
+    d = saved ? JSON.parse(saved) : {
+      period:'Apr 28 – May 27, 2026', grossSales:33271, discounts:1037.38, discountPct:3.1,
+      netSales:32233.62, taxes:3143.14, tips:5531.74, amountCollected:40971.32,
+      itemsSold:2631, avgCheck:12.25,
+      tenders:{creditCard:29551.02,debitCard:8748.98,doorDash:1494.57,cash:1176.75,doorDashPct:3.6}
+    };
+  } catch(e){ d = {}; }
+
+  const prompt = `You are HRZN, an elite AI business operator for restaurants. Analyze this real sales data and provide exactly 6 MORE specific, actionable insights that are DIFFERENT from typical insights about credit cards, DoorDash, discounts, and tips. Focus on growth strategies, operational improvements, and hidden opportunities.
+
+SALES DATA:
+- Period: ${d.period}
+- Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${d.discountPct||0}% of gross)
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
+- Tips: $${Math.round(d.tips||0).toLocaleString()}
+- Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
+- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
+- Items Sold: ${(d.itemsSold||0).toLocaleString()}
+- Avg Check per Item: $${d.avgCheck||0}
+- DoorDash: $${Math.round((d.tenders||{}).doorDash||0).toLocaleString()} (${(d.tenders||{}).doorDashPct||0}% of revenue)
+- Cash: $${Math.round((d.tenders||{}).cash||0).toLocaleString()}
+
+Focus on: pricing strategy, revenue growth, customer behavior, seasonality, operational efficiency, competitive positioning.
+
+Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation.
+Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences with specific numbers and clear action."}`;
+
+  try {
+    const r = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:1500,
+        system:'You are a restaurant business analyst. Always respond with pure JSON only, no markdown.',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await r.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(clean);
+
+    const container = document.getElementById('insightsContainer');
+    if(!container) return;
+
+    // Add divider
+    const divider = document.createElement('div');
+    divider.style.cssText = 'padding:10px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+    divider.textContent = 'Additional Insights';
+    container.appendChild(divider);
+
+    // Add new insights
+    const cols = 3;
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+    insights.forEach((ins, i) => {
+      const border = (i % cols !== cols-1) ? 'border-right:1px solid var(--border);' : '';
+      const topBorder = i >= cols ? 'border-top:1px solid var(--border);' : '';
+      const div = document.createElement('div');
+      div.style.cssText = `padding:18px;${border}${topBorder}`;
+      div.innerHTML = `<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">${ins.emoji} ${ins.title}</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.insight}</div>`;
+      grid.appendChild(div);
+    });
+    container.appendChild(grid);
+    container.scrollTop = container.scrollHeight;
+
+    if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
+  } catch(e){
+    if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
+    console.error('Error generating more insights:', e);
+  }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(getTheme());
 
