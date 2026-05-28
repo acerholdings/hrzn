@@ -228,7 +228,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;"></span>AI Generated</div>
         </div>
       </div>
-      <div id="reportOutputBody" style="padding:24px;font-size:13px;color:var(--text-mid);line-height:1.8;white-space:pre-wrap;"></div>
+      <div id="reportOutputBody" style="padding:24px;font-size:13px;color:var(--text-mid);line-height:1.8;"></div>
     </div>
 
     <!-- CUSTOM REPORT INPUT -->
@@ -301,12 +301,27 @@ MENU: Toro 68% margin $8,240/wk. Salmon 62% $6,120. Edamame 72% (upsell opportun
 Write professional, specific reports. Use real numbers. Be actionable.`;
 
 const reportPrompts = {
-  weekly: 'Write a comprehensive weekly business summary report for Sama Handroll for the week of May 19-25, 2026. Include: executive summary, revenue analysis, labor performance, menu highlights, top 3 alerts, and 5 specific action items for next week. Format with clear sections and headers using dashes.',
-  monthly: 'Write a monthly P&L summary report for Sama Handroll for May 2026. Include: revenue summary, key expense categories, gross and net margin analysis, month-over-month comparison, and 3 financial recommendations. Format with clear sections.',
-  labor: 'Write a labor efficiency report for Sama Handroll for the week of May 19-25. Include: overall labor % analysis, day-by-day breakdown, staffing recommendations, cost savings opportunities, and a specific schedule recommendation for next week. Format with clear sections.',
-  menu: 'Write a menu profitability report for Sama Handroll. Include: top performers, underperformers, menu engineering recommendations, pricing suggestions for low-margin items, and 5 specific menu optimization actions. Format with clear sections.',
-  executive: 'Write an executive summary for Sama Handroll suitable for sharing with investors or partners. Include: business overview, key performance metrics, revenue trends, profitability analysis, competitive strengths, and 6-month outlook. Keep it professional and concise. Format with clear sections.'
+  weekly: `Write a comprehensive weekly business summary report for Sama Handroll LA for the week of May 19-25, 2026. Use this real data: Revenue $48,240 (+14.2%), Labor 32% (Tuesday hit 41%, target 28%), Gross margin 68%, Covers 1,847, Best day Friday $9,840, Slowest Tuesday $3,540, Avg check $26.12. Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
+  monthly: `Write a monthly P&L summary report for Sama Handroll LA for the period Jan-May 2026. Use this real data: Net Sales $211,844, Items Sold 9,219, Avg Check $12.25, Tips $18,038 (16.5%), Discounts $3,544 (3.1%), DoorDash $6,325 (3.7%), Credit Card 71.2% of payments. Include: ## Executive Summary, ## Revenue Breakdown, ## Payment Analysis, ## Key Metrics vs Industry Benchmarks, ## Recommendations. Use specific numbers.`,
+  labor: `Write a labor efficiency report for Sama Handroll LA for the week of May 19-25, 2026. Use this real data: Avg labor 32% (target 28%), Tuesday 41% (worst day), Friday 24% (best day), Total labor $15,437, 21 staff, Revenue per labor hour $117. Include: ## Overview, ## Day-by-Day Analysis, ## Staffing Recommendations, ## Cost Savings Opportunities ($500/wk on Tuesday), ## Next Week Schedule. Use specific numbers.`,
+  menu: `Write a menu profitability report for Sama Handroll LA. Use this real data: Toro Handroll 68% margin $8,240/wk, Salmon 62% $6,120, Yellowtail 61% $4,980, Spicy Tuna 55% $4,210 (down 3%), Wagyu 63% $3,120, Edamame 72% $1,240 (upsell opportunity), Shrimp 56% $2,800, Crab 34% $2,200 (lowest — needs repricing), Miso Soup 30% $890. Include: ## Top Performers, ## Underperformers, ## Menu Engineering Matrix, ## Pricing Recommendations, ## Action Items. Use specific numbers.`,
+  executive: `Write a professional executive summary for Sama Handroll LA suitable for investors or partners. Use this real data: Net Sales $211,844 (Jan-May 2026), 9,219 items sold, Avg check $12.25, Tips 16.5% (above industry standard of 15%), Weekly revenue ~$48,240 (+14.2% growth), Gross margin 68%, Labor 32% (target 28%), Health score 87/100. Include: ## Business Overview, ## Financial Performance, ## Key Strengths, ## Areas for Improvement, ## Growth Outlook. Keep it professional and data-driven.`
 };
+
+function renderMarkdown(text){
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<div style="font-size:13px;font-weight:600;color:var(--text);margin:20px 0 8px;">$1</div>')
+    .replace(/^## (.+)$/gm,'<div style="font-size:15px;font-weight:600;color:var(--gold);margin:24px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border);">$1</div>')
+    .replace(/^# (.+)$/gm,'<div style="font-size:18px;font-weight:500;color:var(--text);margin:0 0 16px;">$1</div>')
+    .replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;"/>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--gold);flex-shrink:0;">&#8226;</span><span>$1</span></div>')
+    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--gold);flex-shrink:0;width:16px;">$1.</span><span>$2</span></div>')
+    .replace(/\n\n/g,'</p><p style="margin-bottom:10px;">')
+    .replace(/\n/g,'<br/>');
+}
 
 async function generateSpecificReport(type) {
   if(type === 'custom') {
@@ -344,7 +359,8 @@ async function generateSpecificReport(type) {
       })
     });
     const data = await r.json();
-    body.textContent = data.content?.[0]?.text || 'Error generating report';
+    const text = data.content?.[0]?.text || 'Error generating report';
+    body.innerHTML = renderMarkdown(text);
   } catch(e) {
     body.textContent = 'Error: ' + e.message;
   }
@@ -376,7 +392,8 @@ async function generateCustomReport() {
       })
     });
     const data = await r.json();
-    body.textContent = data.content?.[0]?.text || 'Error generating report';
+    const text = data.content?.[0]?.text || 'Error generating report';
+    body.innerHTML = renderMarkdown(text);
   } catch(e) {
     body.textContent = 'Error: ' + e.message;
   }
