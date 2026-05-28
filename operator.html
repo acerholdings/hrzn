@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HRZN — Alerts</title>
+<title>HRZN — AI Operator</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>:root{--gold:#C9A84C;--gold-dim:#7a6330;--black:#080808;--surface:#0f0f0f;--surface2:#141414;--surface3:#1a1a1a;--surface4:#202020;--border:rgba(255,255,255,0.06);--border-gold:rgba(201,168,76,0.2);--text:#e8e8e8;--text-dim:#666;--text-mid:#999;--red:#e05555;--red-dim:rgba(224,85,85,0.12);--green:#4caf7d;--green-dim:rgba(76,175,125,0.12);--orange:#e08c35;--orange-dim:rgba(224,140,53,0.12);--blue:#4c8faf;--sidebar-w:240px;}
 body.light{--black:#f5f4f1;--surface:#ffffff;--surface2:#f8f7f5;--surface3:#f0ede8;--surface4:#e8e4de;--border:rgba(0,0,0,0.07);--border-gold:rgba(201,168,76,0.3);--text:#111111;--text-mid:#555;--text-dim:#999;--red:#c0392b;--red-dim:rgba(192,57,43,0.08);--green:#2a7d4f;--green-dim:rgba(42,125,79,0.08);--orange:#c0700a;--orange-dim:rgba(192,112,10,0.08);}
@@ -38,51 +38,37 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 .topbar-left h1{font-size:20px;font-weight:300;color:var(--text);letter-spacing:-0.01em;}
 .topbar-left p{font-size:11px;color:var(--text-dim);margin-top:1px;}
 .topbar-right{display:flex;align-items:center;gap:12px;}
-.topbar-btn{background:var(--gold);color:#000;font-size:11px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;}
 .topbar-btn-ghost{background:transparent;color:var(--text-dim);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;border:1px solid var(--border);font-family:'DM Sans',sans-serif;transition:all 0.2s;}
 .topbar-btn-ghost:hover{color:var(--text);border-color:var(--gold);}
-.content{padding:24px 28px;flex:1;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color 0.2s,background 0.3s;}
-.card:hover{border-color:var(--border-gold);}
-.card-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.card-title{font-size:11px;font-weight:500;color:var(--text);letter-spacing:0.02em;}
-.card-body{padding:16px;}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;transition:border-color 0.2s,background 0.3s;}
-.kpi-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
-.kpi-value{font-size:26px;font-weight:300;color:var(--text);letter-spacing:-0.02em;line-height:1;margin-bottom:6px;}
-.kpi-sub{font-size:11px;color:var(--text-dim);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}.fade-4{animation:fadeUp 0.4s ease 0.24s both}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.alert-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;transition:border-color 0.2s,transform 0.15s;}
-.alert-card:hover{border-color:var(--border-gold);transform:translateX(2px);}
-.alert-card.critical{border-left:3px solid var(--red);}
-.alert-card.warning{border-left:3px solid var(--orange);}
-.alert-card.info{border-left:3px solid var(--blue);}
-.alert-card.success{border-left:3px solid var(--green);}
-.alert-inner{display:flex;align-items:flex-start;gap:14px;padding:16px;}
-.alert-icon-wrap{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.alert-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.alert-tag{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;padding:2px 8px;border-radius:4px;}
-.alert-time{font-size:10px;color:var(--text-dim);}
-.alert-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
-.alert-desc{font-size:12px;color:var(--text-mid);line-height:1.6;}
-.alert-desc strong{color:var(--text);font-weight:500;}
-.alert-actions{display:flex;gap:8px;margin-top:10px;}
-.alert-btn{font-size:11px;padding:5px 12px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
-.alert-btn-primary{background:var(--gold);color:#000;border:none;font-weight:600;}
-.alert-btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border);}
-.alert-btn-ghost:hover{color:var(--text);border-color:var(--gold);}
-.alert-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;}
-.impact-badge{font-size:11px;font-family:'DM Mono',monospace;font-weight:500;padding:4px 10px;border-radius:4px;}
-.filter-row{display:flex;gap:8px;margin-bottom:20px;}
-.filter-btn{font-size:11px;padding:6px 14px;border-radius:20px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'DM Sans',sans-serif;transition:all 0.15s;}
-.filter-btn.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:600;}
-.filter-btn:hover{color:var(--text);border-color:var(--gold);}
-.section-label{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;margin-top:24px;}
-.section-label:first-child{margin-top:0;}
+.operator-layout{display:grid;grid-template-columns:1fr 320px;gap:0;height:calc(100vh - 56px);}
+.chat-area{display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.chat-messages{flex:1;overflow-y:auto;padding:28px;}
+.chat-input-area{border-top:1px solid var(--border);padding:16px 20px;background:var(--surface);}
+.chat-input-wrap{display:flex;align-items:flex-end;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;transition:border-color 0.2s;}
+.chat-input-wrap:focus-within{border-color:var(--gold);}
+.chat-input{flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);resize:none;max-height:120px;line-height:1.5;}
+.chat-input::placeholder{color:var(--text-dim);}
+.send-btn{width:32px;height:32px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;font-size:14px;color:#000;transition:opacity 0.2s;}
+.send-btn:hover{opacity:0.85;}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.right-panel{display:flex;flex-direction:column;overflow-y:auto;background:var(--surface);}
+.panel-section{padding:16px;border-bottom:1px solid var(--border);}
+.panel-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
+.suggestion-btn{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:11px;color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:6px;transition:all 0.15s;line-height:1.4;}
+.suggestion-btn:last-child{margin-bottom:0;}
+.suggestion-btn:hover{border-color:var(--gold);color:var(--text);background:rgba(201,168,76,0.04);}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:11px;color:var(--text-mid);}
+.stat-val{font-size:12px;font-family:'DM Mono',monospace;font-weight:500;color:var(--text);}
+.alert-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;cursor:pointer;transition:border-color 0.15s;}
+.alert-pill:hover{border-color:var(--border-gold);}
+.alert-pill:last-child{margin-bottom:0;}
+.welcome-msg{text-align:center;padding:60px 40px;}
 </style>
 </head>
 <body><div class="sidebar">
@@ -102,9 +88,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item" onclick="navigate('sales.html')"><span class="nav-icon">≡</span> Sales Report</div>
     <div class="nav-item"><span class="nav-icon">~</span> Cash Flow</div>
     <div class="nav-section-label" style="margin-top:8px;">AI</div>
-    <div class="nav-item" onclick="navigate('operator.html')"><span class="nav-icon">◉</span> AI Operator</div>
+    <div class="nav-item active"><span class="nav-icon">◉</span> AI Operator</div>
     <div class="nav-item"><span class="nav-icon">⊟</span> Reports</div>
-    <div class="nav-item  active" onclick="navigate('alerts.html')"><span class="nav-icon">◬</span> Alerts <span class="nav-badge">3</span></div>
+    <div class="nav-item" onclick="navigate('alerts.html')"><span class="nav-icon">◬</span> Alerts <span class="nav-badge">3</span></div>
     <div class="nav-section-label" style="margin-top:8px;">Integrations</div>
     <div class="nav-item"><span class="nav-icon">●</span> POS</div>
     <div class="nav-item"><span class="nav-icon">●</span> Payroll</div>
@@ -117,272 +103,108 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </div>
 </div><div class="main">
   <div class="topbar">
-    <div class="topbar-left"><h1>Alerts</h1><p>Issues and opportunities that need your attention</p></div>
+    <div class="topbar-left">
+      <h1>AI Operator</h1>
+      <p>Your intelligent business advisor — ask anything about Sama Handroll</p>
+    </div>
     <div class="topbar-right">
-      <div style="font-size:11px;color:var(--text-dim);">📅 May 27, 2026</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.15);padding:5px 12px;border-radius:20px;">
+        <div style="width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;"></div>
+        Online
+      </div>
       <button class="topbar-btn-ghost" onclick="navigate('dashboard.html')">← Dashboard</button>
-      <button class="topbar-btn">Mark All Read</button>
     </div>
   </div>
-  <div class="content">
 
-    <!-- KPI ROW -->
-    <div class="kpi-row fade-1">
-      <div class="kpi-card" style="border-left:3px solid var(--red);">
-        <div class="kpi-label">Critical</div>
-        <div class="kpi-value" style="color:var(--red);">2</div>
-        <div class="kpi-sub">Needs immediate action</div>
+  <div class="operator-layout">
+
+    <!-- CHAT AREA -->
+    <div class="chat-area">
+      <div class="chat-messages" id="aiMessages">
+        <div class="welcome-msg fade-1">
+          <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#000;margin:0 auto 16px;">AI</div>
+          <div style="font-size:22px;font-weight:300;color:var(--text);margin-bottom:8px;">Good evening, Sama.</div>
+          <div style="font-size:14px;color:var(--text-mid);line-height:1.7;max-width:480px;margin:0 auto 24px;">I've analyzed your business data. Revenue is up <strong style="color:var(--text);">14.2%</strong> this week, but labor hit <strong style="color:var(--red);">41% on Tuesday</strong>. I have several recommendations ready. What would you like to focus on?</div>
+          <div id="suggestions" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px;margin:0 auto;">
+            <button onclick="askQuestion('What should I focus on this week?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">What should I focus on this week?</button>
+            <button onclick="askQuestion('How do I fix my Tuesday labor problem?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">How do I fix my Tuesday labor problem?</button>
+            <button onclick="askQuestion('Which menu items should I promote?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Which menu items should I promote?</button>
+            <button onclick="askQuestion('What is my biggest opportunity right now?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">What is my biggest opportunity?</button>
+            <button onclick="askQuestion('Forecast my revenue for next month')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Forecast next month revenue</button>
+            <button onclick="askQuestion('Should I invest more in DoorDash or cut it?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Should I invest more in DoorDash?</button>
+          </div>
+        </div>
       </div>
-      <div class="kpi-card" style="border-left:3px solid var(--orange);">
-        <div class="kpi-label">Warnings</div>
-        <div class="kpi-value" style="color:var(--orange);">3</div>
-        <div class="kpi-sub">Monitor closely</div>
-      </div>
-      <div class="kpi-card" style="border-left:3px solid var(--blue);">
-        <div class="kpi-label">Opportunities</div>
-        <div class="kpi-value" style="color:var(--blue);">4</div>
-        <div class="kpi-sub">Revenue upside available</div>
-      </div>
-      <div class="kpi-card" style="border-left:3px solid var(--green);">
-        <div class="kpi-label">Wins</div>
-        <div class="kpi-value" style="color:var(--green);">3</div>
-        <div class="kpi-sub">Things going well</div>
+
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="aiInput" placeholder="Ask anything about your business..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+          <button class="send-btn" id="aiSend">➤</button>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-dim);text-align:center;">HRZN AI has access to your real Sama Handroll data · Press Enter to send</div>
       </div>
     </div>
 
-    <!-- FILTERS -->
-    <div class="filter-row fade-2">
-      <button class="filter-btn active">All (12)</button>
-      <button class="filter-btn">🔴 Critical (2)</button>
-      <button class="filter-btn">🟠 Warnings (3)</button>
-      <button class="filter-btn">🔵 Opportunities (4)</button>
-      <button class="filter-btn">🟢 Wins (3)</button>
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+      <!-- Live Stats -->
+      <div class="panel-section">
+        <div class="panel-label">Live Business Snapshot</div>
+        <div class="stat-row"><span class="stat-label">Net Sales (30d)</span><span class="stat-val" style="color:var(--green);">$32,234</span></div>
+        <div class="stat-row"><span class="stat-label">Weekly Revenue</span><span class="stat-val">$48,240</span></div>
+        <div class="stat-row"><span class="stat-label">Labor Cost %</span><span class="stat-val" style="color:var(--orange);">32%</span></div>
+        <div class="stat-row"><span class="stat-label">Gross Margin</span><span class="stat-val" style="color:var(--green);">68%</span></div>
+        <div class="stat-row"><span class="stat-label">Avg Check</span><span class="stat-val">$12.25</span></div>
+        <div class="stat-row"><span class="stat-label">Items Sold (30d)</span><span class="stat-val">2,631</span></div>
+        <div class="stat-row"><span class="stat-label">Tips Rate</span><span class="stat-val" style="color:var(--green);">16.5%</span></div>
+        <div class="stat-row"><span class="stat-label">Health Score</span><span class="stat-val" style="color:var(--gold);">87/100</span></div>
+      </div>
+
+      <!-- Active Alerts -->
+      <div class="panel-section">
+        <div class="panel-label">Active Alerts</div>
+        <div class="alert-pill" onclick="askQuestion('Tell me more about the Tuesday labor spike')">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+          <div style="font-size:11px;color:var(--text);">Tuesday labor at 41%</div>
+        </div>
+        <div class="alert-pill" onclick="askQuestion('What should I do about the salmon inventory running low?')">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+          <div style="font-size:11px;color:var(--text);">Salmon depletes in ~2 days</div>
+        </div>
+        <div class="alert-pill" onclick="askQuestion('How do I increase Toro lunch sales?')">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0;"></div>
+          <div style="font-size:11px;color:var(--text);">Toro: only 12% lunch sales</div>
+        </div>
+        <div class="alert-pill" onclick="askQuestion('How should I fix the Crab Handroll margin?')">
+          <div style="width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0;"></div>
+          <div style="font-size:11px;color:var(--text);">Crab margin at 34%</div>
+        </div>
+      </div>
+
+      <!-- Suggested Questions -->
+      <div class="panel-section">
+        <div class="panel-label">Ask About</div>
+        <button class="suggestion-btn" onclick="askQuestion('Give me a full weekly business debrief')">📋 Full weekly debrief</button>
+        <button class="suggestion-btn" onclick="askQuestion('What are my top 3 actions this week to increase profit?')">💰 Top 3 profit actions</button>
+        <button class="suggestion-btn" onclick="askQuestion('Compare this month to last month')">📊 Month over month comparison</button>
+        <button class="suggestion-btn" onclick="askQuestion('What is my break-even revenue per day?')">⚖️ Break-even analysis</button>
+        <button class="suggestion-btn" onclick="askQuestion('Which staff shifts should I cut to hit 28% labor?')">✂️ Labor optimization plan</button>
+        <button class="suggestion-btn" onclick="askQuestion('Write me a script for servers to upsell Toro and Edamame')">🗣️ Server upsell script</button>
+        <button class="suggestion-btn" onclick="askQuestion('What would happen to revenue if I raised prices by 10%?')">📈 Price increase impact</button>
+        <button class="suggestion-btn" onclick="askQuestion('Should I expand delivery or focus on dine-in?')">🚗 Delivery vs dine-in strategy</button>
+      </div>
+
+      <!-- Data Source -->
+      <div class="panel-section">
+        <div class="panel-label">Data Source</div>
+        <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);"></div>Clover POS — Apr 28–May 27</div>
+          <div style="font-size:10px;color:var(--text-dim);">Last updated: Today</div>
+        </div>
+      </div>
+
     </div>
-
-    <!-- CRITICAL -->
-    <div class="fade-2">
-      <div class="section-label">🔴 Critical — Act Now</div>
-
-      <div class="alert-card critical">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--red-dim);">⚡</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--red-dim);color:var(--red);">Labor</span><span class="alert-time">Today, 8:00 AM</span></div>
-            <div class="alert-title">Tuesday labor cost hit 41% — 13 points above target</div>
-            <div class="alert-desc">Your slowest revenue day had your highest labor cost. <strong>Cutting 2 dinner shifts</strong> on Tuesday would bring labor to 28% and save an estimated <strong>$500/week</strong> or <strong>$26,000/year</strong>.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-primary">View Labor Page</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--red-dim);color:var(--red);">-$500/wk risk</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card critical">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--red-dim);">📦</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--red-dim);color:var(--red);">Inventory</span><span class="alert-time">Today, 6:30 AM</span></div>
-            <div class="alert-title">Salmon inventory depletes in approximately 2 days</div>
-            <div class="alert-desc">Based on current sales velocity, your salmon supply will run out by <strong>Wednesday evening</strong>. Salmon Handroll is your <strong>#4 revenue item at $6,120/week</strong>. A stockout would cost an estimated <strong>$1,742 in lost sales</strong>.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-primary">Reorder Now</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--red-dim);color:var(--red);">$1,742 at risk</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- WARNINGS -->
-    <div class="fade-3">
-      <div class="section-label">🟠 Warnings — Monitor Closely</div>
-
-      <div class="alert-card warning">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--orange-dim);">📊</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--orange-dim);color:var(--orange);">Labor</span><span class="alert-time">Yesterday</span></div>
-            <div class="alert-title">Saturday labor creeping above target at 33%</div>
-            <div class="alert-desc">Saturday is your <strong>2nd highest revenue day</strong> but labor is trending up. One extra shift could push it to 36%+. Monitor this week and consider cutting back if revenue doesn't increase proportionally.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-ghost">View Labor</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--orange-dim);color:var(--orange);">Watch</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card warning">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--orange-dim);">🦀</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--orange-dim);color:var(--orange);">Menu</span><span class="alert-time">2 days ago</span></div>
-            <div class="alert-title">Crab Handroll margin at 34% — lowest on menu</div>
-            <div class="alert-desc">Crab Handroll is <strong>24 points below your average margin</strong>. Either raise the price by $2–3 or renegotiate with your crab supplier. At current volume, this costs you approximately <strong>$680/week in lost margin</strong>.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-ghost">View Menu</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--orange-dim);color:var(--orange);">-$680/wk</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card warning">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--orange-dim);">📉</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--orange-dim);color:var(--orange);">Revenue</span><span class="alert-time">3 days ago</span></div>
-            <div class="alert-title">Spicy Tuna orders down 3% — declining trend</div>
-            <div class="alert-desc">Spicy Tuna has dropped 3% in orders over the past 2 weeks. At <strong>55% margin and $4,210/week</strong>, it's a key revenue item. Consider a lunch promotion or menu placement change to reverse the trend.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-ghost">View Menu</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--orange-dim);color:var(--orange);">↓ Trending</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- OPPORTUNITIES -->
-    <div class="fade-4">
-      <div class="section-label">🔵 Opportunities — Revenue Upside</div>
-
-      <div class="alert-card info">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:rgba(76,143,175,0.12);">🐟</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:rgba(76,143,175,0.12);color:var(--blue);">Menu</span><span class="alert-time">5 hours ago</span></div>
-            <div class="alert-title">Toro Handroll: only 12% lunch penetration</div>
-            <div class="alert-desc">Your highest margin item at <strong>68%</strong> is barely being ordered at lunch. A targeted lunch promotion or server upsell training could add <strong>$800–$1,200/week</strong> with no additional cost.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-primary">Create Promotion</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:rgba(76,143,175,0.12);color:var(--blue);">+$1,200/wk</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card info">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:rgba(76,143,175,0.12);">🥗</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:rgba(76,143,175,0.12);color:var(--blue);">Menu</span><span class="alert-time">1 day ago</span></div>
-            <div class="alert-title">Edamame upsell opportunity — 72% margin, low penetration</div>
-            <div class="alert-desc">Edamame has your <strong>highest margin at 72%</strong> and costs almost nothing to produce. Upselling it with every handroll order could add <strong>$300–$500/week</strong> with zero extra overhead.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-primary">Add to Upsell Script</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:rgba(76,143,175,0.12);color:var(--blue);">+$500/wk</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card info">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:rgba(76,143,175,0.12);">🚗</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:rgba(76,143,175,0.12);color:var(--blue);">Delivery</span><span class="alert-time">2 days ago</span></div>
-            <div class="alert-title">DoorDash at 3.6% — well below industry average</div>
-            <div class="alert-desc">Most restaurants do <strong>15–20% of revenue through delivery</strong>. Either invest in growing your DoorDash presence or cut it entirely to save on commission fees. There's no middle ground at 3.6%.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-ghost">Analyze</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:rgba(76,143,175,0.12);color:var(--blue);">Decision needed</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card info">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:rgba(76,143,175,0.12);">💳</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:rgba(76,143,175,0.12);color:var(--blue);">Finance</span><span class="alert-time">3 days ago</span></div>
-            <div class="alert-title">93.5% card payments — negotiate processing fees</div>
-            <div class="alert-desc">With <strong>$29,551 in credit card volume</strong>, you're paying approximately <strong>$740–$885/month</strong> in processing fees. A 0.5% rate reduction could save <strong>$148/month</strong>. Worth a call to your processor.</div>
-            <div class="alert-actions">
-              <button class="alert-btn alert-btn-ghost">Learn More</button>
-              <button class="alert-btn alert-btn-ghost">Dismiss</button>
-            </div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:rgba(76,143,175,0.12);color:var(--blue);">+$148/mo</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- WINS -->
-    <div class="fade-4">
-      <div class="section-label">🟢 Wins — Keep It Up</div>
-
-      <div class="alert-card success">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--green-dim);">🏆</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--green-dim);color:var(--green);">Revenue</span><span class="alert-time">Today</span></div>
-            <div class="alert-title">Weekly revenue up 14.2% — strong performance</div>
-            <div class="alert-desc">This week's <strong>$48,240</strong> is your best week in the past month. Friday dinner service hit <strong>$9,840</strong>, a new recent high. The revenue trend is clearly upward.</div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--green-dim);color:var(--green);">↑ +14.2%</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card success">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--green-dim);">😊</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--green-dim);color:var(--green);">Customer</span><span class="alert-time">Yesterday</span></div>
-            <div class="alert-title">Tips at 16.5% — above industry standard of 15%</div>
-            <div class="alert-desc"><strong>$5,532 in tips</strong> this month signals strong customer satisfaction. Your team is delivering a great experience. Leverage this with a loyalty program to increase repeat visits.</div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--green-dim);color:var(--green);">16.5% tips</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="alert-card success">
-        <div class="alert-inner">
-          <div class="alert-icon-wrap" style="background:var(--green-dim);">⚡</div>
-          <div style="flex:1;">
-            <div class="alert-meta-row"><span class="alert-tag" style="background:var(--green-dim);color:var(--green);">Labor</span><span class="alert-time">Today</span></div>
-            <div class="alert-title">Friday labor efficiency is best in class at 24%</div>
-            <div class="alert-desc">On your highest revenue day, you kept labor at just <strong>24%</strong> — 4 points below target. <strong>377 covers</strong> served efficiently. This is the staffing model to replicate on other days.</div>
-          </div>
-          <div class="alert-right">
-            <span class="impact-badge" style="background:var(--green-dim);color:var(--green);">24% labor</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div><script>
 const THEME_KEY='hrzn-theme';
@@ -390,6 +212,111 @@ function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(page){window.location.href=page;}
-document.addEventListener('DOMContentLoaded',()=>applyTheme(getTheme()));
+function askQuestion(q){const i=document.getElementById('aiInput');if(i){i.value=q;sendMessage();}}
+
+let conversationHistory=[];
+const RC=`You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
+
+REAL BUSINESS DATA (from Clover POS, Apr 28 – May 27, 2026):
+- Gross Sales: $33,271
+- Net Sales: $32,234 (after $1,037 in discounts)
+- Total Collected: $40,971 (including $5,532 tips, $3,143 taxes)
+- Items Sold: 2,631
+- Avg Check per Item: $12.25
+- Credit Card: $29,551 (72.1% of collected)
+- Debit Card: $8,749
+- DoorDash: $1,495 (3.6% of revenue — well below industry avg of 15-20%)
+- Cash: $1,177 (2.9%)
+- Tips: $5,532 (16.5% of net sales — above industry standard of 15%)
+- Discounts: $1,037 (3.1% of gross)
+
+WEEKLY PERFORMANCE (estimated from monthly):
+- Weekly Revenue: ~$48,240
+- Labor Cost: 32% avg (Tuesday hit 41% — target is 28%)
+- Gross Margin: 68%
+- Covers: ~1,847/week
+- Best Day: Friday dinner $9,840
+- Slowest Day: Tuesday $3,540
+
+MENU PERFORMANCE:
+- Toro Handroll: 68% margin, $8,240/week — #1 revenue item, only 12% lunch penetration
+- Salmon Handroll: 62% margin, $6,120/week
+- Yellowtail: 61% margin, $4,980/week
+- Spicy Tuna: 55% margin, $4,210/week — down 3%
+- Wagyu Handroll: 63% margin, $3,120/week
+- Edamame: 72% margin, $1,240/week — highest margin, upsell opportunity
+- Shrimp Handroll: 56% margin, $2,800/week
+- Crab Handroll: 34% margin, $2,200/week — lowest margin, needs repricing
+- Miso Soup: 30% margin, $890/week
+
+ACTIVE ALERTS:
+- Tuesday labor spike (41% vs 28% target) — costs ~$500/week
+- Salmon inventory depletes in ~2 days
+- Toro lunch penetration only 12%
+- Crab Handroll margin at 34%
+
+You are a sharp, elite business advisor. Be specific, reference real numbers, give concrete action steps. Be concise but thorough — max 4-6 sentences unless asked for a breakdown. Never be vague.`;
+
+function addMessage(role, text, isTyping=false){
+  const msgs=document.getElementById('aiMessages');
+  if(!msgs)return;
+  const m=document.createElement('div');
+  m.className='ai-msg';
+  m.id=isTyping?'typing':'';
+  
+  if(role==='user'){
+    m.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      <div style="max-width:70%;background:var(--surface2);border:1px solid var(--border);border-radius:12px 12px 2px 12px;padding:10px 14px;">
+        <div style="font-size:12px;color:var(--text);line-height:1.6;">${text}</div>
+      </div>
+    </div>`;
+  } else {
+    m.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:20px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;flex-shrink:0;margin-top:2px;">AI</div>
+      <div style="flex:1;">
+        <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">HRZN AI Operator</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;">${text}</div>
+      </div>
+    </div>`;
+  }
+  msgs.appendChild(m);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+async function sendMessage(){
+  const input=document.getElementById('aiInput'),btn=document.getElementById('aiSend');
+  if(!input||!btn)return;
+  const text=input.value.trim();if(!text)return;
+  input.value='';btn.disabled=true;
+  
+  // Hide suggestions after first message
+  const sugg=document.getElementById('suggestions');
+  if(sugg)sugg.style.display='none';
+  
+  addMessage('user',text);
+  conversationHistory.push({role:'user',content:text});
+  addMessage('ai','Analyzing your business data...', true);
+  
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:RC,messages:conversationHistory})});
+    const d=await r.json();
+    const reply=d.content?.[0]?.text||'Error getting response';
+    conversationHistory.push({role:'assistant',content:reply});
+    document.getElementById('typing')?.remove();
+    addMessage('ai',reply);
+  }catch(e){
+    document.getElementById('typing')?.remove();
+    addMessage('ai','Connection error: '+e.message);
+  }
+  btn.disabled=false;
+  input.focus();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  applyTheme(getTheme());
+  const s=document.getElementById('aiSend'),i=document.getElementById('aiInput');
+  if(s)s.addEventListener('click',sendMessage);
+  if(i)i.addEventListener('keypress',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+});
 </script></body>
 </html>
