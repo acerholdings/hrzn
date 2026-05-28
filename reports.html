@@ -295,13 +295,45 @@ function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.s
 function navigate(page){window.location.href=page;}
 
 const RC = `You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
-REAL DATA (Clover POS, Jan–May 2026): Net Sales $211,844. Items sold 9,219. Avg check $12.25. Tips $18,038 (16.5% — above industry avg). Discounts $3,544 (3.1%). DoorDash $6,325 (3.7% of revenue — well below industry avg of 15-20%). Credit card 71.2% of payments.
-WEEKLY: Revenue ~$48,240 (+14.2%). Labor 32% (Tuesday hit 41% — target 28%). Gross margin 68%. Best day Friday $9,840. Slowest Tuesday $3,540.
-MENU: Toro 68% margin $8,240/wk. Salmon 62% $6,120. Edamame 72% (upsell opportunity). Crab 34% (lowest — needs repricing). Spicy Tuna down 3%.
-Write professional, specific reports. Use real numbers. Be actionable.`;
+
+REAL BUSINESS DATA (from Clover POS, Jan 1 – May 28, 2026):
+- Net Sales: $211,844 over 4.8 months
+- Monthly Average Revenue: ~$44,134/month
+- Weekly Average Revenue: ~$10,193/week
+- Daily Average Revenue: ~$1,456/day
+- Items Sold: 9,219 total (avg ~1,920/month)
+- Avg Check per Item: $12.25
+- Gross Sales: $217,613
+- Discounts: $3,544 (3.1% of gross — very low, good pricing discipline)
+- Tips: $18,038 (8.5% of net sales)
+- Taxes & Fees: $20,657
+- Total Collected: $268,466
+- Credit Card: $199,893 (74.5% of collected)
+- Debit Card: $48,860 (18.2%)
+- DoorDash: $9,807 (3.7% of revenue — well below industry avg of 15-20%)
+- Cash: $9,906 (3.7%)
+
+LABOR (estimated weekly):
+- Avg Labor Cost: ~32% of revenue (target is 28%)
+- Tuesday tends to be overstaffed
+- Friday is most efficient day
+- ~21 staff total
+
+MENU (estimated performance):
+- Top items: Toro Handroll, Salmon Handroll, Yellowtail
+- Lowest margin: Crab Handroll, Miso Soup
+- Upsell opportunity: Edamame (high margin, low penetration)
+
+ALERTS:
+- Labor above target at ~32% (target 28%)
+- DoorDash underutilized at 3.7%
+- Discount rate healthy at 3.1%
+- Tips below restaurant average (8.5% vs typical 15-18% — note: this may be because avg check is per item not per table)
+
+Be specific, reference real numbers, give concrete action steps. Be concise but thorough.`;
 
 const reportPrompts = {
-  weekly: `Write a comprehensive weekly business summary report for Sama Handroll LA for the week of May 19-25, 2026. Use this real data: Revenue $48,240 (+14.2%), Labor 32% (Tuesday hit 41%, target 28%), Gross margin 68%, Covers 1,847, Best day Friday $9,840, Slowest Tuesday $3,540, Avg check $26.12. Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
+  weekly: `Write a comprehensive weekly business summary report for Sama Handroll LA. Use this real data: Monthly avg revenue $44,134, Weekly avg ~$10,193, Items sold 9,219 over 4.8 months, Avg check $12.25, Tips $18,038, DoorDash only 3.7% of revenue, Labor ~32% (target 28%), Discounts $3,544 (3.1% — healthy). Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
   monthly: `Write a monthly P&L summary report for Sama Handroll LA for the period Jan-May 2026. Use this real data: Net Sales $211,844, Items Sold 9,219, Avg Check $12.25, Tips $18,038 (16.5%), Discounts $3,544 (3.1%), DoorDash $6,325 (3.7%), Credit Card 71.2% of payments. Include: ## Executive Summary, ## Revenue Breakdown, ## Payment Analysis, ## Key Metrics vs Industry Benchmarks, ## Recommendations. Use specific numbers.`,
   labor: `Write a labor efficiency report for Sama Handroll LA for the week of May 19-25, 2026. Use this real data: Avg labor 32% (target 28%), Tuesday 41% (worst day), Friday 24% (best day), Total labor $15,437, 21 staff, Revenue per labor hour $117. Include: ## Overview, ## Day-by-Day Analysis, ## Staffing Recommendations, ## Cost Savings Opportunities ($500/wk on Tuesday), ## Next Week Schedule. Use specific numbers.`,
   menu: `Write a menu profitability report for Sama Handroll LA. Use this real data: Toro Handroll 68% margin $8,240/wk, Salmon 62% $6,120, Yellowtail 61% $4,980, Spicy Tuna 55% $4,210 (down 3%), Wagyu 63% $3,120, Edamame 72% $1,240 (upsell opportunity), Shrimp 56% $2,800, Crab 34% $2,200 (lowest — needs repricing), Miso Soup 30% $890. Include: ## Top Performers, ## Underperformers, ## Menu Engineering Matrix, ## Pricing Recommendations, ## Action Items. Use specific numbers.`,
@@ -309,18 +341,54 @@ const reportPrompts = {
 };
 
 function renderMarkdown(text){
-  return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/^### (.+)$/gm,'<div style="font-size:13px;font-weight:600;color:var(--text);margin:20px 0 8px;">$1</div>')
-    .replace(/^## (.+)$/gm,'<div style="font-size:15px;font-weight:600;color:var(--gold);margin:24px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border);">$1</div>')
-    .replace(/^# (.+)$/gm,'<div style="font-size:18px;font-weight:500;color:var(--text);margin:0 0 16px;">$1</div>')
-    .replace(/^---+$/gm,'<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;"/>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^- (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--gold);flex-shrink:0;">&#8226;</span><span>$1</span></div>')
-    .replace(/^(\d+)\. (.+)$/gm,'<div style="display:flex;gap:8px;margin-bottom:6px;"><span style="color:var(--gold);flex-shrink:0;width:16px;">$1.</span><span>$2</span></div>')
-    .replace(/\n\n/g,'</p><p style="margin-bottom:10px;">')
-    .replace(/\n/g,'<br/>');
+  // Escape HTML first
+  let html = text
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+  
+  // Process line by line
+  const lines = html.split('\n');
+  const out = [];
+  
+  for(let i=0; i<lines.length; i++){
+    let line = lines[i];
+    
+    // Headers
+    if(line.startsWith('# ') && !line.startsWith('## ')){
+      out.push('<div style="font-size:18px;font-weight:500;color:var(--text);margin:8px 0 16px;">'+line.slice(2)+'</div>');
+    } else if(line.startsWith('### ')){
+      out.push('<div style="font-size:13px;font-weight:600;color:var(--text);margin:16px 0 6px;">'+line.slice(4)+'</div>');
+    } else if(line.startsWith('## ')){
+      out.push('<div style="font-size:15px;font-weight:600;color:var(--gold);margin:20px 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">'+line.slice(3)+'</div>');
+    }
+    // Horizontal rule
+    else if(/^---+$/.test(line.trim())){
+      out.push('<hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:12px 0;"/>');
+    }
+    // Bullet points
+    else if(line.startsWith('- ')){
+      const content = line.slice(2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
+      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;">•</span><span>'+content+'</span></div>');
+    }
+    // Numbered list
+    else if(/^\d+\. /.test(line)){
+      const num = line.match(/^(\d+)\. /)[1];
+      const content = line.slice(num.length+2).replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>');
+      out.push('<div style="display:flex;gap:8px;margin-bottom:5px;padding-left:8px;"><span style="color:var(--gold);flex-shrink:0;min-width:16px;">'+num+'.</span><span>'+content+'</span></div>');
+    }
+    // Empty line
+    else if(line.trim() === ''){
+      out.push('<div style="height:8px;"></div>');
+    }
+    // Regular paragraph
+    else {
+      const formatted = line.replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);font-weight:600;">$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+      out.push('<div style="margin-bottom:8px;line-height:1.7;">'+formatted+'</div>');
+    }
+  }
+  
+  return out.join('');
 }
 
 async function generateSpecificReport(type) {

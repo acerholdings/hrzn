@@ -218,45 +218,41 @@ function askQuestion(q){const i=document.getElementById('aiInput');if(i){i.value
 let conversationHistory=[];
 const RC=`You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
 
-REAL BUSINESS DATA (from Clover POS, Apr 28 – May 27, 2026):
-- Gross Sales: $33,271
-- Net Sales: $32,234 (after $1,037 in discounts)
-- Total Collected: $40,971 (including $5,532 tips, $3,143 taxes)
-- Items Sold: 2,631
+REAL BUSINESS DATA (from Clover POS, Jan 1 – May 28, 2026):
+- Net Sales: $211,844 over 4.8 months
+- Monthly Average Revenue: ~$44,134/month
+- Weekly Average Revenue: ~$10,193/week
+- Daily Average Revenue: ~$1,456/day
+- Items Sold: 9,219 total (avg ~1,920/month)
 - Avg Check per Item: $12.25
-- Credit Card: $29,551 (72.1% of collected)
-- Debit Card: $8,749
-- DoorDash: $1,495 (3.6% of revenue — well below industry avg of 15-20%)
-- Cash: $1,177 (2.9%)
-- Tips: $5,532 (16.5% of net sales — above industry standard of 15%)
-- Discounts: $1,037 (3.1% of gross)
+- Gross Sales: $217,613
+- Discounts: $3,544 (3.1% of gross — very low, good pricing discipline)
+- Tips: $18,038 (8.5% of net sales)
+- Taxes & Fees: $20,657
+- Total Collected: $268,466
+- Credit Card: $199,893 (74.5% of collected)
+- Debit Card: $48,860 (18.2%)
+- DoorDash: $9,807 (3.7% of revenue — well below industry avg of 15-20%)
+- Cash: $9,906 (3.7%)
 
-WEEKLY PERFORMANCE (estimated from monthly):
-- Weekly Revenue: ~$48,240
-- Labor Cost: 32% avg (Tuesday hit 41% — target is 28%)
-- Gross Margin: 68%
-- Covers: ~1,847/week
-- Best Day: Friday dinner $9,840
-- Slowest Day: Tuesday $3,540
+LABOR (estimated weekly):
+- Avg Labor Cost: ~32% of revenue (target is 28%)
+- Tuesday tends to be overstaffed
+- Friday is most efficient day
+- ~21 staff total
 
-MENU PERFORMANCE:
-- Toro Handroll: 68% margin, $8,240/week — #1 revenue item, only 12% lunch penetration
-- Salmon Handroll: 62% margin, $6,120/week
-- Yellowtail: 61% margin, $4,980/week
-- Spicy Tuna: 55% margin, $4,210/week — down 3%
-- Wagyu Handroll: 63% margin, $3,120/week
-- Edamame: 72% margin, $1,240/week — highest margin, upsell opportunity
-- Shrimp Handroll: 56% margin, $2,800/week
-- Crab Handroll: 34% margin, $2,200/week — lowest margin, needs repricing
-- Miso Soup: 30% margin, $890/week
+MENU (estimated performance):
+- Top items: Toro Handroll, Salmon Handroll, Yellowtail
+- Lowest margin: Crab Handroll, Miso Soup
+- Upsell opportunity: Edamame (high margin, low penetration)
 
-ACTIVE ALERTS:
-- Tuesday labor spike (41% vs 28% target) — costs ~$500/week
-- Salmon inventory depletes in ~2 days
-- Toro lunch penetration only 12%
-- Crab Handroll margin at 34%
+ALERTS:
+- Labor above target at ~32% (target 28%)
+- DoorDash underutilized at 3.7%
+- Discount rate healthy at 3.1%
+- Tips below restaurant average (8.5% vs typical 15-18% — note: this may be because avg check is per item not per table)
 
-You are a sharp, elite business advisor. Be specific, reference real numbers, give concrete action steps. Be concise but thorough — max 4-6 sentences unless asked for a breakdown. Never be vague.`;
+Be specific, reference real numbers, give concrete action steps. Be concise but thorough.`;
 
 function addMessage(role, text, isTyping=false){
   const msgs=document.getElementById('aiMessages');
