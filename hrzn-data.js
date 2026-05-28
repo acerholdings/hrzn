@@ -19,22 +19,22 @@ const HRZN = {
   DEMO_DATA: {
     _source: 'demo',
     _filename: 'Demo Data',
-    period: 'Jan 1, 2026 12:00 AM - May 28, 2026 11:59 PM',
-    grossSales: 217613,
-    discounts: 5769,
-    discountPct: 2.6,
-    netSales: 211844,
-    taxes: 20657,
-    tips: 33642,
-    amountCollected: 268466,
-    itemsSold: 15473,
-    avgCheck: 13.69,
+    period: 'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+    grossSales: 485000,
+    discounts: 9700,
+    discountPct: 2.0,
+    netSales: 475300,
+    taxes: 46300,
+    tips: 71295,
+    amountCollected: 592895,
+    itemsSold: 32000,
+    avgCheck: 14.85,
     tenders: {
-      creditCard: 199893,
-      debitCard:  48860,
-      doorDash:   9807,
-      cash:       9906,
-      doorDashPct: 3.7
+      creditCard: 430000,
+      debitCard:  110000,
+      doorDash:   28000,
+      cash:       24895,
+      doorDashPct: 4.7
     }
   },
 
@@ -201,7 +201,7 @@ Be specific, reference real numbers, give concrete actions.`;
     this.setSource(source);
     document.getElementById('hrzn-source-modal')?.remove();
     // Hard reload to bypass cache
-    window.location.replace(window.location.pathname + '?src=' + source + '&t=' + Date.now());
+    window.location.replace(window.location.pathname);
   },
 
   // ── INJECT BADGE INTO PAGE ───────────────────
