@@ -226,7 +226,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="card">
           <div class="card-header"><div class="card-title">Edit Monthly Expenses</div></div>
           <div class="card-body">
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Revenue is pulled from your Sales Report. Update expenses below and click Save.</div>
+            <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter your <strong style="color:var(--text);">monthly</strong> expenses. HRZN automatically scales them to match your CSV period (<span id="period-months">1 month</span>).</div>
             <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" oninput="saveFromInputs()" value="36032"/></div>
             <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" oninput="saveFromInputs()" value="36032"/></div>
             <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" oninput="saveFromInputs()" value="8500"/></div>
@@ -268,6 +268,19 @@ function navigate(page){window.location.href=page;}
 // P&L Data stored in localStorage
 const PL_KEY = 'hrzn-pl-data';
 
+function getMonthsFromPeriod(period){
+  if(!period) return 1;
+  // Try to calculate months from period string like "Jan 1, 2026 12:00 AM - May 28, 2026 11:59 PM"
+  try {
+    const parts = period.split(' - ');
+    if(parts.length < 2) return 1;
+    const start = new Date(parts[0].replace(/12:00 AM|11:59 PM/g,'').trim());
+    const end = new Date(parts[1].replace(/12:00 AM|11:59 PM/g,'').trim());
+    const months = (end - start) / (1000 * 60 * 60 * 24 * 30.44);
+    return Math.max(1, Math.round(months * 10) / 10);
+  } catch(e){ return 1; }
+}
+
 function loadPLData(){
   try {
     const saved = JSON.parse(localStorage.getItem(PL_KEY)) || getDefaultPL();
@@ -276,6 +289,10 @@ function loadPLData(){
     if(salesData){
       const parsed = JSON.parse(salesData);
       if(parsed.netSales) saved.revenue = parsed.netSales;
+      if(parsed.period) saved.period = parsed.period;
+      saved.months = getMonthsFromPeriod(parsed.period);
+    } else {
+      saved.months = 1;
     }
     return saved;
   }
@@ -317,7 +334,16 @@ function pct(n, total){ return total > 0 ? (n/total*100).toFixed(1)+'%' : '0%'; 
 function calcAndRender(){
   const d = loadPLData();
   
-  const totalExpenses = d.cogs + d.labor + d.rent + d.utilities + d.insurance + d.supplies + d.marketing + d.other;
+  const months = d.months || 1;
+  // Scale monthly expenses to match the period
+  const scaledLabor = d.labor * months;
+  const scaledRent = d.rent * months;
+  const scaledUtilities = d.utilities * months;
+  const scaledInsurance = d.insurance * months;
+  const scaledSupplies = d.supplies * months;
+  const scaledMarketing = d.marketing * months;
+  const scaledOther = d.other * months;
+  const totalExpenses = d.cogs + scaledLabor + scaledRent + scaledUtilities + scaledInsurance + scaledSupplies + scaledMarketing + scaledOther;
   const grossProfit = d.revenue - d.cogs;
   const operatingProfit = d.revenue - totalExpenses;
   const grossMarginPct = d.revenue > 0 ? (grossProfit/d.revenue*100).toFixed(1) : 0;
@@ -326,6 +352,8 @@ function calcAndRender(){
   // Update KPIs
   const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
   set('kpi-revenue', fmt(d.revenue));
+  const monthsEl = document.getElementById('period-months');
+  if(monthsEl) monthsEl.textContent = months.toFixed(1)+' months';
   // Show where revenue came from
   try {
     const salesData = localStorage.getItem('hrzn-sales-data');
@@ -356,20 +384,20 @@ function calcAndRender(){
   set('pl-cogs-pct', pct(d.cogs, d.revenue));
   set('pl-gross', fmt(grossProfit));
   set('pl-gross-pct', grossMarginPct+'%');
-  set('pl-labor', fmt(d.labor));
-  set('pl-labor-pct', pct(d.labor, d.revenue));
-  set('pl-rent', fmt(d.rent));
-  set('pl-rent-pct', pct(d.rent, d.revenue));
-  set('pl-utilities', fmt(d.utilities));
-  set('pl-utilities-pct', pct(d.utilities, d.revenue));
-  set('pl-insurance', fmt(d.insurance));
-  set('pl-insurance-pct', pct(d.insurance, d.revenue));
-  set('pl-supplies', fmt(d.supplies));
-  set('pl-supplies-pct', pct(d.supplies, d.revenue));
-  set('pl-marketing', fmt(d.marketing));
-  set('pl-marketing-pct', pct(d.marketing, d.revenue));
-  set('pl-other', fmt(d.other));
-  set('pl-other-pct', pct(d.other, d.revenue));
+  set('pl-labor', fmt(scaledLabor));
+  set('pl-labor-pct', pct(scaledLabor, d.revenue));
+  set('pl-rent', fmt(scaledRent));
+  set('pl-rent-pct', pct(scaledRent, d.revenue));
+  set('pl-utilities', fmt(scaledUtilities));
+  set('pl-utilities-pct', pct(scaledUtilities, d.revenue));
+  set('pl-insurance', fmt(scaledInsurance));
+  set('pl-insurance-pct', pct(scaledInsurance, d.revenue));
+  set('pl-supplies', fmt(scaledSupplies));
+  set('pl-supplies-pct', pct(scaledSupplies, d.revenue));
+  set('pl-marketing', fmt(scaledMarketing));
+  set('pl-marketing-pct', pct(scaledMarketing, d.revenue));
+  set('pl-other', fmt(scaledOther));
+  set('pl-other-pct', pct(scaledOther, d.revenue));
   set('pl-total-exp', fmt(totalExpenses));
   set('pl-total-exp-pct', pct(totalExpenses, d.revenue));
   set('pl-net', fmt(operatingProfit));
@@ -382,13 +410,13 @@ function calcAndRender(){
   // Update expense bar chart
   const cats = [
     {id:'bar-cogs', val:d.cogs},
-    {id:'bar-labor', val:d.labor},
-    {id:'bar-rent', val:d.rent},
-    {id:'bar-utilities', val:d.utilities},
-    {id:'bar-insurance', val:d.insurance},
-    {id:'bar-supplies', val:d.supplies},
-    {id:'bar-marketing', val:d.marketing},
-    {id:'bar-other', val:d.other},
+    {id:'bar-labor', val:scaledLabor},
+    {id:'bar-rent', val:scaledRent},
+    {id:'bar-utilities', val:scaledUtilities},
+    {id:'bar-insurance', val:scaledInsurance},
+    {id:'bar-supplies', val:scaledSupplies},
+    {id:'bar-marketing', val:scaledMarketing},
+    {id:'bar-other', val:scaledOther},
   ];
   const maxVal = Math.max(...cats.map(c=>c.val));
   cats.forEach(c => {
