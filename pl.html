@@ -207,6 +207,11 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div class="pl-pct" id="pl-other-pct">0.7%</div>
           <div class="pl-val" id="pl-other" style="color:var(--red);">-$800</div>
         </div>
+        <div class="pl-row">
+          <div class="pl-label">Debt Payments</div>
+          <div class="pl-pct" id="pl-debt-pct">3.3%</div>
+          <div class="pl-val" id="pl-debt" style="color:var(--red);">-$7,000</div>
+        </div>
         <div class="pl-row total">
           <div class="pl-label">Total Operating Expenses</div>
           <div class="pl-pct" id="pl-total-exp-pct">75.1%</div>
@@ -251,6 +256,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
             <div class="bar-row"><div class="bar-label">Supplies</div><div class="bar-track"><div class="bar-fill" id="bar-supplies" style="width:2%;background:var(--green);"></div></div><div class="bar-val" id="pl-supplies2">$600</div></div>
             <div class="bar-row"><div class="bar-label">Marketing</div><div class="bar-track"><div class="bar-fill" id="bar-marketing" style="width:1%;background:var(--green);"></div></div><div class="bar-val" id="pl-marketing2">$500</div></div>
             <div class="bar-row"><div class="bar-label">Other</div><div class="bar-track"><div class="bar-fill" id="bar-other" style="width:2%;background:var(--text-dim);"></div></div><div class="bar-val" id="pl-other2">$800</div></div>
+            <div class="bar-row"><div class="bar-label">Debt</div><div class="bar-track"><div class="bar-fill" id="bar-debt" style="width:20%;background:var(--red);"></div></div><div class="bar-val" id="pl-debt2">$7,000</div></div>
           </div>
         </div>
 
@@ -324,7 +330,8 @@ function getDefaultPL(){
     insurance: 800,
     supplies: 600,
     marketing: 500,
-    other: 800
+    other: 800,
+    debt: 7000
   };
 }
 
@@ -343,8 +350,10 @@ function calcAndRender(){
   const scaledSupplies = d.supplies * months;
   const scaledMarketing = d.marketing * months;
   const scaledOther = d.other * months;
-  const totalExpenses = d.cogs + scaledLabor + scaledRent + scaledUtilities + scaledInsurance + scaledSupplies + scaledMarketing + scaledOther;
-  const grossProfit = d.revenue - d.cogs;
+  const scaledDebt = (d.debt || 0) * months;
+  const scaledCogs = d.cogs * months;
+  const totalExpenses = scaledCogs + scaledLabor + scaledRent + scaledUtilities + scaledInsurance + scaledSupplies + scaledMarketing + scaledOther + scaledDebt;
+  const grossProfit = d.revenue - scaledCogs;
   const operatingProfit = d.revenue - totalExpenses;
   const grossMarginPct = d.revenue > 0 ? (grossProfit/d.revenue*100).toFixed(1) : 0;
   const netMarginPct = d.revenue > 0 ? (operatingProfit/d.revenue*100).toFixed(1) : 0;
@@ -380,8 +389,8 @@ function calcAndRender(){
 
   // Update P&L table values
   set('pl-revenue', fmt(d.revenue));
-  set('pl-cogs', fmt(d.cogs));
-  set('pl-cogs-pct', pct(d.cogs, d.revenue));
+  set('pl-cogs', fmt(scaledCogs));
+  set('pl-cogs-pct', pct(scaledCogs, d.revenue));
   set('pl-gross', fmt(grossProfit));
   set('pl-gross-pct', grossMarginPct+'%');
   set('pl-labor', fmt(scaledLabor));
@@ -397,6 +406,8 @@ function calcAndRender(){
   set('pl-marketing', fmt(scaledMarketing));
   set('pl-marketing-pct', pct(scaledMarketing, d.revenue));
   set('pl-other', fmt(scaledOther));
+  set('pl-debt', fmt(scaledDebt));
+  set('pl-debt-pct', pct(scaledDebt, d.revenue));
   set('pl-other-pct', pct(scaledOther, d.revenue));
   set('pl-total-exp', fmt(totalExpenses));
   set('pl-total-exp-pct', pct(totalExpenses, d.revenue));
@@ -409,7 +420,7 @@ function calcAndRender(){
 
   // Update expense bar chart
   const cats = [
-    {id:'bar-cogs', val:d.cogs},
+    {id:'bar-cogs', val:scaledCogs},
     {id:'bar-labor', val:scaledLabor},
     {id:'bar-rent', val:scaledRent},
     {id:'bar-utilities', val:scaledUtilities},
@@ -417,6 +428,7 @@ function calcAndRender(){
     {id:'bar-supplies', val:scaledSupplies},
     {id:'bar-marketing', val:scaledMarketing},
     {id:'bar-other', val:scaledOther},
+    {id:'bar-debt', val:scaledDebt},
   ];
   const maxVal = Math.max(...cats.map(c=>c.val));
   cats.forEach(c => {
@@ -425,7 +437,7 @@ function calcAndRender(){
   });
 
   // Update inputs
-  const fields = ['revenue','cogs','labor','rent','utilities','insurance','supplies','marketing','other'];
+  const fields = ['revenue','cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
   fields.forEach(f => {
     const el = document.getElementById('input-'+f);
     if(el) el.value = d[f];
@@ -434,7 +446,7 @@ function calcAndRender(){
 
 function saveFromInputs(){
   const d = loadPLData();
-  const fields = ['revenue','cogs','labor','rent','utilities','insurance','supplies','marketing','other'];
+  const fields = ['revenue','cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
   fields.forEach(f => {
     const el = document.getElementById('input-'+f);
     if(el) d[f] = parseFloat(el.value.replace(/[^0-9.]/g,'')) || 0;
