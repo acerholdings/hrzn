@@ -235,6 +235,9 @@ function navigate(page){window.location.href=page;}
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(getTheme());
   
+  // Load saved CSV data from localStorage on page load
+  loadSavedData();
+  
   // Auto-generate insights on page load with current Sama data
   generateInsights({
     period: 'Apr 28 – May 27, 2026',
@@ -256,6 +259,21 @@ document.addEventListener('DOMContentLoaded',()=>{
     input.addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0]);});
   }
   
+  const SALES_KEY = 'hrzn-sales-data';
+
+  function loadSavedData(){
+    try{
+      const saved = localStorage.getItem(SALES_KEY);
+      if(saved){
+        const data = JSON.parse(saved);
+        updateDashboard(data);
+        if(status) status.textContent='✓ Showing data from '+data._filename;
+        if(status) status.style.color='var(--green)';
+        if(zone) zone.style.borderColor='var(--green)';
+      }
+    }catch(e){}
+  }
+
   async function processFile(file){
     if(!file.name.endsWith('.csv')){status.textContent='Please upload a CSV file.';status.style.color='var(--red)';return;}
     status.textContent='Reading file...';status.style.color='var(--text-dim)';
@@ -264,7 +282,9 @@ document.addEventListener('DOMContentLoaded',()=>{
       const res = await fetch('/api/parse-csv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
       const data = await res.json();
       if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
-      // Update dashboard with real data
+      // Save to localStorage so it persists across refreshes
+      data._filename = file.name;
+      localStorage.setItem(SALES_KEY, JSON.stringify(data));
       updateDashboard(data);
       status.textContent='✓ Data updated from '+file.name;
       status.style.color='var(--green)';
