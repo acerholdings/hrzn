@@ -200,8 +200,8 @@ Be specific, reference real numbers, give concrete actions.`;
   switchSource(source) {
     this.setSource(source);
     document.getElementById('hrzn-source-modal')?.remove();
-    // Reload to refresh all data
-    window.location.reload();
+    // Hard reload to bypass cache
+    window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
   },
 
   // ── INJECT BADGE INTO PAGE ───────────────────
