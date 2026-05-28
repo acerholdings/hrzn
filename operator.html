@@ -109,6 +109,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <p>Your intelligent business advisor — ask anything about Sama Handroll</p>
     </div>
     <div class="topbar-right">
+      <div id="hrzn-source-badge"></div>
       <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.15);padding:5px 12px;border-radius:20px;">
         <div style="width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;"></div>
         Online
@@ -207,7 +208,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 
     </div>
   </div>
-</div><script>
+</div><script src="hrzn-data.js"></script>
+<script>
 const THEME_KEY='hrzn-theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
@@ -216,25 +218,7 @@ function navigate(page){window.location.href=page;}
 function askQuestion(q){const i=document.getElementById('aiInput');if(i){i.value=q;sendMessage();}}
 
 let conversationHistory=[];
-function getRC(){
-  let s = {};
-  try { const d=localStorage.getItem('hrzn-sales-data'); if(d) s=JSON.parse(d); } catch(e){}
-  const ns=s.netSales||211844, gs=s.grossSales||217613, ac=s.amountCollected||268466;
-  const tips=s.tips||18038, disc=s.discounts||3544, items=s.itemsSold||9219;
-  const avg=s.avgCheck||12.25, period=s.period||'Jan 1 – May 28, 2026';
-  const t=s.tenders||{}, cc=t.creditCard||199893, dc=t.debitCard||48860;
-  const dd=t.doorDash||9807, cash=t.cash||9906, ddp=t.doorDashPct||3.7;
-  const monthly=Math.round(ns/4.8), weekly=Math.round(monthly/4.33);
-  return `You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
-REAL DATA (Clover POS, ${period}):
-Net Sales: $${ns.toLocaleString()} | Gross Sales: $${gs.toLocaleString()} | Total Collected: $${ac.toLocaleString()}
-Items Sold: ${items.toLocaleString()} | Avg Check: $${avg} | Monthly Avg: ~$${monthly.toLocaleString()} | Weekly Avg: ~$${weekly.toLocaleString()}
-Tips: $${tips.toLocaleString()} (${(tips/ns*100).toFixed(1)}%) | Discounts: $${disc.toLocaleString()} (${s.discountPct||3.1}%)
-Credit Card: $${cc.toLocaleString()} | Debit: $${dc.toLocaleString()} | DoorDash: $${dd.toLocaleString()} (${ddp}%) | Cash: $${cash.toLocaleString()}
-LABOR: ~32% avg (target 28%). Tuesday overstaffed. ~21 staff.
-MENU: Toro Handroll, Salmon Handroll, Yellowtail, Spicy Tuna, Wagyu Handroll, Shrimp Handroll, Crab Handroll (low margin), Edamame (high margin, upsell opp), Miso Soup.
-Be sharp, specific, reference real numbers. Max 4-6 sentences unless breakdown needed.`;}
-const RC=getRC();
+
 
 function addMessage(role, text, isTyping=false){
   const msgs=document.getElementById('aiMessages');
@@ -277,7 +261,7 @@ async function sendMessage(){
   addMessage('ai','Analyzing your business data...', true);
   
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:getRC(),messages:conversationHistory})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:HRZN.getAIContext(),messages:conversationHistory})});
     const d=await r.json();
     const reply=d.content?.[0]?.text||'Error getting response';
     conversationHistory.push({role:'assistant',content:reply});
@@ -292,6 +276,8 @@ async function sendMessage(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  HRZN.injectBadge('hrzn-source-badge');
+  HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
   const s=document.getElementById('aiSend'),i=document.getElementById('aiInput');
   if(s)s.addEventListener('click',sendMessage);

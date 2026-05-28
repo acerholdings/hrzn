@@ -107,6 +107,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <p id="val-period">Apr 28 – May 27, 2026</p>
     </div>
     <div class="topbar-right">
+      <div id="hrzn-source-badge"></div>
       <div class="live-badge"><div class="live-dot"></div>Real Data</div>
       <button class="topbar-btn-ghost" onclick="navigate('dashboard.html')">← Dashboard</button>
       <button class="topbar-btn" onclick="document.getElementById('csvInput').click()">↑ Upload New CSV</button>
@@ -229,6 +230,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 
   </div>
 </div>
+<script src="hrzn-data.js"></script>
 <script>
 const THEME_KEY='hrzn-theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -276,7 +278,7 @@ Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences wit
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
-        system:'You are a restaurant business analyst. Always respond with pure JSON only, no markdown.',
+        system:'You are a restaurant business analyst for Sama Handroll LA. Always respond with pure JSON only, no markdown. Data: '+JSON.stringify(HRZN.getData()).slice(0,500),
         messages:[{role:'user',content:prompt}]
       })
     });
@@ -317,33 +319,25 @@ Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences wit
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  HRZN.injectBadge('hrzn-source-badge');
+  HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
 
   const zone = document.getElementById('uploadZone');
   const input = document.getElementById('csvInput');
   const status = document.getElementById('uploadStatus');
 
-  // Load saved CSV data — runs after DOM elements are ready
-  const SALES_KEY = 'hrzn-sales-data';
+  // Load data through HRZN data layer
   try {
-    const saved = localStorage.getItem(SALES_KEY);
-    if(saved){
-      const data = JSON.parse(saved);
+    const data = HRZN.getData();
+    if(data._source !== 'demo') {
       updateDashboard(data);
-      if(status){ status.textContent='✓ Showing data from '+data._filename; status.style.color='var(--green)'; }
+      if(status){ status.textContent='✓ Showing data from '+(data._filename||data._source); status.style.color='var(--green)'; }
       if(zone){ zone.style.borderColor='var(--green)'; }
-    } else {
-      // No saved data — show defaults and generate insights
-      generateInsights({
-        period: 'Apr 28 – May 27, 2026',
-        grossSales: 33271, discounts: 1037.38, discountPct: 3.1,
-        netSales: 32233.62, taxes: 3143.14, tips: 5531.74,
-        amountCollected: 40971.32, itemsSold: 2631, avgCheck: 12.25,
-        tenders: { creditCard: 29551.02, debitCard: 8748.98, doorDash: 1494.57, cash: 1176.75, doorDashPct: 3.6 }
-      });
     }
+    generateInsights(data);
   } catch(e) {
-    console.error('Error loading saved data:', e);
+    console.error('Error loading data:', e);
   }
   
   if(zone){
@@ -375,9 +369,10 @@ document.addEventListener('DOMContentLoaded',()=>{
       const res = await fetch('/api/parse-csv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
       const data = await res.json();
       if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
-      // Save to localStorage so it persists across refreshes
+      // Save through HRZN data layer
       data._filename = file.name;
-      localStorage.setItem('hrzn-sales-data', JSON.stringify(data));
+      HRZN.saveCSV(data);
+      HRZN.injectBadge('hrzn-source-badge');
       updateDashboard(data);
       status.textContent='✓ Data updated from '+file.name;
       status.style.color='var(--green)';

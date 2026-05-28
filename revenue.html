@@ -124,6 +124,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   <div class="topbar">
     <div class="topbar-left"><h1>Revenue</h1><p>Deep dive into your sales performance</p></div>
     <div class="topbar-right">
+      <div id="hrzn-source-badge"></div>
       <div style="font-size:11px;color:var(--text-dim);">📅 May 19–25, 2025</div>
       <button class="topbar-btn-ghost" onclick="navigate('dashboard.html')">← Dashboard</button>
       <button class="topbar-btn-ghost" onclick="navigate('/')">← Home</button>
@@ -206,7 +207,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       </table>
     </div>
   </div>
-</div><script>
+</div><script src="hrzn-data.js"></script>
+<script>
 const THEME_KEY='hrzn-theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){
@@ -231,6 +233,8 @@ async function sendMessage(){
   }catch(e){removeTyping();addMessage('ai','Error: '+e.message);}btn.disabled=false;
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  HRZN.injectBadge('hrzn-source-badge');
+  HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
   const s=document.getElementById('aiSend'),i=document.getElementById('aiInput'),a=document.getElementById('askBtn');
   if(s)s.addEventListener('click',sendMessage);
