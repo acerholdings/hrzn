@@ -201,7 +201,7 @@ Be specific, reference real numbers, give concrete actions.`;
     this.setSource(source);
     document.getElementById('hrzn-source-modal')?.remove();
     // Hard reload to bypass cache
-    window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
+    window.location.replace(window.location.pathname + '?src=' + source + '&t=' + Date.now());
   },
 
   // ── INJECT BADGE INTO PAGE ───────────────────

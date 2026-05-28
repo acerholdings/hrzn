@@ -273,6 +273,7 @@ async function sendMessage(){
   }catch(e){removeTyping();addMessage('ai','Error: '+e.message);}btn.disabled=false;
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
   HRZN.injectBadge('hrzn-source-badge');
 
   // Update Performance page with real data

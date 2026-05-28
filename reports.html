@@ -738,11 +738,18 @@ async function generateSpecificReport(type) {
     return;
   }
   
+  const d = HRZN.getData();
+  const months = HRZN.getMonths(d);
+  const monthly = Math.round((d.netSales||0)/months);
+  const weekly = Math.round(monthly/4.33);
+  const period = d.period || 'Jan–May 2026';
+  // Shorten period for title
+  const shortPeriod = period.replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   const titles = {
-    weekly: 'Weekly Business Summary — May 19–25, 2026',
-    monthly: 'Monthly P&L Summary — May 2026',
-    labor: 'Labor Efficiency Report — Week of May 19',
-    menu: 'Menu Profitability Report',
+    weekly: 'Weekly Business Summary — ' + shortPeriod,
+    monthly: 'Monthly P&L Summary — ' + shortPeriod,
+    labor: 'Labor Efficiency Report — ' + shortPeriod,
+    menu: 'Menu Profitability Report — ' + shortPeriod,
     executive: 'Executive Summary — Sama Handroll LA'
   };
 

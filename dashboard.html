@@ -287,6 +287,7 @@ async function sendMessage(){
   sendBtn.disabled=false;
 }
 document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
   HRZN.injectBadge('hrzn-source-badge');
 
   // Load real data into dashboard KPIs
@@ -312,11 +313,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
+  }, 50);
   const s=document.getElementById('aiSend'),i=document.getElementById('aiInput'),a=document.getElementById('askBtn');
   if(s)s.addEventListener('click',sendMessage);
   if(i)i.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});
   if(a)a.addEventListener('click',()=>{i.focus();i.scrollIntoView({behavior:'smooth'});});
 });
+
+  // Re-render when data source changes
+  window.addEventListener('hrzn-source-changed', () => {
+    setTimeout(() => { window.location.href = window.location.href.split('?')[0] + '?r=' + Date.now(); }, 100);
+  });
 </script>
 </body>
 </html>
