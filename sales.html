@@ -234,22 +234,33 @@ function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.s
 function navigate(page){window.location.href=page;}
 document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(getTheme());
-  
-  // Load saved CSV data from localStorage on page load
-  loadSavedData();
-  
-  // Auto-generate insights on page load with current Sama data
-  generateInsights({
-    period: 'Apr 28 – May 27, 2026',
-    grossSales: 33271, discounts: 1037.38, discountPct: 3.1,
-    netSales: 32233.62, taxes: 3143.14, tips: 5531.74,
-    amountCollected: 40971.32, itemsSold: 2631, avgCheck: 12.25,
-    tenders: { creditCard: 29551.02, debitCard: 8748.98, doorDash: 1494.57, cash: 1176.75, doorDashPct: 3.6 }
-  });
 
   const zone = document.getElementById('uploadZone');
   const input = document.getElementById('csvInput');
   const status = document.getElementById('uploadStatus');
+
+  // Load saved CSV data — runs after DOM elements are ready
+  const SALES_KEY = 'hrzn-sales-data';
+  try {
+    const saved = localStorage.getItem(SALES_KEY);
+    if(saved){
+      const data = JSON.parse(saved);
+      updateDashboard(data);
+      if(status){ status.textContent='✓ Showing data from '+data._filename; status.style.color='var(--green)'; }
+      if(zone){ zone.style.borderColor='var(--green)'; }
+    } else {
+      // No saved data — show defaults and generate insights
+      generateInsights({
+        period: 'Apr 28 – May 27, 2026',
+        grossSales: 33271, discounts: 1037.38, discountPct: 3.1,
+        netSales: 32233.62, taxes: 3143.14, tips: 5531.74,
+        amountCollected: 40971.32, itemsSold: 2631, avgCheck: 12.25,
+        tenders: { creditCard: 29551.02, debitCard: 8748.98, doorDash: 1494.57, cash: 1176.75, doorDashPct: 3.6 }
+      });
+    }
+  } catch(e) {
+    console.error('Error loading saved data:', e);
+  }
   
   if(zone){
     zone.addEventListener('click',()=>input.click());
@@ -259,8 +270,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     input.addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0]);});
   }
   
-  const SALES_KEY = 'hrzn-sales-data';
-
   function loadSavedData(){
     try{
       const saved = localStorage.getItem(SALES_KEY);
@@ -284,7 +293,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
       // Save to localStorage so it persists across refreshes
       data._filename = file.name;
-      localStorage.setItem(SALES_KEY, JSON.stringify(data));
+      localStorage.setItem('hrzn-sales-data', JSON.stringify(data));
       updateDashboard(data);
       status.textContent='✓ Data updated from '+file.name;
       status.style.color='var(--green)';
