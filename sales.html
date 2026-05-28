@@ -272,23 +272,25 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   
   function updateDashboard(d){
-    const set = (id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+    const set = (id,val)=>{document.querySelectorAll('#'+id).forEach(el=>el.textContent=val);};
     const fmt = n=>'$'+Math.round(n).toLocaleString();
     set('val-net-sales', fmt(d.netSales));
+    set('val-net-sales2', fmt(d.netSales));
     set('val-gross-sales', fmt(d.grossSales));
     set('val-collected', fmt(d.amountCollected));
+    set('val-collected2', fmt(d.amountCollected));
     set('val-tips', fmt(d.tips));
-    set('val-discounts', fmt(d.discounts));
+    set('val-discounts', '-'+fmt(d.discounts));
     set('val-taxes', fmt(d.taxes));
     set('val-items', d.itemsSold.toLocaleString());
-    set('val-avg-check', '$'+d.avgCheck);
+    set('val-avg-check', '$'+(Math.round(d.avgCheck*100)/100).toFixed(2));
     set('val-doordash', fmt(d.tenders.doorDash));
     set('val-doordash-pct', d.tenders.doorDashPct+'%');
     set('val-cash', fmt(d.tenders.cash));
     set('val-credit', fmt(d.tenders.creditCard));
     set('val-debit', fmt(d.tenders.debitCard));
     set('val-period', d.period);
-    set('val-discount-pct', d.discountPct+'%');
+    set('val-discount-pct', '('+fmt(d.discounts)+' off)');
     // Generate AI insights from real data
     generateInsights(d);
   }
