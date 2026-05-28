@@ -227,14 +227,14 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div class="card-header"><div class="card-title">Edit Monthly Expenses</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Revenue is pulled from your Sales Report. Update expenses below and click Save.</div>
-            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" value="36032"/></div>
-            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" value="36032"/></div>
-            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" value="8500"/></div>
-            <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" value="1200"/></div>
-            <div class="input-row"><div class="input-label">Insurance</div><input class="input-field" id="input-insurance" type="number" value="800"/></div>
-            <div class="input-row"><div class="input-label">Supplies</div><input class="input-field" id="input-supplies" type="number" value="600"/></div>
-            <div class="input-row"><div class="input-label">Marketing</div><input class="input-field" id="input-marketing" type="number" value="500"/></div>
-            <div class="input-row"><div class="input-label">Other</div><input class="input-field" id="input-other" type="number" value="800"/></div>
+            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" oninput="saveFromInputs()" value="36032"/></div>
+            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" oninput="saveFromInputs()" value="36032"/></div>
+            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" oninput="saveFromInputs()" value="8500"/></div>
+            <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" oninput="saveFromInputs()" value="1200"/></div>
+            <div class="input-row"><div class="input-label">Insurance</div><input class="input-field" id="input-insurance" type="number" oninput="saveFromInputs()" value="800"/></div>
+            <div class="input-row"><div class="input-label">Supplies</div><input class="input-field" id="input-supplies" type="number" oninput="saveFromInputs()" value="600"/></div>
+            <div class="input-row"><div class="input-label">Marketing</div><input class="input-field" id="input-marketing" type="number" oninput="saveFromInputs()" value="500"/></div>
+            <div class="input-row"><div class="input-label">Other</div><input class="input-field" id="input-other" type="number" oninput="saveFromInputs()" value="800"/></div>
             <input type="hidden" id="input-revenue" value="112599"/>
           </div>
         </div>
