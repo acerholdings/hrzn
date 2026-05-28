@@ -15,12 +15,11 @@ export default async function handler(req, res) {
     const extractVal = (label) => {
       const line = lines.find(l => l.startsWith(label + ',') || l.startsWith('"' + label + '",'));
       if (!line) return 0;
-      const matches = line.match(/"\$?([\d,]+\.?\d*)"|^\$?([\d,]+\.?\d*)/g);
-      if (!matches) return 0;
-      // Get last dollar amount on the line
-      const dollarMatches = line.match(/\$?([\d,]+\.\d{2})/g);
-      if (!dollarMatches) return 0;
-      const last = dollarMatches[dollarMatches.length - 1].replace(/[$,]/g, '');
+      // Extract all numbers with decimals (handles negative, quoted, dollar signs)
+      const numMatches = line.match(/[\d,]+\.\d{2}/g);
+      if (!numMatches) return 0;
+      // Get the last number on the line
+      const last = numMatches[numMatches.length - 1].replace(/,/g, '');
       return parseFloat(last) || 0;
     };
 
