@@ -269,7 +269,16 @@ function navigate(page){window.location.href=page;}
 const PL_KEY = 'hrzn-pl-data';
 
 function loadPLData(){
-  try { return JSON.parse(localStorage.getItem(PL_KEY)) || getDefaultPL(); }
+  try {
+    const saved = JSON.parse(localStorage.getItem(PL_KEY)) || getDefaultPL();
+    // Always sync revenue from latest Sales Report upload
+    const salesData = localStorage.getItem('hrzn-sales-data');
+    if(salesData){
+      const parsed = JSON.parse(salesData);
+      if(parsed.netSales) saved.revenue = parsed.netSales;
+    }
+    return saved;
+  }
   catch(e){ return getDefaultPL(); }
 }
 
