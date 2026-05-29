@@ -235,6 +235,10 @@ async function sendMessage(){
 document.addEventListener('DOMContentLoaded',()=>{
   HRZN.injectBadge('hrzn-source-badge');
   const d = HRZN.getData();
+  // Update date label from active data source
+  const _period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+  const _dateEl = document.getElementById('page-date-label');
+  if(_dateEl && _period) _dateEl.textContent = '📅 ' + _period;
   const months = HRZN.getMonths(d);
   const weekly = Math.round((d.netSales||0) / months / 4.33);
   const daily = Math.round(weekly / 7);

@@ -186,6 +186,25 @@ function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(page){window.location.href=page;}
-document.addEventListener('DOMContentLoaded',()=>{applyTheme(getTheme());setTimeout(()=>{HRZN.injectBadge('hrzn-source-badge');},50);});
+document.addEventListener('DOMContentLoaded',()=>{
+  applyTheme(getTheme());
+  HRZN.injectBadge('hrzn-source-badge');
+  const d = HRZN.getData();
+  const months = HRZN.getMonths(d);
+  const weekly = Math.round((d.netSales||0) / months / 4.33);
+  const fmt = n => '$' + Math.round(n).toLocaleString();
+  const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  
+  // Date label
+  const _period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+  const _dateEl = document.getElementById('page-date-label');
+  if(_dateEl) _dateEl.textContent = '📅 ' + (_period || 'Jan 1 – May 28, 2026');
+
+  // Revenue values
+  set('labor-weekly-rev', fmt(weekly));
+  set('menu-weekly-rev', fmt(weekly));
+  set('menu-daily-rev', fmt(Math.round(weekly/7)));
+  set('menu-avg-check', '$'+(d.avgCheck||0));
+});
 </script></body>
 </html>
