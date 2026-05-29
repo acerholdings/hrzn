@@ -181,18 +181,19 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <!-- RIGHT PANEL -->
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
-          <div class="card-header"><div class="card-title">Edit Monthly Expenses</div></div>
+          <div class="card-header"><div class="card-title">Edit Monthly Expenses</div>
+          <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Auto-fill labor from CSV</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter <strong style="color:var(--text);">monthly</strong> amounts. HRZN scales to your CSV period (<span id="period-months">1.0</span> months).</div>
-            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" value="36032" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" value="36032" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" value="8500" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" value="1200" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Insurance</div><input class="input-field" id="input-insurance" type="number" value="800" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Supplies</div><input class="input-field" id="input-supplies" type="number" value="600" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Marketing</div><input class="input-field" id="input-marketing" type="number" value="500" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Other</div><input class="input-field" id="input-other" type="number" value="800" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Debt Payments</div><input class="input-field" id="input-debt" type="number" value="7000" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="Monthly" value="0" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" value="0" placeholder="Monthly" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" placeholder="Monthly" value="0" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" placeholder="Monthly" value="1200" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Insurance</div><input class="input-field" id="input-insurance" type="number" placeholder="Monthly" value="800" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Supplies</div><input class="input-field" id="input-supplies" type="number" placeholder="Monthly" value="600" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Marketing</div><input class="input-field" id="input-marketing" type="number" placeholder="Monthly" value="500" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Other</div><input class="input-field" id="input-other" type="number" placeholder="Monthly" value="800" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Debt Payments</div><input class="input-field" id="input-debt" type="number" placeholder="Monthly" value="7000" oninput="calcAndRender()"/></div>
           </div>
         </div>
 
@@ -430,6 +431,23 @@ function renderDataBadges(sources) {
       '<span style="font-size:8px;">'+dot+'</span>' + s.label + (loaded ? '' : ' — not uploaded') +
     '</span>';
   }).join('');
+}
+
+function suggestLaborFromCSV(){
+  try {
+    const d = HRZN.getData();
+    const months = HRZN.getMonths(d);
+    const monthlyRevenue = (d.netSales||0) / months;
+    const laborPct = 0.32; // from CSV
+    const suggestedMonthly = Math.round(monthlyRevenue * laborPct);
+    const el = document.getElementById('input-labor');
+    if(el) {
+      el.value = suggestedMonthly;
+      calcAndRender();
+      const btn = document.getElementById('labor-suggest');
+      if(btn) btn.textContent = '$' + suggestedMonthly.toLocaleString() + '/mo applied';
+    }
+  } catch(e) {}
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
