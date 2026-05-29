@@ -33,7 +33,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 .toggle-track.on{background:var(--gold);border-color:var(--gold);}
 .toggle-thumb{width:14px;height:14px;border-radius:50%;background:var(--text-dim);position:absolute;top:2px;left:2px;transition:left 0.2s,background 0.2s;}
 .toggle-track.on .toggle-thumb{left:18px;background:#000;}
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 .topbar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;transition:background 0.3s,border-color 0.3s;}
 .topbar-left h1{font-size:20px;font-weight:300;color:var(--text);letter-spacing:-0.01em;}
 .topbar-left p{font-size:11px;color:var(--text-dim);margin-top:1px;}
@@ -44,7 +44,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
-.operator-layout{display:grid;grid-template-columns:1fr 320px;gap:0;height:calc(100vh - 56px);}
+.operator-layout{display:grid;grid-template-columns:1fr 320px;gap:0;height:calc(100vh - 56px);overflow:hidden;}
 .chat-area{display:flex;flex-direction:column;border-right:1px solid var(--border);}
 .chat-messages{flex:1;overflow-y:auto;padding:28px;}
 .chat-input-area{border-top:1px solid var(--border);padding:16px 20px;background:var(--surface);}
