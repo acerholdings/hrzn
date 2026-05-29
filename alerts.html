@@ -321,7 +321,7 @@ function generateAlerts(){
     opportunity.push({
       type:'opportunity', category:'Revenue',
       title:`${fmt(revenueGap)} from your monthly revenue target`,
-      desc:`Your monthly average of ${fmt(monthly)} is ${fmt(revenueGap)} below your ${fmt(t.monthlyRevenue)} target. Closing this gap requires either ${Math.round(revenueGap/avgCheck/30)} additional covers per day or a ${((t.monthlyRevenue/monthly-1)*100).toFixed(0)}% increase in avg check.`,
+      desc:`Your monthly average of ${fmt(monthly)} is ${fmt(revenueGap)} below your ${fmt(t.monthlyRevenue)} target. Closing this gap requires either ${Math.round(revenueGap/avgCheck/30)} additional covers per day or a ${((t.monthlyRevenue/monthly-1)*100).toFixed(0)}% increase in avg item price.`,
       value:`${fmt(monthly)} vs ${fmt(t.monthlyRevenue)} target`,
       action:"navigate('revenue.html')", actionLabel:'View Revenue →'
     });

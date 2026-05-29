@@ -109,7 +109,7 @@ REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'Clover POS'}, ${d.period 
 - Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
 - Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
 - Items Sold: ${(d.itemsSold||0).toLocaleString()}
-- Avg Check per Item: $${d.avgCheck||0}
+- Avg Item Price: $${d.avgCheck||0}
 - Monthly Average: ~$${monthly.toLocaleString()}/month
 - Weekly Average: ~$${weekly.toLocaleString()}/week
 - Period: ${d.period || 'N/A'} (${months.toFixed(1)} months)

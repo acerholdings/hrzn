@@ -631,7 +631,7 @@ REAL BUSINESS DATA (from Clover POS, ${period}):
 - Taxes & Fees: $${Math.round(taxes).toLocaleString()}
 - Total Collected: $${Math.round(amountCollected).toLocaleString()}
 - Items Sold: ${itemsSold.toLocaleString()}
-- Avg Check per Item: $${avgCheck}
+- Avg Item Price: $${avgCheck}
 - Monthly Average Revenue: ~$${monthlyAvg.toLocaleString()}/month
 - Weekly Average Revenue: ~$${weeklyAvg.toLocaleString()}/week
 
@@ -650,7 +650,7 @@ const RC = getRC();
 
 const reportPrompts = {
   weekly: `Write a comprehensive weekly business summary report for Sama Handroll LA. Use this real data: Monthly avg revenue $44,134, Weekly avg ~$10,193, Items sold 9,219 over 4.8 months, Avg check $12.25, Tips $18,038, DoorDash only 3.7% of revenue, Labor ~32% (target 28%), Discounts $3,544 (3.1% — healthy). Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
-  monthly: `Write a monthly P&L summary report for Sama Handroll LA for the period Jan-May 2026. Use this real data: Net Sales $211,844, Items Sold 9,219, Avg Check $12.25, Tips $18,038 (16.5%), Discounts $3,544 (3.1%), DoorDash $6,325 (3.7%), Credit Card 71.2% of payments. Include: ## Executive Summary, ## Revenue Breakdown, ## Payment Analysis, ## Key Metrics vs Industry Benchmarks, ## Recommendations. Use specific numbers.`,
+  monthly: `Write a monthly P&L summary report for Sama Handroll LA for the period Jan-May 2026. Use this real data: Net Sales $211,844, Items Sold 9,219, Avg Item Price $12.25, Tips $18,038 (16.5%), Discounts $3,544 (3.1%), DoorDash $6,325 (3.7%), Credit Card 71.2% of payments. Include: ## Executive Summary, ## Revenue Breakdown, ## Payment Analysis, ## Key Metrics vs Industry Benchmarks, ## Recommendations. Use specific numbers.`,
   labor: `Write a labor efficiency report for Sama Handroll LA for the week of May 19-25, 2026. Use this real data: Avg labor 32% (target 28%), Tuesday 41% (worst day), Friday 24% (best day), Total labor $15,437, 21 staff, Revenue per labor hour $117. Include: ## Overview, ## Day-by-Day Analysis, ## Staffing Recommendations, ## Cost Savings Opportunities ($500/wk on Tuesday), ## Next Week Schedule. Use specific numbers.`,
   menu: `Write a menu profitability report for Sama Handroll LA. Use this real data: Toro Handroll 68% margin $8,240/wk, Salmon 62% $6,120, Yellowtail 61% $4,980, Spicy Tuna 55% $4,210 (down 3%), Wagyu 63% $3,120, Edamame 72% $1,240 (upsell opportunity), Shrimp 56% $2,800, Crab 34% $2,200 (lowest — needs repricing), Miso Soup 30% $890. Include: ## Top Performers, ## Underperformers, ## Menu Engineering Matrix, ## Pricing Recommendations, ## Action Items. Use specific numbers.`,
   executive: `Write a professional executive summary for Sama Handroll LA suitable for investors or partners. Use this real data: Net Sales $211,844 (Jan-May 2026), 9,219 items sold, Avg check $12.25, Tips 16.5% (above industry standard of 15%), Weekly revenue ~$48,240 (+14.2% growth), Gross margin 68%, Labor 32% (target 28%), Health score 87/100. Include: ## Business Overview, ## Financial Performance, ## Key Strengths, ## Areas for Improvement, ## Growth Outlook. Keep it professional and data-driven.`

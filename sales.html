@@ -142,7 +142,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="kpi-sub">Total transactions</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Avg Check</div>
+        <div class="kpi-label">Avg Item Price</div>
         <div class="kpi-value" id="val-avg-check">$12.25</div>
         <div class="kpi-sub">Per item sold</div>
       </div>
@@ -263,7 +263,7 @@ SALES DATA:
 - Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
 - Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
 - Items Sold: ${(d.itemsSold||0).toLocaleString()}
-- Avg Check per Item: $${d.avgCheck||0}
+- Avg Item Price: $${d.avgCheck||0}
 - DoorDash: $${Math.round((d.tenders||{}).doorDash||0).toLocaleString()} (${(d.tenders||{}).doorDashPct||0}% of revenue)
 - Cash: $${Math.round((d.tenders||{}).cash||0).toLocaleString()}
 
@@ -421,7 +421,7 @@ SALES DATA:
 - Taxes & Fees: $${Math.round(d.taxes).toLocaleString()}
 - Total Collected: $${Math.round(d.amountCollected).toLocaleString()}
 - Items Sold: ${d.itemsSold.toLocaleString()}
-- Avg Check per Item: $${d.avgCheck}
+- Avg Item Price: $${d.avgCheck}
 - Credit Card: $${Math.round(d.tenders.creditCard).toLocaleString()}
 - Debit Card: $${Math.round(d.tenders.debitCard).toLocaleString()}
 - DoorDash: $${Math.round(d.tenders.doorDash).toLocaleString()} (${d.tenders.doorDashPct}% of revenue)
