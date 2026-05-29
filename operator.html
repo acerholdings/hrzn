@@ -185,12 +185,13 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="panel-section">
         <div class="panel-label">Data Source</div>
         <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);"></div id="data-period">Loading data...</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;"></div><span id="data-period">Loading data...</span>
           <div style="font-size:10px;color:var(--text-dim);">Last updated: Today</div>
         </div>
       </div>
 
     </div>
+  </div>
   </div>
 </div><script src="hrzn-data.js"></script>
 <script>
@@ -199,7 +200,7 @@ function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(page){window.location.href=page;}
-function askQuestion(q){const i=document.getElementById('aiInput');if(i){i.value=q;sendMessage();}}
+function askQuestion(q){const i=document.getElementById('aiInput');if(!i)return;i.value=typeof q==='string'?q:(q.target||q).dataset?.q||'';if(i.value)sendMessage();}
 
 let conversationHistory=[];
 
@@ -317,11 +318,12 @@ document.addEventListener('DOMContentLoaded',()=>{
       if(alerts.length === 0) {
         alertsList.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">No active alerts</div>';
       } else {
-        alertsList.innerHTML = alerts.slice(0,4).map(a =>
-          '<div class="alert-pill" onclick="askQuestion(''+a.q+'')">'+
-          '<div style="width:6px;height:6px;border-radius:50%;background:'+a.color+';flex-shrink:0;"></div>'+
-          '<div style="font-size:11px;color:var(--text);">'+a.text+'</div></div>'
-        ).join('');
+        alertsList.innerHTML = alerts.slice(0,4).map(a => {
+          const q = a.q.replace(/'/g, '&#39;');
+          return '<div class="alert-pill" onclick="askQuestion(this.dataset.q)" data-q="'+a.q+'">' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:'+a.color+';flex-shrink:0;"></div>' +
+            '<div style="font-size:11px;color:var(--text);">'+a.text+'</div></div>';
+        }).join('');
       }
     }
   } catch(e) {}
