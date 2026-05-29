@@ -331,12 +331,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');
-  if(alertsList) alertsList.innerHTML = alerts.slice(0,4).map(a =>
-    '<div class="alert-item" onclick="navigate(''+a.link+'')" style="cursor:pointer;">' +
-    '<div class="alert-icon" style="background:'+a.bg+';color:'+a.color+';">'+a.icon+'</div>' +
-    '<div><div style="font-size:12px;font-weight:500;color:var(--text);">'+a.title+'</div>' +
-    '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">'+a.desc+'</div></div></div>'
-  ).join('');
+  if(alertsList) alertsList.innerHTML = alerts.slice(0,4).map(a => {
+    return '<div class="alert-item" style="cursor:pointer;" onclick="navigate(this.getAttribute('data-link'))" data-link="' + a.link + '">' +
+    '<div class="alert-icon" style="background:' + a.bg + ';color:' + a.color + ';">' + a.icon + '</div>' +
+    '<div><div style="font-size:12px;font-weight:500;color:var(--text);">' + a.title + '</div>' +
+    '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">' + a.desc + '</div></div></div>';
+  }).join('');
 
   // Health Score
   const scores = [
@@ -372,13 +372,13 @@ document.addEventListener('DOMContentLoaded', () => {
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Based on your real data',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
-  if(recsList) recsList.innerHTML = recs.slice(0,3).map(r =>
-    '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);" onclick="navigate(''+r.link+'')">' +
-    '<div style="width:28px;height:28px;border-radius:6px;background:rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">'+r.icon+'</div>' +
-    '<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--text);">'+r.title+'</div>' +
-    '<div style="font-size:10px;color:var(--green);">'+r.impact+'</div></div>' +
-    '<span style="font-size:12px;color:var(--text-dim);">›</span></div>'
-  ).join('');
+  if(recsList) recsList.innerHTML = recs.slice(0,3).map(r => {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);" onclick="navigate(this.dataset.link)" data-link="' + r.link + '">' +
+    '<div style="width:28px;height:28px;border-radius:6px;background:rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">' + r.icon + '</div>' +
+    '<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--text);">' + r.title + '</div>' +
+    '<div style="font-size:10px;color:var(--green);">' + r.impact + '</div></div>' +
+    '<span style="font-size:12px;color:var(--text-dim);">›</span></div>';
+  }).join('');
 
   // Nav badge
   const navBadge = document.getElementById('nav-alert-count');
