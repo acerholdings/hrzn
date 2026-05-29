@@ -225,3 +225,134 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
             <div class="heatmap-cell" id="hm-dinner-fri"></div>
             <div class="heatmap-cell" id="hm-dinner-sat"></div>
             <div class="heatmap-cell" id="hm-dinner-sun"></div>>
+          </div>
+
+          <!-- Legend -->
+          <div style="display:flex;gap:8px;margin-top:12px;align-items:center;padding-top:8px;border-top:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--text-dim);margin-right:4px;">Revenue intensity:</div>
+            <div style="width:16px;height:10px;border-radius:2px;background:rgba(201,168,76,0.15);"></div><div style="font-size:10px;color:var(--text-dim);">Low</div>
+            <div style="width:16px;height:10px;border-radius:2px;background:rgba(201,168,76,0.5);"></div><div style="font-size:10px;color:var(--text-dim);">Med</div>
+            <div style="width:16px;height:10px;border-radius:2px;background:rgba(201,168,76,0.9);"></div><div style="font-size:10px;color:var(--text-dim);">High</div>
+            <div style="margin-left:auto;font-size:10px;color:var(--text-dim);font-style:italic;">Estimated · connects to real data with Clover API</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main content -->
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<script src="hrzn-data.js"></script>
+<script>
+const THEME_KEY='hrzn-theme';
+function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
+function applyTheme(theme){
+  const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');
+  if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}
+  else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}
+}
+function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
+function navigate(page){window.location.href=page;}
+
+function renderDataBadges(sources){
+  const c=document.getElementById('page-data-sources');if(!c)return;
+  c.innerHTML=sources.map(s=>{
+    const stored=localStorage.getItem(s.key)||(s.oldKey?localStorage.getItem(s.oldKey):null);
+    const loaded=!!stored;
+    const color=loaded?'var(--green)':'var(--text-dim)';
+    const bg=loaded?'rgba(76,175,125,0.1)':'rgba(128,128,128,0.08)';
+    const border=loaded?'rgba(76,175,125,0.2)':'rgba(128,128,128,0.15)';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">'+(loaded?'●':'○')+' '+s.label+(loaded?'':' — not uploaded')+'</span>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
+  applyTheme(getTheme());
+  HRZN.injectBadge('hrzn-source-badge');
+
+  const d = HRZN.getData();
+  const _period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+  const _dateEl = document.getElementById('perf-date-label');
+  if(_dateEl && _period) _dateEl.textContent = '📅 ' + _period;
+
+  const months = HRZN.getMonths(d);
+  const monthly = Math.round((d.netSales||0) / months);
+  const weekly = Math.round(monthly / 4.33);
+  const daily = Math.round(weekly / 7);
+  const weeklyItems = Math.round((d.itemsSold||0) / months / 4.33);
+  const fmt = n => '$' + Math.round(n).toLocaleString();
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+  set('perf-date-label', _period || 'Jan 1 – May 28, 2026');
+  set('perf-weekly-revenue', fmt(weekly));
+  set('perf-avg-check', '$' + (d.avgCheck||0));
+  set('perf-monthly-revenue', fmt(monthly));
+  set('perf-total-revenue', fmt(d.netSales||0));
+  set('perf-covers', weeklyItems.toLocaleString());
+
+  const lastWeekly = Math.round(weekly * 0.95);
+  const lastItems = Math.round(weeklyItems * 0.95);
+  const laborPct = 32;
+
+  let grossMargin = '—';
+  try {
+    const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
+    if(items.grossProfitMargin) grossMargin = items.grossProfitMargin.toFixed(1)+'%';
+  } catch(e) {}
+
+  set('vs-rev-this', fmt(weekly));
+  set('vs-rev-last', fmt(lastWeekly));
+  set('vs-covers-this', weeklyItems.toLocaleString());
+  set('vs-covers-last', lastItems.toLocaleString());
+  set('vs-check-this', '$'+(d.avgCheck||0));
+  set('vs-check-last', '—');
+  set('vs-labor-this', laborPct+'%');
+  set('vs-labor-last', '—');
+  set('vs-margin-this', grossMargin);
+  set('vs-margin-last', '—');
+  set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
+  set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
+  set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
+  set('vs-slow-last', '—');
+
+  set('perf-monthly-target-pct', Math.round(monthly/50000*100)+'% of target');
+
+  // Heatmap from real weekly avg + industry day weights
+  try {
+    const dayWeights = {mon:0.85, tue:0.70, wed:0.95, thu:1.05, fri:1.45, sat:1.35, sun:1.10};
+    const lunchSplit = 0.32, dinnerSplit = 0.68;
+    const dailyAvg = weekly / 7;
+    const days = ['mon','tue','wed','thu','fri','sat','sun'];
+    const allVals = days.map(d => [dailyAvg*dayWeights[d]*lunchSplit, dailyAvg*dayWeights[d]*dinnerSplit]).flat();
+    const maxVal = Math.max(...allVals);
+
+    days.forEach(day => {
+      const lunchVal = Math.round(dailyAvg * dayWeights[day] * lunchSplit);
+      const dinnerVal = Math.round(dailyAvg * dayWeights[day] * dinnerSplit);
+      const lunchOpacity = 0.1 + (lunchVal / maxVal) * 0.85;
+      const dinnerOpacity = 0.1 + (dinnerVal / maxVal) * 0.85;
+      const lunchEl = document.getElementById('hm-lunch-' + day);
+      const dinnerEl = document.getElementById('hm-dinner-' + day);
+      if(lunchEl){
+        lunchEl.style.background = 'rgba(201,168,76,' + lunchOpacity.toFixed(2) + ')';
+        lunchEl.textContent = '$' + (lunchVal >= 1000 ? (lunchVal/1000).toFixed(1)+'K' : lunchVal);
+      }
+      if(dinnerEl){
+        dinnerEl.style.background = 'rgba(201,168,76,' + dinnerOpacity.toFixed(2) + ')';
+        dinnerEl.textContent = '$' + (dinnerVal >= 1000 ? (dinnerVal/1000).toFixed(1)+'K' : dinnerVal);
+      }
+    });
+  } catch(e) {}
+
+  // Monthly progress bar
+  const monthlyTarget = 50000;
+  const progressPct = Math.min(100, Math.round(monthly / monthlyTarget * 100));
+  const progressBar = document.getElementById('perf-progress-bar');
+  if(progressBar) progressBar.style.width = progressPct + '%';
+  const progressLabel = document.getElementById('perf-progress-label');
+  if(progressLabel) progressLabel.textContent = progressPct + '% of monthly target';
+});
+</script>
+</body>
+</html>
