@@ -424,7 +424,25 @@ function renderAlerts(){
   if(empty) empty.style.display = total===0 ? 'block' : 'none';
 }
 
+
+function renderDataBadges(sources) {
+  const container = document.getElementById('page-data-sources');
+  if (!container) return;
+  container.innerHTML = sources.map(s => {
+    const stored = localStorage.getItem(s.key) || localStorage.getItem(s.oldKey || '');
+    const loaded = !!stored;
+    const color = loaded ? 'var(--green)' : 'var(--text-dim)';
+    const bg = loaded ? 'var(--green-dim)' : 'rgba(128,128,128,0.08)';
+    const border = loaded ? 'rgba(76,175,125,0.2)' : 'rgba(128,128,128,0.15)';
+    const dot = loaded ? '●' : '○';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">' +
+      '<span style="font-size:8px;">'+dot+'</span>' + s.label + (loaded ? '' : ' — not uploaded') +
+    '</span>';
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
+  renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
   renderAlerts();
