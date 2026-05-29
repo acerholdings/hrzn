@@ -218,7 +218,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 
     </div>
     <!-- AI INSIGHTS -->
-    <div class="card fade-3" style="margin-bottom:20px;" id="menu-insights-card">
+    <div class="card fade-3" style="margin-bottom:20px;position:relative;z-index:1;" id="menu-insights-card">
       <div class="card-header">
         <div class="card-title">AI Insights — Menu Performance</div>
         <div style="display:flex;align-items:center;gap:12px;">
@@ -226,7 +226,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
         </div>
       </div>
-      <div id="menu-insights-container">
+      <div id="menu-insights-container" style="max-height:500px;overflow-y:auto;">
         <div style="padding:32px;text-align:center;color:var(--text-dim);font-size:12px;">Upload Item Sales CSV to generate menu insights...</div>
       </div>
     </div>
@@ -424,7 +424,7 @@ Respond ONLY with JSON array of 6 objects: [{"emoji":"...","title":"5-8 words","
     insights.forEach((ins,i)=>{
       const border = i%3!==2?'border-right:1px solid var(--border);':'';
       const top = i>=3?'border-top:1px solid var(--border);':'';
-      html+=`<div style="padding:18px;${border}${top}">
+      html+=`<div style="padding:18px;position:relative;${border}${top}">
         <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">${ins.emoji} ${ins.title}</div>
         <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.insight}</div>
       </div>`;
