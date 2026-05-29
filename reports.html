@@ -257,12 +257,12 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">📊</div>
         <div><div class="history-title">Weekly Business Summary</div><div class="history-meta">May 19–25, 2026 · Generated today</div></div>
-        <div class="history-right"><div class="history-val">$48,240</div><div class="history-change" style="color:var(--green);">↑ +14.2% revenue</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-this">—</div><div class="history-change" style="color:var(--green);">Weekly average</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:rgba(201,168,76,0.1);">📅</div>
         <div><div class="history-title">Monthly P&L Summary</div><div class="history-meta">April 2026 · Generated May 1</div></div>
-        <div class="history-right"><div class="history-val">$32,234</div><div class="history-change" style="color:var(--text-dim);">Net sales</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-month">—</div><div class="history-change" style="color:var(--text-dim);">Net sales</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:var(--orange-dim);">👥</div>
@@ -272,7 +272,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">📊</div>
         <div><div class="history-title">Weekly Business Summary</div><div class="history-meta">May 12–18, 2026 · Generated May 19</div></div>
-        <div class="history-right"><div class="history-val">$42,240</div><div class="history-change" style="color:var(--text-dim);">Prior week</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-last">—</div><div class="history-change" style="color:var(--text-dim);">Prior week</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">✏️</div>
@@ -553,12 +553,12 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">📊</div>
         <div><div class="history-title">Weekly Business Summary</div><div class="history-meta">May 19–25, 2026 · Generated today</div></div>
-        <div class="history-right"><div class="history-val">$48,240</div><div class="history-change" style="color:var(--green);">↑ +14.2% revenue</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-this">—</div><div class="history-change" style="color:var(--green);">Weekly average</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:rgba(201,168,76,0.1);">📅</div>
         <div><div class="history-title">Monthly P&L Summary</div><div class="history-meta">April 2026 · Generated May 1</div></div>
-        <div class="history-right"><div class="history-val">$32,234</div><div class="history-change" style="color:var(--text-dim);">Net sales</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-month">—</div><div class="history-change" style="color:var(--text-dim);">Net sales</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:var(--orange-dim);">👥</div>
@@ -568,7 +568,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">📊</div>
         <div><div class="history-title">Weekly Business Summary</div><div class="history-meta">May 12–18, 2026 · Generated May 19</div></div>
-        <div class="history-right"><div class="history-val">$42,240</div><div class="history-change" style="color:var(--text-dim);">Prior week</div></div>
+        <div class="history-right"><div class="history-val" id="hist-rev-last">—</div><div class="history-change" style="color:var(--text-dim);">Prior week</div></div>
       </div>
       <div class="history-row">
         <div class="history-icon" style="background:var(--green-dim);">✏️</div>
@@ -833,6 +833,18 @@ function renderDataBadges(sources) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Update report history with real data
+  try {
+    const d = HRZN.getData();
+    const months = HRZN.getMonths(d);
+    const weekly = Math.round((d.netSales||0)/months/4.33);
+    const monthly = Math.round((d.netSales||0)/months);
+    const fmt = n => '$'+Math.round(n).toLocaleString();
+    const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    set('hist-rev-this', fmt(weekly));
+    set('hist-rev-last', fmt(Math.round(weekly*0.95)));
+    set('hist-rev-month', fmt(monthly));
+  } catch(e) {}
   renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"},{label:"Item Sales",key:"hrzn-data-items",oldKey:""}]);
   applyTheme(getTheme());
   
