@@ -278,14 +278,22 @@ document.addEventListener('DOMContentLoaded',()=>{
     const fmt = n => '$'+Math.round(n).toLocaleString();
     const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
     const tipsPct = d.netSales>0 ? ((d.tips||0)/d.netSales*100).toFixed(1) : '—';
-    const grossMarginPct = d.grossSales>0 ? ((d.netSales||0)/(d.grossSales||1)*100).toFixed(1) : '68';
+    // Gross margin - only show if Item Sales CSV uploaded
+    let grossMarginPct = '—';
+    try {
+      const itemsRaw = localStorage.getItem('hrzn-data-items');
+      if(itemsRaw) {
+        const items = JSON.parse(itemsRaw);
+        if(items.grossProfitMargin) grossMarginPct = items.grossProfitMargin.toFixed(1) + '%';
+      }
+    } catch(e) {}
 
     set('op-net-sales', fmt(d.netSales||0));
     set('op-weekly', fmt(weekly));
     set('op-avg-check', '$'+(d.avgCheck||0));
     set('op-items', (d.itemsSold||0).toLocaleString());
     set('op-tips', tipsPct+'%');
-    set('op-margin', grossMarginPct+'%');
+    set('op-margin', grossMarginPct);
 
     const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     set('data-period', period || 'Clover POS data');
