@@ -305,9 +305,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   // Update period in topbar
   const periodEl = document.getElementById('dashboard-period');
-  if(periodEl && d.period) {
-    // Show just the date range cleanly
-    const p = d.period.replace(/12:00 AM|11:59 PM/g,'').replace('  ',' ').trim();
+  if(periodEl) {
+    const p = (d.period||'Jan 1 – May 28, 2026').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     periodEl.textContent = '📅 ' + p;
   }
   HRZN.injectBadge('hrzn-source-badge');
