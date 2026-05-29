@@ -152,14 +152,14 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <!-- Live Stats -->
       <div class="panel-section">
         <div class="panel-label">Live Business Snapshot</div>
-        <div class="stat-row"><span class="stat-label">Net Sales (30d)</span><span class="stat-val" style="color:var(--green);">$32,234</span></div>
-        <div class="stat-row"><span class="stat-label">Weekly Revenue</span><span class="stat-val">$48,240</span></div>
-        <div class="stat-row"><span class="stat-label">Labor Cost %</span><span class="stat-val" style="color:var(--orange);">32%</span></div>
-        <div class="stat-row"><span class="stat-label">Gross Margin</span><span class="stat-val" style="color:var(--green);">68%</span></div>
-        <div class="stat-row"><span class="stat-label">Avg Check</span><span class="stat-val">$12.25</span></div>
-        <div class="stat-row"><span class="stat-label">Items Sold (30d)</span><span class="stat-val">2,631</span></div>
-        <div class="stat-row"><span class="stat-label">Tips Rate</span><span class="stat-val" style="color:var(--green);">16.5%</span></div>
-        <div class="stat-row"><span class="stat-label">Health Score</span><span class="stat-val" style="color:var(--gold);">87/100</span></div>
+        <div class="stat-row"><span class="stat-label">Net Sales</span><span class="stat-val" id="op-net-sales" style="color:var(--green);">—</span></div>
+        <div class="stat-row"><span class="stat-label">Weekly Avg</span><span class="stat-val" id="op-weekly">—</span></div>
+        <div class="stat-row"><span class="stat-label">Labor Cost %</span><span class="stat-val" id="op-labor" style="color:var(--orange);">32%</span></div>
+        <div class="stat-row"><span class="stat-label">Gross Margin</span><span class="stat-val" id="op-margin" style="color:var(--green);">—</span></div>
+        <div class="stat-row"><span class="stat-label">Avg Check</span><span class="stat-val" id="op-avg-check">—</span></div>
+        <div class="stat-row"><span class="stat-label">Items Sold</span><span class="stat-val" id="op-items">—</span></div>
+        <div class="stat-row"><span class="stat-label">Tips Rate</span><span class="stat-val" id="op-tips" style="color:var(--green);">—</span></div>
+        <div class="stat-row"><span class="stat-label">Health Score</span><span class="stat-val" id="op-health" style="color:var(--gold);">87/100</span></div>
       </div>
 
       <!-- Active Alerts -->
@@ -200,7 +200,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="panel-section">
         <div class="panel-label">Data Source</div>
         <div style="font-size:11px;color:var(--text-mid);line-height:1.6;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);"></div>Clover POS — Apr 28–May 27</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><div style="width:5px;height:5px;border-radius:50%;background:var(--green);"></div id="data-period">Loading data...</div>
           <div style="font-size:10px;color:var(--text-dim);">Last updated: Today</div>
         </div>
       </div>
@@ -275,6 +275,27 @@ async function sendMessage(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // Load real stats into right panel
+  try {
+    const d = HRZN.getData();
+    const months = HRZN.getMonths(d);
+    const monthly = Math.round((d.netSales||0)/months);
+    const weekly = Math.round(monthly/4.33);
+    const fmt = n => '$'+Math.round(n).toLocaleString();
+    const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    const tipsPct = d.netSales>0 ? ((d.tips||0)/d.netSales*100).toFixed(1) : '—';
+    const grossMarginPct = d.grossSales>0 ? ((d.netSales||0)/(d.grossSales||1)*100).toFixed(1) : '68';
+
+    set('op-net-sales', fmt(d.netSales||0));
+    set('op-weekly', fmt(weekly));
+    set('op-avg-check', '$'+(d.avgCheck||0));
+    set('op-items', (d.itemsSold||0).toLocaleString());
+    set('op-tips', tipsPct+'%');
+    set('op-margin', grossMarginPct+'%');
+
+    const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    set('data-period', period || 'Clover POS data');
+  } catch(e) {}
   HRZN.injectBadge('hrzn-source-badge');
   HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
