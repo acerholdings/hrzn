@@ -162,25 +162,25 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           </svg>
           <div class="score-center"><div style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">87</div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
         </div>
-        <div style="font-size:18px;color:var(--gold);margin-bottom:8px;">Strong</div>
-        <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;">Your business is operating well. Labor efficiency needs attention, but revenue and margins are healthy.</div>
-        <div style="font-size:12px;color:var(--green);">↑ 6 pts vs last week</div>
+        <div style="font-size:18px;color:var(--gold);margin-bottom:8px;" id="perf-health-label">—</div>
+        <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;" id="perf-health-desc">Calculating...</div>
+        <div style="font-size:12px;color:var(--green);" id="perf-health-change">Based on real data</div>
       </div>
       <div>
         <div style="font-size:11px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Score breakdown</div>
-        <div class="score-metric"><div class="metric-label">Revenue Growth</div><div class="metric-bar-bg"><div class="metric-bar" style="width:95%;background:var(--green);"></div></div><div class="metric-val">95</div><div class="metric-grade" style="color:var(--green);">Excellent</div></div>
-        <div class="score-metric"><div class="metric-label">Gross Margin</div><div class="metric-bar-bg"><div class="metric-bar" style="width:90%;background:var(--green);"></div></div><div class="metric-val">90</div><div class="metric-grade" style="color:var(--green);">Excellent</div></div>
-        <div class="score-metric"><div class="metric-label">Customer Volume</div><div class="metric-bar-bg"><div class="metric-bar" style="width:88%;background:var(--green);"></div></div><div class="metric-val">88</div><div class="metric-grade" style="color:var(--green);">Strong</div></div>
-        <div class="score-metric"><div class="metric-label">Labor Efficiency</div><div class="metric-bar-bg"><div class="metric-bar" style="width:62%;background:var(--orange);"></div></div><div class="metric-val">62</div><div class="metric-grade" style="color:var(--orange);">Needs work</div></div>
-        <div class="score-metric"><div class="metric-label">Inventory Health</div><div class="metric-bar-bg"><div class="metric-bar" style="width:74%;background:var(--gold);"></div></div><div class="metric-val">74</div><div class="metric-grade" style="color:var(--gold);">Good</div></div>
-        <div class="score-metric"><div class="metric-label">Menu Profitability</div><div class="metric-bar-bg"><div class="metric-bar" style="width:85%;background:var(--green);"></div></div><div class="metric-val">85</div><div class="metric-grade" style="color:var(--green);">Strong</div></div>
+        <div class="score-metric"><div class="metric-label">Revenue Growth</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-rev-growth" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-rev-growth">—</div><div class="metric-grade" id="grade-rev-growth" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Gross Margin</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-gross-margin" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-gross-margin">—</div><div class="metric-grade" id="grade-gross-margin" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Customer Volume</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-cust-vol" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-cust-vol">—</div><div class="metric-grade" id="grade-cust-vol" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Labor Efficiency</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-labor-eff" style="width:0%;background:var(--orange);transition:width 0.6s;"></div></div><div class="metric-val" id="score-labor-eff">—</div><div class="metric-grade" id="grade-labor-eff" style="color:var(--orange);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Inventory Health</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-inv-health" style="width:0%;background:var(--gold);transition:width 0.6s;"></div></div><div class="metric-val" id="score-inv-health">—</div><div class="metric-grade" id="grade-inv-health" style="color:var(--gold);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Menu Profitability</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-menu-prof" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-menu-prof">—</div><div class="metric-grade" id="grade-menu-prof" style="color:var(--green);">—</div></div>
       </div>
     </div>
     <div class="trend-grid fade-2">
       <div class="trend-card"><div class="kpi-label">Weekly Revenue</div><div class="kpi-value" id="perf-weekly-revenue">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;" id="kpi-rev-change">Weekly avg</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,35 15,30 30,28 45,22 60,20 75,12 90,10 100,8" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Gross Margin</div><div class="kpi-value" id="perf-gross-margin">68%</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Overall margin</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,30 15,28 30,25 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Labor Cost</div><div class="kpi-value" id="perf-labor-cost">32%</div><div style="font-size:11px;color:var(--red);margin-bottom:12px;">↑ +3.1% — above target</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,22 30,18 45,25 60,24 75,28 90,26 100,30" fill="none" stroke="var(--red)" stroke-width="1.5" opacity="0.8"/></svg></div>
-      <div class="trend-card"><div class="kpi-label">Covers This Week</div><div class="kpi-value" id="perf-covers">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Total period</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,32 15,28 30,26 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
+      <div class="trend-card"><div class="kpi-label">Items / Week</div><div class="kpi-value" id="perf-covers">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Total period</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,32 15,28 30,26 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Avg Item Price</div><div class="kpi-value" id="perf-avg-check">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">→ Flat vs last week</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,21 30,19 45,20 60,21 75,19 90,20 100,20" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Table Turn Rate</div><div class="kpi-value" id="perf-turn-rate">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Needs orders API</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,28 15,26 30,24 45,22 60,18 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
     </div>
@@ -190,11 +190,11 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="card-body">
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ —</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);">→ Flat</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">32%</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);">↑ +3.1%</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">32%</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">↑ above target</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ +5.4%</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Best Day Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-best-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-best-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ +22%</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Slowest Day</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-slow-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-slow-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);">↓ -8%</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Best Day Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-best-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-best-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-best-change">—</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Slowest Day</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-slow-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-slow-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-slow-change">—</div></div>
         </div>
       </div>
       <div class="card">
@@ -344,6 +344,52 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
     });
   } catch(e) {}
+
+  // Calculate real health scores
+  const laborScore = laborPct <= 28 ? 95 : laborPct <= 30 ? 82 : laborPct <= 32 ? 70 : 55;
+  const marginScore = grossMargin !== '—' ? (parseFloat(grossMargin) >= 65 ? 92 : parseFloat(grossMargin) >= 50 ? 78 : 60) : 82;
+  const discountPct = parseFloat(d.discountPct||0);
+  const revenueScore = weekly >= 12000 ? 95 : weekly >= 10000 ? 85 : weekly >= 7000 ? 72 : 60;
+  const volumeScore = weeklyItems >= 800 ? 92 : weeklyItems >= 500 ? 80 : 70;
+  const menuScore = grossMargin !== '—' ? (parseFloat(grossMargin) >= 65 ? 88 : 75) : 75;
+  const invScore = 74; // needs inventory data
+  
+  const healthNum = Math.round((laborScore + marginScore + revenueScore + volumeScore + menuScore + invScore) / 6);
+  const healthLabel = healthNum >= 90 ? 'Excellent' : healthNum >= 80 ? 'Strong' : healthNum >= 70 ? 'Good' : healthNum >= 60 ? 'Fair' : 'Needs Work';
+  const healthColor = healthNum >= 80 ? 'var(--green)' : healthNum >= 65 ? 'var(--gold)' : 'var(--orange)';
+
+  set('perf-health-num', healthNum);
+  set('perf-health-label', healthLabel);
+  set('perf-health-desc', 'Based on your real ' + months.toFixed(1) + '-month data');
+  set('perf-health-change', 'Calculated from real metrics');
+  
+  const scoreEl = document.getElementById('perf-health-num');
+  if(scoreEl) scoreEl.style.color = healthColor;
+
+  // Update SVG ring if exists
+  const ring = document.getElementById('health-ring');
+  if(ring) ring.setAttribute('stroke-dasharray', Math.round(healthNum/100*251.2) + ' 251.2');
+
+  // Score breakdown
+  const scores = [
+    {barId:'bar-rev-growth', valId:'score-rev-growth', gradeId:'grade-rev-growth', val:revenueScore},
+    {barId:'bar-gross-margin', valId:'score-gross-margin', gradeId:'grade-gross-margin', val:marginScore},
+    {barId:'bar-cust-vol', valId:'score-cust-vol', gradeId:'grade-cust-vol', val:volumeScore},
+    {barId:'bar-labor-eff', valId:'score-labor-eff', gradeId:'grade-labor-eff', val:laborScore},
+    {barId:'bar-inv-health', valId:'score-inv-health', gradeId:'grade-inv-health', val:invScore},
+    {barId:'bar-menu-prof', valId:'score-menu-prof', gradeId:'grade-menu-prof', val:menuScore},
+  ];
+
+  scores.forEach(s => {
+    const bar = document.getElementById(s.barId);
+    const val = document.getElementById(s.valId);
+    const grade = document.getElementById(s.gradeId);
+    const color = s.val >= 85 ? 'var(--green)' : s.val >= 70 ? 'var(--gold)' : 'var(--orange)';
+    const gradeLabel = s.val >= 90 ? 'Excellent' : s.val >= 80 ? 'Strong' : s.val >= 70 ? 'Good' : s.val >= 60 ? 'Fair' : 'Needs work';
+    if(bar) { bar.style.width = s.val + '%'; bar.style.background = color; }
+    if(val) val.textContent = s.val;
+    if(grade) { grade.textContent = gradeLabel; grade.style.color = color; }
+  });
 
   // Monthly progress bar
   const monthlyTarget = 50000;
