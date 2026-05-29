@@ -170,7 +170,7 @@ Be specific, reference real numbers, give concrete actions.`;
 
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
             <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Want to upload a new CSV?</div>
-            <button onclick="document.getElementById('hrzn-source-modal').remove();window.location.href='sales.html'" style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;">Go to Sales Report →</button>
+            <button onclick="document.getElementById('hrzn-source-modal').remove();window.location.href='data.html'" style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;">Go to Data Sources →</button>
           </div>
         </div>
       </div>`;
