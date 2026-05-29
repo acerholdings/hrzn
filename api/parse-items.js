@@ -68,6 +68,10 @@ export default async function handler(req, res) {
 
       const parts = parseCSVLine(line);
 
+      // Skip summary header rows
+      const SKIP_ROWS = ['Gross Sales','Net Sales','COGS','Gross Profit','Gross Profit Margin','Category Name','TOTAL','Items Report','Filters','Categories','The report'];
+      if (SKIP_ROWS.some(s => line.startsWith(s))) continue;
+
       // Category header - doesn't start with comma, not a Total row
       if (!line.startsWith(',') && !line.startsWith('Total') && !line.startsWith('"Total') && parts[0] && parts[0].trim() !== '') {
         currentCategory = parts[0].replace(/"/g,'').trim();
@@ -88,7 +92,8 @@ export default async function handler(req, res) {
         const sold = cleanInt(parts[4]);
         const refunded = cleanInt(parts[5]);
         const discounts = cleanAmt(parts[9]);
-        const avgItemSize = cleanAmt(parts[11]);
+        // Calculate avg price from net sales / sold (more accurate than Clover's col 11)
+        const avgItemSize = sold > 0 ? Math.round(cleanAmt(parts[3]) / sold * 100) / 100 : 0;
         const itemGrossProfit = cleanAmt(parts[13]);
 
         if (gross === 0 && net === 0 && sold === 0) continue; // skip empty/modifier-only rows
