@@ -137,7 +137,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="kpi-card"><div class="kpi-label">Avg Item Price</div><div class="kpi-value" id="rev-avg-check" id="rev-avg-check-kpi">—</div><div class="kpi-change neutral">→ Flat vs last week</div><svg class="sparkline" viewBox="0 0 100 36"><polyline points="0,18 15,19 30,17 45,18 60,19 75,17 90,18 100,18" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.8"/></svg></div>
     </div>
     <div class="card fade-2" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title">Revenue Over Time</div><div class="tab-row"><div class="tab active">Daily</div><div class="tab">Weekly</div><div class="tab">Monthly</div></div></div>
+      <div class="card-header"><div class="card-title">Revenue Over Time<span style="font-size:10px;color:var(--orange);margin-left:8px;">⚠ Est.</span></div><div class="tab-row"><div class="tab active">Daily</div><div class="tab">Weekly</div><div class="tab">Monthly</div></div></div>
       <div class="card-body">
         <div style="position:relative;height:200px;padding-bottom:24px;">
           <div style="position:absolute;left:0;top:0;bottom:24px;display:flex;flex-direction:column;justify-content:space-between;">
@@ -170,7 +170,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     </div>
     <div class="section-grid fade-3">
       <div class="card">
-        <div class="card-header"><div class="card-title">Revenue by Day</div><div style="font-size:10px;color:var(--text-dim);">vs Target</div></div>
+        <div class="card-header"><div class="card-title">Revenue by Day<span style="font-size:10px;color:var(--orange);margin-left:8px;">⚠ Est.</span></div><div style="font-size:10px;color:var(--text-dim);">vs Target</div></div>
         <div class="card-body">
           <div class="breakdown-row"><div style="font-size:12px;color:var(--text);width:90px;flex-shrink:0;">Friday</div><div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--gold);border-radius:3px;"></div></div><div style="font-size:12px;font-family:'DM Mono',monospace;width:60px;text-align:right;">$9,840</div><div style="font-size:10px;color:var(--green);width:40px;text-align:right;">↑ 22%</div></div>
           <div class="breakdown-row"><div style="font-size:12px;color:var(--text);width:90px;flex-shrink:0;">Saturday</div><div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:88%;height:100%;background:var(--gold);border-radius:3px;"></div></div><div style="font-size:12px;font-family:'DM Mono',monospace;width:60px;text-align:right;">$8,620</div><div style="font-size:10px;color:var(--green);width:40px;text-align:right;">↑ 18%</div></div>
@@ -182,7 +182,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Revenue Insights</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;"></span>AI</div></div>
+        <div class="card-header"><div class="card-title">Revenue Insights<span style="font-size:10px;color:var(--orange);margin-left:8px;">⚠ Est.</span></div><div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;"></span>AI</div></div>
         <div class="insight-item"><div class="insight-icon" style="background:var(--green-dim);">📈</div><div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">Weekend momentum is strong</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5;">Fri–Sun generated <strong style="color:var(--text);">$25,540</strong>, 53% of weekly revenue.</div></div></div>
         <div class="insight-item"><div class="insight-icon" style="background:var(--red-dim);">⚠️</div><div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">Tuesday is dragging the week</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5;">Tuesday is your slowest day — <strong style="color:var(--text);" id="rev-slow-insight">—</strong> avg.</div></div></div>
         <div class="insight-item"><div class="insight-icon" style="background:rgba(201,168,76,0.1);">💡</div><div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">Lunch revenue opportunity</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5;">Lunch is only <strong style="color:var(--text);">38%</strong> of daily revenue. Toro promotion could add $800–1,200/wk.</div></div></div>
@@ -190,7 +190,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       </div>
     </div>
     <div class="card fade-4" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title">Daily Revenue Breakdown</div><div class="card-link">Export CSV →</div></div>
+      <div class="card-header"><div class="card-title">Daily Revenue Breakdown<span style="font-size:10px;color:var(--orange);margin-left:8px;">⚠ Est.</span></div><div class="card-link">Export CSV →</div></div>
       <table class="data-table">
         <thead><tr><th>Day</th><th>Lunch</th><th>Dinner</th><th>Total</th><th>Covers</th><th>Avg Item Price</th><th>vs Target</th><th>vs Last Week</th></tr></thead>
         <tbody>

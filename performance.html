@@ -198,9 +198,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Revenue Heatmap — By Session & Day</div><div style="font-size:10px;color:var(--text-dim);">Darker = higher revenue · estimated from period avg</div></div>
+        <div class="card-header"><div class="card-title">Revenue Heatmap — By Session & Day</div><div style="font-size:10px;color:var(--orange);">⚠ Estimated · based on your real weekly avg + industry day weights</div></div>
         <div class="card-body"><div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;">Each cell shows estimated revenue intensity by day and meal period. Based on your weekly average — will show real data when Clover live API connects.</div>
-          <div class="heatmap-grid">
+          <div class="heatmap-grid" id="heatmap-grid">
             <div></div>
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Mon</div>
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Tue</div>
@@ -210,170 +210,18 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Sat</div>
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Sun</div>
             <div style="font-size:10px;color:var(--text-dim);display:flex;align-items:center;">Lunch</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.25);color:var(--text-dim);">$2.0K</div>
-            <div class="heatmap-cell" style="background:rgba(224,85,85,0.15);color:var(--text-dim);">$1.4K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.3);color:var(--text-dim);">$2.3K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.35);color:var(--text-dim);">$2.6K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.5);color:var(--text);">$3.9K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.55);color:var(--text);">$3.5K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.4);color:var(--text-dim);">$2.8K</div>
+            <div class="heatmap-cell" id="hm-lunch-mon"></div>
+            <div class="heatmap-cell" id="hm-lunch-tue"></div>
+            <div class="heatmap-cell" id="hm-lunch-wed"></div>
+            <div class="heatmap-cell" id="hm-lunch-thu"></div>
+            <div class="heatmap-cell" id="hm-lunch-fri"></div>
+            <div class="heatmap-cell" id="hm-lunch-sat"></div>
+            <div class="heatmap-cell" id="hm-lunch-sun"></div>
             <div style="font-size:10px;color:var(--text-dim);display:flex;align-items:center;">Dinner</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.35);color:var(--text-dim);">$3.1K</div>
-            <div class="heatmap-cell" style="background:rgba(224,85,85,0.2);color:var(--text-dim);">$2.1K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.4);color:var(--text-dim);">$3.4K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.45);color:var(--text-dim);">$3.8K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.85);color:#000;font-weight:500;">$5.9K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.75);color:#000;">$5.2K</div>
-            <div class="heatmap-cell" style="background:rgba(201,168,76,0.6);color:var(--text);">$4.3K</div>
-          </div>
-          <div style="margin-top:14px;font-size:10px;color:var(--text-dim);display:flex;align-items:center;gap:8px;">
-            <span>Low</span>
-            <div style="display:flex;gap:3px;"><div style="width:16px;height:8px;border-radius:2px;background:rgba(201,168,76,0.1);"></div><div style="width:16px;height:8px;border-radius:2px;background:rgba(201,168,76,0.3);"></div><div style="width:16px;height:8px;border-radius:2px;background:rgba(201,168,76,0.5);"></div><div style="width:16px;height:8px;border-radius:2px;background:rgba(201,168,76,0.7);"></div><div style="width:16px;height:8px;border-radius:2px;background:rgba(201,168,76,0.9);"></div></div>
-            <span>High</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="card fade-4" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title">Monthly Progress</div><div class="card-link">View full month →</div></div>
-      <div class="card-body">
-        <div class="monthly-grid">
-          <div><div style="font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Monthly Revenue</div><div style="font-size:28px;font-weight:300;color:var(--text);margin-bottom:4px;" id="perf-monthly-revenue">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">of target — <span id="perf-total-revenue">—</span> YTD · <span id="perf-monthly-target-pct">—</span></div><div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:93%;height:100%;background:var(--gold);border-radius:3px;"></div></div><div style="font-size:10px;color:var(--gold);margin-top:4px;">93% to target · On pace to exceed</div></div>
-          <div><div style="font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Monthly Covers</div><div style="font-size:28px;font-weight:300;color:var(--text);margin-bottom:4px;">5,991</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">of 6,500 target</div><div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:92%;height:100%;background:var(--green);border-radius:3px;"></div></div><div style="font-size:10px;color:var(--green);margin-top:4px;">92% to target · Strong pace</div></div>
-          <div><div style="font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Avg Labor Cost</div><div style="font-size:28px;font-weight:300;color:var(--text);margin-bottom:4px;">30.4%</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">target: under 28%</div><div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--red);border-radius:3px;"></div></div><div style="font-size:10px;color:var(--red);margin-top:4px;">Above target · Needs attention</div></div>
-          <div><div style="font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Avg Gross Margin</div><div style="font-size:28px;font-weight:300;color:var(--text);margin-bottom:4px;">65.8%</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">target: 62%+</div><div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--green);border-radius:3px;"></div></div><div style="font-size:10px;color:var(--green);margin-top:4px;">Above target · Excellent</div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div><script src="hrzn-data.js"></script>
-<script>
-const THEME_KEY='hrzn-theme';
-function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
-function applyTheme(theme){
-  const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');
-  if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}
-  else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}
-}
-function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
-function navigate(page){window.location.href=page;}
-function askQuestion(q){const i=document.getElementById('aiInput');if(i){i.value=q;sendMessage();}}
-let conversationHistory=[];
-const RC=`You are HRZN, an elite AI business operator for Sama Handroll. REVENUE: Weekly $48,240 (+14.2%). Best day: Friday $9,840. Slowest: Tuesday. Avg check $26.12. Covers 1,847. LABOR: Avg 32%. Tuesday 41% (overstaffed). Target 28%. MENU: Toro 68% $8,240. Salmon 62% $6,120. Edamame 72% $1,240. Crab 34% $2,200. ALERTS: Tuesday labor spike. Salmon depletes 2 days. Toro undersold lunch. Respond sharp, concise, use numbers. Max 4 sentences.`;
-function addMessage(role,text){const msgs=document.getElementById('aiMessages');if(!msgs)return;const m=document.createElement('div');m.className='ai-msg';m.innerHTML='<div class="ai-msg-label">'+(role==='ai'?'HRZN AI':'You')+'</div><div class="ai-msg-text" style="'+(role==='user'?'color:var(--text);font-size:12px;':'')+'">'+text+'</div>';msgs.appendChild(m);msgs.scrollTop=msgs.scrollHeight;}
-function addTyping(){const msgs=document.getElementById('aiMessages');if(!msgs)return;const t=document.createElement('div');t.className='ai-msg';t.id='typing';t.innerHTML='<div class="ai-msg-label">HRZN AI</div><div class="ai-msg-text" style="color:var(--text-dim);">Analyzing...</div>';msgs.appendChild(t);msgs.scrollTop=msgs.scrollHeight;}
-function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
-async function sendMessage(){
-  const input=document.getElementById('aiInput'),btn=document.getElementById('aiSend');
-  if(!input||!btn)return;const text=input.value.trim();if(!text)return;
-  input.value='';btn.disabled=true;addMessage('user',text);conversationHistory.push({role:'user',content:text});addTyping();
-  try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,system:RC,messages:conversationHistory})});
-    const d=await r.json();const reply=d.content?.[0]?.text||'Error';conversationHistory.push({role:'assistant',content:reply});removeTyping();addMessage('ai',reply);
-  }catch(e){removeTyping();addMessage('ai','Error: '+e.message);}btn.disabled=false;
-}
-
-function renderDataBadges(sources) {
-  const container = document.getElementById('page-data-sources');
-  if (!container) return;
-  container.innerHTML = sources.map(s => {
-    const stored = localStorage.getItem(s.key) || localStorage.getItem(s.oldKey || '');
-    const loaded = !!stored;
-    const color = loaded ? 'var(--green)' : 'var(--text-dim)';
-    const bg = loaded ? 'var(--green-dim)' : 'rgba(128,128,128,0.08)';
-    const border = loaded ? 'rgba(76,175,125,0.2)' : 'rgba(128,128,128,0.15)';
-    const dot = loaded ? '●' : '○';
-    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">' +
-      '<span style="font-size:8px;">'+dot+'</span>' + s.label + (loaded ? '' : ' — not uploaded') +
-    '</span>';
-  }).join('');
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
-  applyTheme(getTheme());
-  HRZN.injectBadge('hrzn-source-badge');
-
-  const d = HRZN.getData();
-  // Update date label from active data source
-  const _period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
-  const _dateEl = document.getElementById('perf-date-label');
-  if(_dateEl && _period) _dateEl.textContent = '📅 ' + _period;
-  const months = HRZN.getMonths(d);
-  const monthly = Math.round((d.netSales||0) / months);
-  const weekly = Math.round(monthly / 4.33);
-  const daily = Math.round(weekly / 7);
-  const weeklyItems = Math.round((d.itemsSold||0) / months / 4.33);
-  const fmt = n => '$' + Math.round(n).toLocaleString();
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-
-  // Update date label from CSV period
-  const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
-  set('perf-date-label', period || 'Jan 1 – May 28, 2026');
-
-  // KPI Cards
-  set('perf-weekly-revenue', fmt(weekly));
-  set('perf-avg-check', '$' + (d.avgCheck||0));
-  set('perf-monthly-revenue', fmt(monthly));
-  set('perf-total-revenue', fmt(d.netSales||0));
-  set('perf-items', weeklyItems.toLocaleString());
-  set('perf-covers', weeklyItems.toLocaleString());
-
-  // Comparison table - real this period vs estimated prior period
-  const lastWeekly = Math.round(weekly * 0.95);
-  const lastItems = Math.round(weeklyItems * 0.95);
-  const laborPct = 32;
-
-  // Get gross margin from Item Sales if available
-  let grossMargin = '—';
-  try {
-    const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
-    if(items.grossProfitMargin) grossMargin = items.grossProfitMargin.toFixed(1)+'%';
-  } catch(e) {}
-
-  set('vs-rev-this', fmt(weekly));
-  set('vs-rev-last', fmt(lastWeekly));
-  set('vs-covers-this', weeklyItems.toLocaleString());
-  set('vs-covers-last', lastItems.toLocaleString());
-  set('vs-check-this', '$'+(d.avgCheck||0));
-  set('vs-check-last', '—');
-  set('vs-labor-this', laborPct+'%');
-  set('vs-labor-last', '—');
-  set('vs-margin-this', grossMargin);
-  set('vs-margin-last', '—');
-  set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
-  set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
-  set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
-  set('vs-slow-last', '—');
-  set('vs-rev-change', '+' + Math.round((weekly/lastWeekly-1)*100) + '%');
-
-  // Monthly progress
-  set('perf-monthly-target-pct', Math.round(monthly/50000*100)+'% of target');
-
-  // Update monthly progress bar
-  const monthlyTarget = 50000;
-  const progressPct = Math.min(100, Math.round(monthly / monthlyTarget * 100));
-  const progressBar = document.getElementById('perf-progress-bar');
-  if(progressBar) progressBar.style.width = progressPct + '%';
-  const progressLabel = document.getElementById('perf-progress-label');
-  if(progressLabel) progressLabel.textContent = progressPct + '% of monthly target';
-
-  // Update comparison table with real data
-  const setEl = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-  setEl('vs-rev-this', fmt(weekly));
-  setEl('vs-rev-last', fmt(Math.round(weekly*0.95)));
-  setEl('vs-covers-this', weeklyItems.toLocaleString());
-  setEl('vs-covers-last', Math.round(weeklyItems*0.95).toLocaleString());
-  setEl('vs-check-this', '$'+(d.avgCheck||0));
-  setEl('vs-check-last', '—');
-  setEl('vs-best-this', fmt(Math.round(weekly*0.97)));
-  setEl('vs-slow-this', fmt(Math.round(weekly*0.60)));
-
-  HRZN.injectBadge('hrzn-source-badge');
-  applyTheme(getTheme());
-  const s=document.getElementById('aiSend'),i=document.getElementById('aiInput'),a=document.getElementById('askBtn');
-  if(s)s.addEventListener('click',sendMessage);
-  if(i)i.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});
-  if(a)a.addEventListener('click',()=>{i&&i.focus();});
-});
-</script></body>
-</html>
+            <div class="heatmap-cell" id="hm-dinner-mon"></div>
+            <div class="heatmap-cell" id="hm-dinner-tue"></div>
+            <div class="heatmap-cell" id="hm-dinner-wed"></div>
+            <div class="heatmap-cell" id="hm-dinner-thu"></div>
+            <div class="heatmap-cell" id="hm-dinner-fri"></div>
+            <div class="heatmap-cell" id="hm-dinner-sat"></div>
+            <div class="heatmap-cell" id="hm-dinner-sun"></div>>
