@@ -267,7 +267,7 @@ function renderDataBadges(sources){
     const color=loaded?'var(--green)':'var(--text-dim)';
     const bg=loaded?'rgba(76,175,125,0.1)':'rgba(128,128,128,0.08)';
     const border=loaded?'rgba(76,175,125,0.2)':'rgba(128,128,128,0.15)';
-    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">'+(loaded?'&bull;':'&cir;')+' '+s.label+(loaded?'':' -- not uploaded')+'</span>';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">'+(loaded?'•':'○')+' '+s.label+(loaded?'':' -- not uploaded')+'</span>';
   }).join('');
 }
 
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   set('dashboard-period', period || 'No data uploaded');
   const periodBtn = document.getElementById('dashboard-period-btn');
-  if(periodBtn) periodBtn.textContent = '&#128197; ' + (period || 'Upload CSV') + ' &#8964;';
+  if(periodBtn) periodBtn.textContent = '📅 ' + (period || 'Upload CSV') + ' ⌄';
 
   // KPIs
   set('kpi-revenue', fmt(d.netSales||0));
@@ -325,10 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Critical Alerts
   const alerts = [];
-  if(laborPct > tgt.labor) alerts.push({icon:'&#9889;',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) alerts.push({icon:'&#128663;',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(weekly*(tgt.doordash-doorDashPct)/100)+'/week revenue gap',link:'sales.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'&#128200;',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'menu.html'});
-  if(discountPct <= tgt.discount) alerts.push({icon:'&#10003;',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
+  if(laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
+  if(doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(weekly*(tgt.doordash-doorDashPct)/100)+'/week revenue gap',link:'sales.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'menu.html'});
+  if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');
   if(alertsList) alertsList.innerHTML = alerts.slice(0,4).map(a =>
@@ -361,15 +361,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const breakdown = document.getElementById('dash-score-breakdown');
   if(breakdown) breakdown.innerHTML = scores.map(s => {
     const c = s.val>=85?'var(--green)':s.val>=70?'var(--gold)':'var(--orange)';
-    return '<div style="font-size:10px;"><span style="color:'+c+';">&bull;</span> '+s.label+' <span style="color:'+c+';font-weight:500;">'+s.val+'</span></div>';
+    return '<div style="font-size:10px;"><span style="color:'+c+';">•</span> '+s.label+' <span style="color:'+c+';font-weight:500;">'+s.val+'</span></div>';
   }).join('');
 
   // Top Recommendations
   const recs = [];
-  if(laborPct > tgt.labor) recs.push({icon:'&#9986;',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(weekly*(laborPct-tgt.labor)/100))+'/week savings',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) recs.push({icon:'&#128663;',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(weekly*(tgt.doordash-doorDashPct)/100))+'/week upside',link:'data.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'&#128200;',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round((d.itemsSold||0)/months/4.33))+'/week',link:'menu.html'});
-  recs.push({icon:'&#128172;',title:'Ask AI for personalized plan',impact:'Based on your real data',link:'operator.html'});
+  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(weekly*(laborPct-tgt.labor)/100))+'/week savings',link:'labor.html'});
+  if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(weekly*(tgt.doordash-doorDashPct)/100))+'/week upside',link:'data.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round((d.itemsSold||0)/months/4.33))+'/week',link:'menu.html'});
+  recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Based on your real data',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
   if(recsList) recsList.innerHTML = recs.slice(0,3).map(r =>
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '<div style="width:28px;height:28px;border-radius:6px;background:rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">'+r.icon+'</div>' +
     '<div style="flex:1;"><div style="font-size:12px;font-weight:500;color:var(--text);">'+r.title+'</div>' +
     '<div style="font-size:10px;color:var(--green);">'+r.impact+'</div></div>' +
-    '<span style="font-size:12px;color:var(--text-dim);">&rsaquo;</span></div>'
+    '<span style="font-size:12px;color:var(--text-dim);">›</span></div>'
   ).join('');
 
   // Nav badge
