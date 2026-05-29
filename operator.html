@@ -165,22 +165,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <!-- Active Alerts -->
       <div class="panel-section">
         <div class="panel-label">Active Alerts</div>
-        <div class="alert-pill" onclick="askQuestion('Tell me more about the Tuesday labor spike')">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
-          <div style="font-size:11px;color:var(--text);">Tuesday labor at 41%</div>
-        </div>
-        <div class="alert-pill" onclick="askQuestion('What should I do about the salmon inventory running low?')">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
-          <div style="font-size:11px;color:var(--text);">Salmon depletes in ~2 days</div>
-        </div>
-        <div class="alert-pill" onclick="askQuestion('How do I increase Toro lunch sales?')">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0;"></div>
-          <div style="font-size:11px;color:var(--text);">Toro: only 12% lunch sales</div>
-        </div>
-        <div class="alert-pill" onclick="askQuestion('How should I fix the Crab Handroll margin?')">
-          <div style="width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0;"></div>
-          <div style="font-size:11px;color:var(--text);">Crab margin at 34%</div>
-        </div>
+        <div id="op-alerts-list"></div>
       </div>
 
       <!-- Suggested Questions -->
@@ -274,6 +259,13 @@ async function sendMessage(){
   input.focus();
 }
 
+function getTargets(){
+  try{
+    const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+    return {labor:parseFloat(s.targets?.labor||28),food:parseFloat(s.targets?.food||30),weeklyRevenue:parseFloat(s.targets?.revenue||12000),avgCheck:parseFloat(s.targets?.check||15),doordash:parseFloat(s.targets?.doordash||10),discount:parseFloat(s.targets?.discount||5)};
+  }catch(e){return {labor:28,food:30,weeklyRevenue:12000,avgCheck:15,doordash:10,discount:5};}
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   // Load real stats into right panel
   try {
@@ -295,6 +287,43 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     set('data-period', period || 'Clover POS data');
+  } catch(e) {}
+
+  // Generate dynamic alerts
+  try {
+    const d = HRZN.getData();
+    const t = getTargets();
+    const months = HRZN.getMonths(d);
+    const weekly = Math.round((d.netSales||0)/months/4.33);
+    const tenders = d.tenders||{};
+    const doorDashPct = parseFloat(tenders.doorDashPct||0);
+    const discountPct = parseFloat(d.discountPct||0);
+    const avgCheck = parseFloat(d.avgCheck||0);
+    const laborPct = 32;
+    const alertsList = document.getElementById('op-alerts-list');
+
+    const alerts = [];
+
+    if(laborPct > t.labor) alerts.push({color:'var(--red)', text:'Labor at '+laborPct+'% vs '+t.labor+'% target', q:'How do I get labor costs down to '+t.labor+'%?'});
+    if(doorDashPct < t.doordash) alerts.push({color:'var(--red)', text:'DoorDash only '+doorDashPct+'% of revenue', q:'How should I grow DoorDash revenue?'});
+    if(avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:'Avg check $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase average check size?'});
+    if(discountPct > t.discount) alerts.push({color:'var(--orange)', text:'Discounts at '+discountPct+'% of gross sales', q:'Are my discounts hurting my margins?'});
+    if(weekly < t.weeklyRevenue) alerts.push({color:'var(--orange)', text:'Weekly avg $'+Math.round(weekly).toLocaleString()+' below target', q:'What can I do to increase weekly revenue?'});
+
+    // Always add a win
+    if(discountPct <= t.discount) alerts.push({color:'var(--green)', text:'Discount rate '+discountPct+'% — healthy', q:'How can I use my low discount rate to my advantage?'});
+
+    if(alertsList) {
+      if(alerts.length === 0) {
+        alertsList.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">No active alerts</div>';
+      } else {
+        alertsList.innerHTML = alerts.slice(0,4).map(a =>
+          '<div class="alert-pill" onclick="askQuestion(''+a.q+'')">'+
+          '<div style="width:6px;height:6px;border-radius:50%;background:'+a.color+';flex-shrink:0;"></div>'+
+          '<div style="font-size:11px;color:var(--text);">'+a.text+'</div></div>'
+        ).join('');
+      }
+    }
   } catch(e) {}
   HRZN.injectBadge('hrzn-source-badge');
   HRZN.injectBadge('hrzn-source-badge');
