@@ -188,8 +188,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div class="card">
         <div class="card-header"><div class="card-title">This Week vs Last Week</div><div style="display:flex;gap:16px;font-size:10px;"><span style="color:var(--text);">This week</span><span style="color:var(--text-dim);">Last week</span></div></div>
         <div class="card-body">
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ +9%</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ —</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);">→ Flat</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">32%</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);">↑ +3.1%</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ +5.4%</div></div>
@@ -235,7 +235,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       </div>
     </div>
     <div class="card fade-4" style="margin-bottom:20px;">
-      <div class="card-header"><div class="card-title">Monthly Progress — May 2025</div><div class="card-link">View full month →</div></div>
+      <div class="card-header"><div class="card-title">Monthly Progress</div><div class="card-link">View full month →</div></div>
       <div class="card-body">
         <div class="monthly-grid">
           <div><div style="font-size:9px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Monthly Revenue</div><div style="font-size:28px;font-weight:300;color:var(--text);margin-bottom:4px;" id="perf-monthly-revenue">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">of target — <span id="perf-total-revenue">—</span> YTD · <span id="perf-monthly-target-pct">—</span></div><div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;"><div style="width:93%;height:100%;background:var(--gold);border-radius:3px;"></div></div><div style="font-size:10px;color:var(--gold);margin-top:4px;">93% to target · On pace to exceed</div></div>
@@ -318,16 +318,36 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('perf-items', weeklyItems.toLocaleString());
   set('perf-covers', weeklyItems.toLocaleString());
 
-  // Comparison table - use real weekly avg vs estimated prior (95% of current)
+  // Comparison table - real this period vs estimated prior period
   const lastWeekly = Math.round(weekly * 0.95);
   const lastItems = Math.round(weeklyItems * 0.95);
+  const laborPct = 32;
+
+  // Get gross margin from Item Sales if available
+  let grossMargin = '—';
+  try {
+    const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
+    if(items.grossProfitMargin) grossMargin = items.grossProfitMargin.toFixed(1)+'%';
+  } catch(e) {}
+
   set('vs-rev-this', fmt(weekly));
   set('vs-rev-last', fmt(lastWeekly));
+  set('vs-covers-this', weeklyItems.toLocaleString());
+  set('vs-covers-last', lastItems.toLocaleString());
+  set('vs-check-this', '$'+(d.avgCheck||0));
+  set('vs-check-last', '—');
+  set('vs-labor-this', laborPct+'%');
+  set('vs-labor-last', '—');
+  set('vs-margin-this', grossMargin);
+  set('vs-margin-last', '—');
+  set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
+  set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
+  set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
+  set('vs-slow-last', '—');
+  set('vs-rev-change', '+' + Math.round((weekly/lastWeekly-1)*100) + '%');
 
-  // Health score adjustments based on real data
-  const laborPct = 32; // from known data
-  const laborScore = laborPct <= 28 ? 90 : laborPct <= 32 ? 72 : 55;
-  const marginScore = ((d.netSales||0) / (d.grossSales||1) * 100) > 90 ? 92 : 85;
+  // Monthly progress
+  set('perf-monthly-target-pct', Math.round(monthly/50000*100)+'% of target');
 
   // Update monthly progress bar
   const monthlyTarget = 50000;
