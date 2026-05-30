@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const user = hrznGetUser();
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const bizName = settings.businessName || user.user_metadata?.full_name || 'My Restaurant';
+    const bizName = settings.businessName || 'My Restaurant';
     const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
     const userEmail = user.email || '';
 
