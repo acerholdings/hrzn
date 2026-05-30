@@ -167,6 +167,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_vwR5ZxytRXriGjsIFSUvBg_uUH21z8U';
 let selectedPOS = null;
 let authToken = null;
 let userId = null;
+let storedBizName = '';
+let storedBizLocation = '';
 
 function selectPOS(pos, el) {
   selectedPOS = pos;
@@ -234,9 +236,8 @@ function goStep3() {
   const bizName = document.getElementById('biz-name').value.trim();
   const err = document.getElementById('err-2');
   if (!bizName) { err.textContent = 'Please enter your restaurant name.'; return; }
-  // Store in hidden field so finish() can read it even when step 2 is hidden
-  document.getElementById('stored-biz-name').value = bizName;
-  document.getElementById('stored-biz-location').value = document.getElementById('biz-location').value.trim();
+  storedBizName = bizName;
+  storedBizLocation = document.getElementById('biz-location').value.trim();
   goToStep(3);
 }
 
@@ -246,8 +247,8 @@ async function finish() {
   btn.textContent = 'Setting up...';
   btn.disabled = true;
 
-  const bizName = document.getElementById('stored-biz-name').value.trim() || document.getElementById('biz-name').value.trim();
-  const location = document.getElementById('stored-biz-location').value.trim() || document.getElementById('biz-location').value.trim();
+  const bizName = storedBizName || document.getElementById('biz-name').value.trim() || 'My Restaurant';
+  const location = storedBizLocation || document.getElementById('biz-location').value.trim() || '';
   const targets = {
     labor: document.getElementById('t-labor').value,
     food: document.getElementById('t-food').value,
