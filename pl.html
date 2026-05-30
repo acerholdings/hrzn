@@ -247,7 +247,10 @@ const PL_KEY='hrzn-pl-data';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
-function navigate(page){window.location.href=page;}
+function navigate(p){
+  const isDemo = new URLSearchParams(window.location.search).get('demo')==='true';
+  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
+}
 function fmt(n){return '$'+Math.round(Math.abs(n)).toLocaleString();}
 function pct(n,total){return total>0?(n/total*100).toFixed(1)+'%':'0%';}
 

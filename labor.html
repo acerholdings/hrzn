@@ -193,7 +193,10 @@ function applyTheme(t){
   else{b.classList.remove('light');if(tr)tr.classList.remove('on');if(l)l.textContent='Dark mode';if(lg)lg.style.filter='none';}
 }
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
-function navigate(p){window.location.href=p;}
+function navigate(p){
+  const isDemo = new URLSearchParams(window.location.search).get('demo')==='true';
+  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
+}
 function fmt(n){return '$'+Math.round(n).toLocaleString();}
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 

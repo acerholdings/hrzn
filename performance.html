@@ -256,7 +256,10 @@ function applyTheme(theme){
   else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}
 }
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
-function navigate(page){window.location.href=page;}
+function navigate(p){
+  const isDemo = new URLSearchParams(window.location.search).get('demo')==='true';
+  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
+}
 
 function renderDataBadges(sources){
   const c=document.getElementById('page-data-sources');if(!c)return;
