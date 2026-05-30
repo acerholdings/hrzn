@@ -201,10 +201,10 @@ async function goStep2() {
     const r = await fetch(SUPABASE_URL + '/auth/v1/signup', {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY},
-      body: JSON.stringify({email, password, options: {data: {full_name: name}}})
+      body: JSON.stringify({email, password, data: {full_name: name}})
     });
     const data = await r.json();
-    if (data.user || data.access_token) {
+    if (data.user) {
       authToken = data.access_token;
       userId = data.user?.id;
       if(authToken) {
@@ -212,9 +212,15 @@ async function goStep2() {
         localStorage.setItem('hrzn_refresh', data.refresh_token);
         localStorage.setItem('hrzn_user', JSON.stringify(data.user));
       }
+      // User created - proceed even if email not confirmed yet
       goToStep(2);
     } else {
-      err.textContent = data.error_description || data.msg || 'Signup failed. Try again.';
+      const errMsg = data.error_description || data.msg || data.error || '';
+      if(errMsg.toLowerCase().includes('already registered')) {
+        err.textContent = 'Email already registered. Try signing in instead.';
+      } else {
+        err.textContent = errMsg || 'Signup failed. Try again.';
+      }
     }
   } catch(e) {
     err.textContent = 'Connection error. Please try again.';
