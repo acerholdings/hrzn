@@ -3,6 +3,43 @@
 // Single source of truth for all pages
 // ─────────────────────────────────────────────
 
+// ── AUTH HELPERS ─────────────────────────────────────────────
+function hrznGetToken() {
+  return localStorage.getItem('hrzn_token');
+}
+
+function hrznIsLoggedIn() {
+  return !!localStorage.getItem('hrzn_token');
+}
+
+function hrznIsDemo() {
+  return new URLSearchParams(window.location.search).get('demo') === 'true';
+}
+
+function hrznRequireAuth() {
+  // Skip auth check if demo mode or already on auth pages
+  const authPages = ['login.html','signup.html','forgot.html'];
+  const currentPage = window.location.pathname.split('/').pop();
+  if (authPages.includes(currentPage)) return;
+  if (hrznIsDemo()) return;
+  if (!hrznIsLoggedIn()) {
+    window.location.href = 'login.html';
+    return;
+  }
+}
+
+function hrznLogout() {
+  localStorage.removeItem('hrzn_token');
+  localStorage.removeItem('hrzn_refresh');
+  localStorage.removeItem('hrzn_user');
+  window.location.href = 'login.html';
+}
+
+function hrznGetUser() {
+  try { return JSON.parse(localStorage.getItem('hrzn_user') || '{}'); }
+  catch(e) { return {}; }
+}
+
 const HRZN = {
 
   // Keys

@@ -102,6 +102,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </nav>
   <div class="sidebar-bottom">
     <div class="user-row"><div class="user-avatar">SH</div><div><div class="user-name">Sama Handroll</div><div class="user-role">Owner</div></div></div>
+    <div onclick="hrznLogout()" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;color:var(--text-dim);font-size:11px;margin-top:8px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">
+      <span style="font-size:13px;">⎋</span> Sign Out
+    </div>
     <div class="mode-toggle" onclick="toggleTheme()"><span class="toggle-label" id="toggleLabel">Dark mode</span><div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div></div>
   </div>
 </div>
@@ -187,6 +190,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </div>
 </div>
 <script src="hrzn-data.js"></script>
+<script>hrznRequireAuth();</script>
 <script>
 const THEME_KEY = 'hrzn-theme';
 const ITEMS_KEY = 'hrzn-data-items';
@@ -336,6 +340,12 @@ function renderDataBadges(sources) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Show demo banner if in demo mode
+  if (hrznIsDemo()) {
+    const banner = document.getElementById('demo-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+
   renderDataBadges([{label:"Item Sales",key:"hrzn-data-items",oldKey:""}]);
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');

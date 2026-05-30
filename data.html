@@ -122,6 +122,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </nav>
   <div class="sidebar-bottom">
     <div class="user-row"><div class="user-avatar">SH</div><div><div class="user-name">Sama Handroll</div><div class="user-role">Owner</div></div></div>
+    <div onclick="hrznLogout()" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;color:var(--text-dim);font-size:11px;margin-top:8px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">
+      <span style="font-size:13px;">⎋</span> Sign Out
+    </div>
     <div class="mode-toggle" onclick="toggleTheme()"><span class="toggle-label" id="toggleLabel">Dark mode</span><div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div></div>
   </div>
 </div>
@@ -133,6 +136,10 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       <div id="hrzn-source-badge"></div>
       <button class="topbar-btn-ghost" onclick="navigate('dashboard.html')">&#8592; Dashboard</button>
     </div>
+  </div>
+<div id="demo-banner" style="display:none;background:rgba(201,168,76,0.1);border-bottom:1px solid rgba(201,168,76,0.2);padding:8px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;">
+    <span>👀 You're viewing a demo with sample data from Sama Handroll LA</span>
+    <a href="signup.html" style="color:var(--gold);font-weight:500;text-decoration:none;">Start Free Trial →</a>
   </div>
 
   <div class="content">
@@ -233,6 +240,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 <input type="file" id="global-file-input" accept=".csv" style="display:none;" onchange="handleFileSelect(event)"/>
 
 <script src="hrzn-data.js"></script>
+<script>hrznRequireAuth();</script>
 <script>
 const THEME_KEY='hrzn-theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
@@ -368,6 +376,12 @@ function updateSourceButtons(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // Show demo banner if in demo mode
+  if (hrznIsDemo()) {
+    const banner = document.getElementById('demo-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
   renderCSVGrid();

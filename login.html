@@ -59,7 +59,9 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
     <button class="btn-primary" id="signin-btn" onclick="signIn()">Sign In</button>
     <div class="err" id="err"></div>
 
-    <div class="link-row">
+    <div class="divider"><div class="divider-line"></div><div class="divider-text">or</div><div class="divider-line"></div></div>
+    <button onclick="window.location.href='dashboard.html?demo=true'" style="width:100%;background:transparent;border:1px solid rgba(255,255,255,0.08);color:#999;border-radius:8px;padding:12px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(201,168,76,0.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">👀 View Demo</button>
+    <div class="link-row" style="margin-top:12px;">
       Don't have an account? <a href="signup.html">Start free trial →</a>
     </div>
   </div>
