@@ -399,10 +399,7 @@ const SETTINGS_KEY='hrzn-settings';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
-function navigate(p){
-  const isDemo = new URLSearchParams(window.location.search).get('demo')==='true';
-  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
-}
+function navigate(p){ hrznNavigate(p); }
 
 function showSection(id){
   document.querySelectorAll('.settings-section').forEach(s=>s.classList.remove('active'));

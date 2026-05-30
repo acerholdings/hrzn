@@ -107,10 +107,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 </div>
 
 <script>
-function navigate(p){
-  const isDemo = new URLSearchParams(window.location.search).get('demo')==='true';
-  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
-}
+function navigate(p){ hrznNavigate(p); }
 const THEME_KEY='hrzn-theme';
 function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(t){const b=document.body,tr=document.getElementById('toggleTrack'),l=document.getElementById('toggleLabel'),lg=document.getElementById('sidebarLogo');if(t==='light'){b.classList.add('light');if(tr)tr.classList.add('on');if(l)l.textContent='Light mode';if(lg)lg.style.filter='brightness(0.15)';}else{b.classList.remove('light');if(tr)tr.classList.remove('on');if(l)l.textContent='Dark mode';if(lg)lg.style.filter='none';}}

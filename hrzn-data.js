@@ -17,15 +17,24 @@ function hrznIsDemo() {
 }
 
 function hrznRequireAuth() {
-  // Skip auth check if demo mode or already on auth pages
   const authPages = ['login.html','signup.html','forgot.html'];
-  const currentPage = window.location.pathname.split('/').pop();
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   if (authPages.includes(currentPage)) return;
-  if (hrznIsDemo()) return;
+  // Check demo mode - look at current URL and also referrer
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('demo') === 'true') return;
+  // Also check if demo param is in the hash
+  if (window.location.hash.includes('demo=true')) return;
   if (!hrznIsLoggedIn()) {
+    // Preserve demo mode if somehow lost
     window.location.href = 'login.html';
     return;
   }
+}
+
+function hrznNavigate(p) {
+  const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
+  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
 }
 
 function hrznLogout() {
