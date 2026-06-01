@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     status.textContent='Reading file...';status.style.color='var(--text-dim)';
     const text = await file.text();
     try{
-      const res = await fetch('/api/parse-csv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
+      const res = await fetch('/api/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
       const data = await res.json();
       if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
       // Save through HRZN data layer

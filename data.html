@@ -248,7 +248,7 @@ function applyTheme(theme){const body=document.body,track=document.getElementByI
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(p){ hrznNavigate(p); }
 
-const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, tips, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Clover → Reports → Sales Overview → Export CSV', 'parser': '/api/parse-csv'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '🍱', 'desc': 'Per-item revenue, quantity sold, category breakdown', 'powers': 'Menu page, AI menu insights', 'path': 'Clover → Reports → Item Sales → Export CSV', 'parser': '/api/parse-items'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Guest Count', 'icon': '👥', 'desc': 'Covers per day, table turns, party sizes', 'powers': 'Dashboard covers, Performance health score', 'path': 'Clover → Reports → Guest Count → Export CSV', 'parser': '/api/parse-guests'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee, tips per employee, performance', 'powers': 'Labor page, team performance', 'path': 'Clover → Reports → Employee Sales → Export CSV', 'parser': '/api/parse-employees'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order Types', 'icon': '🧾', 'desc': 'Dine-in vs takeout vs delivery split', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Clover → Reports → Order Types → Export CSV', 'parser': '/api/parse-orders'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Clover → Reports → Discounts → Export CSV', 'parser': '/api/parse-discounts'}];
+const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, tips, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Clover → Reports → Sales Overview → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '🍱', 'desc': 'Per-item revenue, quantity sold, category breakdown', 'powers': 'Menu page, AI menu insights', 'path': 'Clover → Reports → Item Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Guest Count', 'icon': '👥', 'desc': 'Covers per day, table turns, party sizes', 'powers': 'Dashboard covers, Performance health score', 'path': 'Clover → Reports → Guest Count → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee, tips per employee, performance', 'powers': 'Labor page, team performance', 'path': 'Clover → Reports → Employee Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order Types', 'icon': '🧾', 'desc': 'Dine-in vs takeout vs delivery split', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Clover → Reports → Order Types → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Clover → Reports → Discounts → Export CSV', 'parser': '/api/parse'}];
 
 let currentUploadKey = null;
 
@@ -317,10 +317,22 @@ async function handleFileSelect(event){
   if(btn){ btn.textContent = 'Uploading...'; btn.disabled = true; }
 
   try{
+    // Determine type from key
+    const typeMap = {
+      'hrzn-data-csv': 'sales',
+      'hrzn-sales-data': 'sales',
+      'hrzn-data-items': 'items',
+      'hrzn-data-employees': 'employees',
+      'hrzn-data-guests': 'guests',
+      'hrzn-data-orders': 'orders',
+      'hrzn-data-discounts': 'discounts'
+    };
+    const parseType = typeMap[key] || 'sales';
+
     const res = await fetch(parser, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({csv: text})
+      body: JSON.stringify({csv: text, type: parseType})
     });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
