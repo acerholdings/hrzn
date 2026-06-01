@@ -110,6 +110,15 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
 <div class="trial-note">All plans include a 14-day free trial · No credit card required to start</div>
 
 <script>
+// Check if logged in
+const token = localStorage.getItem('hrzn_token');
+if (!token) {
+  // Save intended plan and redirect to login
+  const params = new URLSearchParams(window.location.search);
+  const plan = params.get('plan');
+  if (plan) localStorage.setItem('hrzn_pending_plan', plan);
+}
+
 // Show cancelled banner if redirected back
 if (window.location.search.includes('cancelled=true')) {
   document.getElementById('cancelled-banner').style.display = 'block';
@@ -118,6 +127,14 @@ if (window.location.search.includes('cancelled=true')) {
 async function checkout(plan) {
   const token = localStorage.getItem('hrzn_token');
   const btn = event.target;
+
+  // If not logged in, go to login first
+  if (!token) {
+    localStorage.setItem('hrzn_pending_plan', plan);
+    window.location.href = 'login.html?next=pricing';
+    return;
+  }
+
   btn.textContent = 'Redirecting...';
   btn.disabled = true;
 
