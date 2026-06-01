@@ -318,6 +318,62 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
 
+
+  // Fix data source dropdown - hide Demo Data for logged-in users
+  try {
+    if (hrznIsLoggedIn() && !hrznIsDemo()) {
+      const dropdown = document.getElementById('data-source-select');
+      if (dropdown) {
+        // Remove demo data options
+        Array.from(dropdown.options).forEach(opt => {
+          if (opt.value === 'demo' || opt.text.toLowerCase().includes('demo')) {
+            opt.remove();
+          }
+        });
+        // If no CSV uploaded, show placeholder
+        if (!hrznHasData()) {
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'No data — Upload CSV';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          dropdown.insertBefore(placeholder, dropdown.firstChild);
+        }
+      }
+
+      // Also fix the topbar source badge text
+      const badge = document.getElementById('hrzn-source-badge');
+      if (badge && !hrznHasData()) {
+        badge.innerHTML = '<span style="font-size:10px;color:var(--text-dim);padding:3px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px;">No data</span>';
+      }
+    }
+  } catch(e) {}
+
+
+  // Empty state for new users
+  if (hrznIsNewUser()) {
+    const contentArea = document.querySelector('.content');
+    if (contentArea) {
+      // Dim existing content
+      Array.from(contentArea.children).forEach(child => {
+        child.style.opacity = '0.08';
+        child.style.pointerEvents = 'none';
+      });
+      // Show empty state overlay
+      contentArea.style.position = 'relative';
+      contentArea.style.minHeight = '400px';
+      const emptyState = document.createElement('div');
+      emptyState.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10;pointer-events:auto;padding:40px;';
+      emptyState.innerHTML = `
+        <div style="font-size:40px;margin-bottom:16px;">👥</div>
+        <div style="font-size:18px;font-weight:300;color:var(--text);margin-bottom:10px;">No labor data yet</div>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:24px;max-width:360px;line-height:1.7;">Upload your Employee Sales CSV to see labor costs, staff performance, and scheduling insights.</div>
+        <a href="data.html" style="background:var(--gold);color:#000;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">Upload Employee CSV →</a>
+      `;
+      contentArea.appendChild(emptyState);
+    }
+  }
+
   // Show demo banner if in demo mode
   if (hrznIsDemo()) {
     const banner = document.getElementById('demo-banner');

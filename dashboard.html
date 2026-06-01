@@ -389,6 +389,77 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
 
+
+  // Show onboarding banner for new users
+  if (hrznIsNewUser()) {
+    const banner = document.getElementById('onboarding-banner');
+    if (banner) banner.style.display = 'block';
+
+    // Replace KPI values with empty state messages
+    const emptyKPIs = [
+      'kpi-revenue', 'kpi-labor', 'kpi-items', 'kpi-check',
+      'kpi-doordash', 'kpi-tips', 'kpi-gross', 'kpi-collected'
+    ];
+    emptyKPIs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+
+    // Hide chart sections and show upload prompt
+    const charts = document.querySelectorAll('.chart-wrap, .chart-container, canvas');
+    charts.forEach(c => {
+      c.style.opacity = '0.15';
+      c.style.pointerEvents = 'none';
+    });
+
+    // Show upload prompt in main content area
+    const uploadPrompt = document.createElement('div');
+    uploadPrompt.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10;pointer-events:auto;';
+    uploadPrompt.innerHTML = `
+      <div style="font-size:32px;margin-bottom:12px;">📈</div>
+      <div style="font-size:16px;font-weight:300;color:var(--text);margin-bottom:8px;">No data yet</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:20px;max-width:300px;">Upload your first CSV to see your business insights here.</div>
+      <a href="data.html" style="background:var(--gold);color:#000;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">Upload CSV →</a>
+    `;
+    const contentArea = document.querySelector('.content');
+    if (contentArea) {
+      contentArea.style.position = 'relative';
+      contentArea.appendChild(uploadPrompt);
+    }
+  }
+
+
+
+  // Fix data source dropdown - hide Demo Data for logged-in users
+  try {
+    if (hrznIsLoggedIn() && !hrznIsDemo()) {
+      const dropdown = document.getElementById('data-source-select');
+      if (dropdown) {
+        // Remove demo data options
+        Array.from(dropdown.options).forEach(opt => {
+          if (opt.value === 'demo' || opt.text.toLowerCase().includes('demo')) {
+            opt.remove();
+          }
+        });
+        // If no CSV uploaded, show placeholder
+        if (!hrznHasData()) {
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'No data — Upload CSV';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          dropdown.insertBefore(placeholder, dropdown.firstChild);
+        }
+      }
+
+      // Also fix the topbar source badge text
+      const badge = document.getElementById('hrzn-source-badge');
+      if (badge && !hrznHasData()) {
+        badge.innerHTML = '<span style="font-size:10px;color:var(--text-dim);padding:3px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px;">No data</span>';
+      }
+    }
+  } catch(e) {}
+
   // Show demo banner if in demo mode
   if (hrznIsDemo()) {
     const banner = document.getElementById('demo-banner');
@@ -521,6 +592,38 @@ document.addEventListener('DOMContentLoaded', () => {
   if(navBadge) navBadge.textContent = alerts.filter(a=>a.color!=='var(--green)').length;
 });
 </script>
+
+
+<!-- ONBOARDING BANNER -->
+<div id="onboarding-banner" style="display:none;background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border-bottom:1px solid rgba(201,168,76,0.15);padding:20px 28px;">
+  <div style="max-width:800px;">
+    <div style="font-size:13px;font-weight:500;color:var(--gold);margin-bottom:4px;">👋 Welcome to HRZN — let's set up your dashboard</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Follow these steps to start seeing real insights for your business.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <a href="data.html" style="display:flex;align-items:center;gap:8px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:10px 16px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(201,168,76,0.18)'" onmouseout="this.style.background='rgba(201,168,76,0.1)'">
+        <span style="font-size:16px;">📁</span>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--gold);">Step 1 — Upload CSV</div>
+          <div style="font-size:11px;color:var(--text-dim);">Export from Clover, Square, or Toast</div>
+        </div>
+      </a>
+      <a href="settings.html" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 16px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+        <span style="font-size:16px;">🎯</span>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);">Step 2 — Set Targets</div>
+          <div style="font-size:11px;color:var(--text-dim);">Labor %, food cost, revenue goals</div>
+        </div>
+      </a>
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:10px 16px;opacity:0.5;">
+        <span style="font-size:16px;">📊</span>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--text);">Step 3 — View Insights</div>
+          <div style="font-size:11px;color:var(--text-dim);">Unlocks after data upload</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- PAYWALL MODAL -->
 <div id="paywall-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">

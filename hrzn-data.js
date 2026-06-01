@@ -55,6 +55,27 @@ function hrznGetUser() {
   catch(e) { return {}; }
 }
 
+// ── DATA STATE HELPERS ───────────────────────────────────────
+function hrznHasData() {
+  return !!(
+    localStorage.getItem('hrzn-data-csv') ||
+    localStorage.getItem('hrzn-sales-data')
+  );
+}
+
+function hrznHasItems() {
+  return !!localStorage.getItem('hrzn-data-items');
+}
+
+function hrznHasEmployees() {
+  return !!localStorage.getItem('hrzn-data-employees');
+}
+
+function hrznIsNewUser() {
+  // New user = logged in but no data uploaded
+  return hrznIsLoggedIn() && !hrznIsDemo() && !hrznHasData();
+}
+
 // ── CLOUD SYNC ───────────────────────────────────────────────
 async function hrznSyncToCloud(type, data) {
   const token = hrznGetToken();

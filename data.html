@@ -491,6 +491,59 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   } catch(e) {}
 
+
+  // Fix data source dropdown - hide Demo Data for logged-in users
+  try {
+    if (hrznIsLoggedIn() && !hrznIsDemo()) {
+      const dropdown = document.getElementById('data-source-select');
+      if (dropdown) {
+        // Remove demo data options
+        Array.from(dropdown.options).forEach(opt => {
+          if (opt.value === 'demo' || opt.text.toLowerCase().includes('demo')) {
+            opt.remove();
+          }
+        });
+        // If no CSV uploaded, show placeholder
+        if (!hrznHasData()) {
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'No data — Upload CSV';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          dropdown.insertBefore(placeholder, dropdown.firstChild);
+        }
+      }
+
+      // Also fix the topbar source badge text
+      const badge = document.getElementById('hrzn-source-badge');
+      if (badge && !hrznHasData()) {
+        badge.innerHTML = '<span style="font-size:10px;color:var(--text-dim);padding:3px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px;">No data</span>';
+      }
+    }
+  } catch(e) {}
+
+
+  // Show onboarding welcome for new users
+  if (hrznIsNewUser()) {
+    const welcome = document.createElement('div');
+    welcome.style.cssText = 'background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:24px 28px;margin-bottom:24px;';
+    welcome.innerHTML = `
+      <div style="font-size:14px;font-weight:500;color:var(--gold);margin-bottom:6px;">👋 Welcome! Let's connect your data.</div>
+      <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:16px;">
+        Upload your CSV exports from Clover, Square, Toast, or any POS system.<br>
+        Start with <strong style="color:var(--text);">Sales Overview</strong> — it powers most of your dashboard.
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:8px 14px;font-size:11px;color:var(--gold);">📥 How to export from Clover: Reports → Sales Summary → Export CSV</div>
+        <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:8px 14px;font-size:11px;color:var(--gold);">📥 How to export from Square: Reports → Sales → Download</div>
+      </div>
+    `;
+    const content = document.querySelector('.content');
+    if (content && content.firstChild) {
+      content.insertBefore(welcome, content.firstChild);
+    }
+  }
+
   // Show demo banner if in demo mode
   if (hrznIsDemo()) {
     const banner = document.getElementById('demo-banner');
