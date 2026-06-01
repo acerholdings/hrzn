@@ -125,7 +125,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item active"><span class="nav-icon">⚙</span> Settings</div>
   </nav>
   <div class="sidebar-bottom">
-    <div class="user-row"><div class="user-avatar" id="s-avatar">SH</div><div><div class="user-name" id="s-user-name"><span id="account-name">—</span></div><div class="user-role" id="s-user-role">Owner</div></div></div>
+    <div class="user-row"><div class="user-avatar" id="s-avatar">?</div><div><div class="user-name" id="s-user-name"><span id="account-name">—</span></div><div class="user-role" id="s-user-role">Owner</div></div></div>
     <div onclick="hrznLogout()" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;color:var(--text-dim);font-size:11px;margin-top:8px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">
       <span style="font-size:13px;">⎋</span> Sign Out
     </div>
@@ -490,6 +490,18 @@ function loadSettings(){
     const accountName = document.getElementById('account-name');
     const accountEmail = document.getElementById('account-email');
     if (accountName) accountName.textContent = s.businessName || user.user_metadata?.full_name || '—';
+
+    // Update avatar initials
+    const avatar = document.getElementById('s-avatar');
+    if (avatar) {
+      const name = s.businessName || user.user_metadata?.full_name || '';
+      const words = name.trim().split(' ');
+      if (words.length >= 2) {
+        avatar.textContent = (words[0][0] + words[1][0]).toUpperCase();
+      } else if (words[0]) {
+        avatar.textContent = words[0].substring(0, 2).toUpperCase();
+      }
+    }
     if (accountEmail) accountEmail.textContent = user.email || '—';
 
     // Upgrade button
