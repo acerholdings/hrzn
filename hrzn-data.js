@@ -49,6 +49,90 @@ function hrznGetUser() {
   catch(e) { return {}; }
 }
 
+// ── CLOUD SYNC ───────────────────────────────────────────────
+async function hrznSyncToCloud(type, data) {
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) return;
+  try {
+    await fetch('/api/sync-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ type, data })
+    });
+  } catch(e) { console.warn('Cloud sync failed:', e); }
+}
+
+async function hrznLoadFromCloud() {
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) return false;
+  try {
+    const r = await fetch('/api/sync-data', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const { data } = await r.json();
+    if (!data) return false;
+
+    // Load sales data into localStorage
+    if (data.salesData) {
+      localStorage.setItem('hrzn-data-csv', JSON.stringify(data.salesData));
+      localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
+    }
+
+    // Load menu data
+    if (data.menuData) {
+      localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
+    }
+
+    // Load labor data
+    if (data.laborData) {
+      localStorage.setItem('hrzn-data-employees', JSON.stringify(data.laborData));
+    }
+
+    // Load P&L data
+    if (data.plData) {
+      const plFormatted = {
+        cogs: data.plData.food_cost,
+        labor: data.plData.labor,
+        rent: data.plData.rent,
+        utilities: data.plData.utilities,
+        insurance: data.plData.insurance,
+        supplies: data.plData.supplies,
+        marketing: data.plData.marketing,
+        other: data.plData.other,
+        debt: data.plData.debt
+      };
+      localStorage.setItem('hrzn-pl-data', JSON.stringify(plFormatted));
+    }
+
+    // Load settings
+    if (data.settings && data.business) {
+      const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      localStorage.setItem('hrzn-settings', JSON.stringify({
+        ...existing,
+        businessName: data.business.name,
+        location: data.business.location,
+        pos: data.business.pos_system,
+        targets: {
+          labor: data.settings.target_labor_pct,
+          food: data.settings.target_food_cost_pct,
+          revenue: data.settings.target_weekly_revenue,
+          check: data.settings.target_avg_check,
+          doordash: data.settings.target_doordash_pct,
+          discount: data.settings.target_discount_pct || 5
+        }
+      }));
+    }
+
+    return true;
+  } catch(e) {
+    console.warn('Cloud load failed:', e);
+    return false;
+  }
+}
+
 const HRZN = {
 
   // Keys

@@ -337,6 +337,13 @@ async function handleFileSelect(event){
       HRZN.saveCSV(data);
     }
 
+    // Sync to cloud based on data type
+    try {
+      if (key === 'hrzn-data-csv') hrznSyncToCloud('sales', data);
+      else if (key === 'hrzn-data-items') hrznSyncToCloud('menu', data);
+      else if (key === 'hrzn-data-employees') hrznSyncToCloud('labor', data);
+    } catch(e) {}
+
     // Show success
     showToast(`✓ ${file.name} uploaded successfully`);
     renderCSVGrid();

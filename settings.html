@@ -433,6 +433,8 @@ function saveAll(){
     }
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  // Sync targets to cloud
+  hrznSyncToCloud('settings', settings.targets || {}).catch(()=>{});
 
   // Update sidebar with new business name
   if(settings.bizName){

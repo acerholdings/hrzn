@@ -95,6 +95,36 @@ async function signIn() {
       localStorage.setItem('hrzn_token', data.access_token);
       localStorage.setItem('hrzn_refresh', data.refresh_token);
       localStorage.setItem('hrzn_user', JSON.stringify(data.user));
+      // Load user's cloud data before going to dashboard
+      btn.textContent = 'Loading your data...';
+      try {
+        const syncR = await fetch('/api/sync-data', {
+          headers: { 'Authorization': 'Bearer ' + data.access_token }
+        });
+        const syncData = await syncR.json();
+        if (syncData.data) {
+          if (syncData.data.salesData) {
+            localStorage.setItem('hrzn-data-csv', JSON.stringify(syncData.data.salesData));
+            localStorage.setItem('hrzn-sales-data', JSON.stringify(syncData.data.salesData));
+          }
+          if (syncData.data.menuData) localStorage.setItem('hrzn-data-items', JSON.stringify(syncData.data.menuData));
+          if (syncData.data.laborData) localStorage.setItem('hrzn-data-employees', JSON.stringify(syncData.data.laborData));
+          if (syncData.data.business && syncData.data.settings) {
+            const s = syncData.data.settings;
+            const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+            localStorage.setItem('hrzn-settings', JSON.stringify({
+              ...existing,
+              businessName: syncData.data.business.name,
+              location: syncData.data.business.location,
+              targets: {
+                labor: s.target_labor_pct, food: s.target_food_cost_pct,
+                revenue: s.target_weekly_revenue, check: s.target_avg_check,
+                doordash: s.target_doordash_pct, discount: s.target_discount_pct || 5
+              }
+            }));
+          }
+        }
+      } catch(e) { console.warn('Sync failed, using local data'); }
       window.location.href = 'dashboard.html';
     } else {
       err.textContent = data.error_description || data.msg || 'Invalid email or password.';

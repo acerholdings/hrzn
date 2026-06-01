@@ -459,6 +459,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       // Save through HRZN data layer
       data._filename = file.name;
       HRZN.saveCSV(data);
+      hrznSyncToCloud('sales', data).catch(()=>{});
       HRZN.injectBadge('hrzn-source-badge');
       updateDashboard(data);
       status.textContent='✓ Data updated from '+file.name;
