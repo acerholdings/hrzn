@@ -383,13 +383,63 @@ document.addEventListener('DOMContentLoaded', () => {
           trialBanner.style.cssText = 'background:rgba(201,168,76,0.08);border-bottom:1px solid rgba(201,168,76,0.15);padding:7px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;';
           const urgency = daysLeft <= 3 ? 'color:var(--orange)' : 'color:var(--gold)';
           trialBanner.innerHTML = '<span style="' + urgency + ';">⏱ ' + daysLeft + ' day' + (daysLeft===1?'':'s') + ' left in your free trial</span>' +
-            '<a href="signup.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
+            '<a href="pricing.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
           // Insert after topbar
           const topbar = document.querySelector('.topbar');
           if (topbar && topbar.nextSibling) {
             topbar.parentNode.insertBefore(trialBanner, topbar.nextSibling);
           }
         }
+      }
+    }
+  } catch(e) {}
+
+  
+  // Check trial status and show paywall if expired
+  try {
+    if (!hrznIsDemo() && hrznIsLoggedIn()) {
+      const user = hrznGetUser();
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+
+      // If already on a paid plan, show manage subscription option
+      if (plan === 'starter' || plan === 'pro') {
+        const upgradeBtn = document.querySelector('.upgrade-btn');
+        if (upgradeBtn) {
+          upgradeBtn.textContent = 'Manage Plan';
+          upgradeBtn.onclick = async () => {
+            const token = localStorage.getItem('hrzn_token');
+            const r = await fetch('/api/stripe-portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const data = await r.json();
+            if (data.url) window.location.href = data.url;
+          };
+        }
+      }
+
+      // Check if trial expired
+      const createdAt = user.created_at ? new Date(user.created_at) : null;
+      if (createdAt) {
+        const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        if (now > trialEnd && plan === 'trial') {
+          const modal = document.getElementById('paywall-modal');
+          if (modal) modal.style.display = 'flex';
+        }
+      }
+
+      // Show upgrade success banner if redirected from Stripe
+      if (window.location.search.includes('upgraded=true')) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:rgba(76,175,125,0.1);border-bottom:1px solid rgba(76,175,125,0.2);padding:8px 28px;font-size:12px;color:#4caf7d;text-align:center;';
+        banner.textContent = '🎉 Welcome to HRZN! Your subscription is now active.';
+        const topbar = document.querySelector('.topbar');
+        if (topbar && topbar.nextSibling) topbar.parentNode.insertBefore(banner, topbar.nextSibling);
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
       }
     }
   } catch(e) {}
@@ -406,5 +456,20 @@ document.addEventListener('DOMContentLoaded', () => {
   loadData();
 });
 </script>
+
+<!-- PAYWALL MODAL -->
+<div id="paywall-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#0f0f0f;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:48px;max-width:480px;width:90%;text-align:center;">
+    <div style="font-size:32px;margin-bottom:16px;">⏱</div>
+    <div style="font-size:22px;font-weight:300;letter-spacing:-0.02em;margin-bottom:10px;">Your free trial has ended</div>
+    <div style="font-size:13px;color:#666;margin-bottom:32px;line-height:1.7;">Upgrade to keep access to your dashboard, analytics, AI operator, and all your data.</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="window.location.href='pricing.html'" style="background:#C9A84C;color:#000;border:none;padding:13px 28px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View Plans →</button>
+      <button onclick="window.location.href='pricing.html?plan=starter'" style="background:transparent;color:#999;border:1px solid rgba(255,255,255,0.1);padding:13px 28px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Start at $99/mo</button>
+    </div>
+    <div style="margin-top:20px;font-size:11px;color:#444;">Questions? <a href="mailto:hello@usehrzn.ai" style="color:#C9A84C;text-decoration:none;">hello@usehrzn.ai</a></div>
+  </div>
+</div>
+
 </body>
 </html>
