@@ -38,9 +38,15 @@ function hrznNavigate(p) {
 }
 
 function hrznLogout() {
+  // Clear auth
   localStorage.removeItem('hrzn_token');
   localStorage.removeItem('hrzn_refresh');
   localStorage.removeItem('hrzn_user');
+  // Clear all user data so next user starts fresh
+  const keysToKeep = ['hrzn-theme']; // only keep theme preference
+  Object.keys(localStorage).forEach(key => {
+    if (!keysToKeep.includes(key)) localStorage.removeItem(key);
+  });
   window.location.href = 'login.html';
 }
 

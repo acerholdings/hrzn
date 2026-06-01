@@ -196,6 +196,12 @@ async function goStep2() {
   if (!name || !email || !password) { err.textContent = 'Please fill in all fields.'; return; }
   if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
 
+  // Clear any existing user data before creating new account
+  const keysToKeep = ['hrzn-theme'];
+  Object.keys(localStorage).forEach(key => {
+    if (!keysToKeep.includes(key)) localStorage.removeItem(key);
+  });
+
   btn.textContent = 'Creating account...';
   btn.disabled = true;
   err.textContent = '';
