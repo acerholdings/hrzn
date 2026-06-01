@@ -514,8 +514,12 @@ document.addEventListener('DOMContentLoaded', () => {
   try { const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}'); if(s.targets) tgt={labor:+s.targets.labor||28,doordash:+s.targets.doordash||10,discount:+s.targets.discount||5,check:+s.targets.check||15,revenue:+s.targets.revenue||12000}; } catch(e){}
 
   const laborPct = 32;
-  const doorDashPct = parseFloat(t.doorDashPct||0);
-  const discountPct = parseFloat(d.discountPct||0);
+  const doorDashPct = d.amountCollected > 0 
+    ? parseFloat(((t.doorDash||0) / d.amountCollected * 100).toFixed(1))
+    : parseFloat(t.doorDashPct||0);
+  const discountPct = d.grossSales > 0
+    ? parseFloat(((d.discounts||0) / d.grossSales * 100).toFixed(1))
+    : parseFloat(d.discountPct||0);
   const avgCheck = parseFloat(d.avgCheck||0);
 
   // Critical Alerts

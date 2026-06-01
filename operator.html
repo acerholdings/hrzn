@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (csvData && !hrznIsDemo()) {
       try {
         const data = JSON.parse(csvData);
-        const weeklyAvg = data.netSales ? (data.netSales / (data.rowCount || 20) * 7).toFixed(0) : null;
+        const weeklyAvg = data.netSales ? Math.round(data.netSales / (data.periodDays ? data.periodDays/7 : 21)).toLocaleString() : null;
         const initialMsg = document.getElementById('ai-initial-msg');
         if (initialMsg && weeklyAvg) {
           initialMsg.textContent = `I've analyzed your business data. Revenue is averaging $${parseInt(weeklyAvg).toLocaleString()}/week. What would you like to focus on?`;
@@ -481,9 +481,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Load real stats into right panel
   try {
     const d = HRZN.getData();
-    const months = HRZN.getMonths(d);
+    const periodDays = d.periodDays || 148;
+    const months = periodDays / 30.44;
     const monthly = Math.round((d.netSales||0)/months);
-    const weekly = Math.round(monthly/4.33);
+    const weekly = Math.round((d.netSales||0) / (months * 4.33));
     const fmt = n => '$'+Math.round(n).toLocaleString();
     const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
     const tipsPct = d.netSales>0 ? ((d.tips||0)/d.netSales*100).toFixed(1) : '—';
@@ -500,8 +501,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('op-net-sales', fmt(d.netSales||0));
     const welcomeRev = document.getElementById('op-welcome-rev');
     const welcomeRev2 = document.getElementById('op-welcome-rev2');
-    if(welcomeRev2) welcomeRev2.textContent = fmt(Math.round((d.netSales||0)/months/4.33));
-    if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/months/4.33));
+    if(welcomeRev2) welcomeRev2.textContent = fmt(Math.round((d.netSales||0)/(months*4.33)));
+    if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/(months*4.33)));
     set('op-weekly', fmt(weekly));
     set('op-avg-check', '$'+(d.avgCheck||0));
     set('op-items', (d.itemsSold||0).toLocaleString());
@@ -517,9 +518,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     const d = HRZN.getData();
     const t = getTargets();
     const months = HRZN.getMonths(d);
-    const weekly = Math.round((d.netSales||0)/months/4.33);
+    const weekly = Math.round((d.netSales||0) / (months * 4.33));
     const tenders = d.tenders||{};
-    const doorDashPct = parseFloat(tenders.doorDashPct||0);
+    const doorDashPct = d.amountCollected > 0 
+      ? parseFloat(((tenders.doorDash||0) / d.amountCollected * 100).toFixed(1))
+      : parseFloat(tenders.doorDashPct||0);
     const discountPct = parseFloat(d.discountPct||0);
     const avgCheck = parseFloat(d.avgCheck||0);
     const laborPct = 32;

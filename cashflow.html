@@ -130,7 +130,7 @@ tr:hover td{background:rgba(128,128,128,0.03);}
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Monthly Outflow</div>
-        <div class="kpi-value" id="cf-outflow" style="color:var(--red);">$55,432</div>
+        <div class="kpi-value" id="cf-outflow" style="color:var(--red);">—</div>
         <div class="kpi-sub">Average expenses per month</div>
       </div>
       <div class="kpi-card">
@@ -168,13 +168,13 @@ tr:hover td{background:rgba(128,128,128,0.03);}
         <div class="card-header"><div class="card-title">Inflow Breakdown</div><div style="font-size:10px;color:var(--green);">Monthly avg</div></div>
         <div class="flow-row" style="background:var(--surface2);">
           <div class="flow-label" style="font-weight:500;">Total Inflow</div>
-          <div class="flow-val" id="cf-revenue" style="color:var(--green);">$44,134</div>
+          <div class="flow-val" id="cf-revenue" style="color:var(--green);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Net Sales Revenue</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" style="width:100%;background:var(--green);"></div></div>
           <div class="flow-pct" id="cf-revenue-pct">100%</div>
-          <div class="flow-val" id="cf-revenue2" style="color:var(--green);">$44,134</div>
+          <div class="flow-val" id="cf-revenue2" style="color:var(--green);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Tips Collected</div>
@@ -198,7 +198,7 @@ tr:hover td{background:rgba(128,128,128,0.03);}
         <div class="card-header"><div class="card-title">Outflow Breakdown</div><div style="font-size:10px;color:var(--red);">Monthly avg · from P&L</div></div>
         <div class="flow-row" style="background:var(--surface2);">
           <div class="flow-label" style="font-weight:500;">Total Outflow</div>
-          <div class="flow-val" id="cf-outflow2" style="color:var(--red);">$55,432</div>
+          <div class="flow-val" id="cf-outflow2" style="color:var(--red);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Food Cost (COGS)</div>
@@ -512,6 +512,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // KPIs
   set('cf-inflow', fmt(monthly));
   set('cf-outflow', fmt(totalMonthlyExp));
+  set('cf-outflow2', fmt(totalMonthlyExp));
   set('cf-net', (isPositive?'+':'-')+fmt(netCashFlow));
   set('cf-runway', isPositive ? '∞' : Math.round((monthly*2)/Math.abs(netCashFlow))+'mo');
 

@@ -191,7 +191,8 @@ const HRZN = {
       debitCard:  110000,
       doorDash:   28000,
       cash:       24895,
-      doorDashPct: 4.7
+      doorDashPct: 4.7,
+      giftCard: 0
     }
   },
 
@@ -237,14 +238,18 @@ const HRZN = {
 
   // ── GET MONTHS FROM PERIOD ───────────────────
   getMonths(data) {
-    const period = (data || this.getData()).period || '';
+    const d = data || this.getData();
+    // Use periodDays if available (most accurate)
+    if (d.periodDays) return d.periodDays / 30.44;
+    // Try period string
+    const period = d.period || (d.periodStart ? d.periodStart + ' - ' + (d.periodEnd||'') : '');
     try {
       const parts = period.split(' - ');
       if (parts.length < 2) return 1;
       const s = new Date(parts[0].replace(/12:00 AM|11:59 PM/g,'').trim());
       const e = new Date(parts[1].replace(/12:00 AM|11:59 PM/g,'').trim());
-      const m = (e - s) / (1000 * 60 * 60 * 24 * 30.44);
-      return Math.max(1, Math.round(m * 10) / 10);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) return 1;
+      return Math.max(1, (e - s) / (1000 * 60 * 60 * 24 * 30.44));
     } catch(e) { return 1; }
   },
 
@@ -253,14 +258,24 @@ const HRZN = {
     const d = this.getData();
     const months = this.getMonths(d);
     const monthly = Math.round((d.netSales || 0) / months);
-    const weekly  = Math.round(monthly / 4.33);
+    const weekly  = Math.round((d.netSales || 0) / (months * 4.33));
     const t = d.tenders || {};
+    // Calculate doordash pct if not stored
+    const ddPct = d.amountCollected > 0 
+      ? ((t.doorDash||0) / d.amountCollected * 100).toFixed(1)
+      : (t.doorDashPct || 0);
+    const discPct = d.grossSales > 0 
+      ? ((d.discounts||0) / d.grossSales * 100).toFixed(1)
+      : 0;
 
-    return `You are HRZN, an elite AI business operator for Sama Handroll LA, a high-end Japanese handroll restaurant in Los Angeles.
+    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const bizName = hrznIsDemo() ? 'Sama Handroll LA' : (settings.businessName || 'this restaurant');
+    const periodLabel = d.periodStart || d.period || 'Jan–May 2026';
+    return `You are HRZN, an elite AI business operator for ${bizName}.
 
-REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'Clover POS'}, ${d.period || 'Jan–May 2026'}):
+REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, ${periodLabel}):
 - Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
-- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${d.discountPct||0}% of gross)
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% of gross)
 - Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
 - Tips: $${Math.round(d.tips||0).toLocaleString()} (${d.netSales > 0 ? (d.tips/d.netSales*100).toFixed(1) : 0}% of net)
 - Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
