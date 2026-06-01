@@ -368,25 +368,28 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   } catch(e) {}
 
-  // Trial countdown banner
+  // Trial countdown banner - only show if on trial plan
   try {
     if (!hrznIsDemo() && hrznIsLoggedIn()) {
-      const user = hrznGetUser();
-      const createdAt = user.created_at ? new Date(user.created_at) : null;
-      if (createdAt) {
-        const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-        const now = new Date();
-        const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
-        if (daysLeft <= 14 && daysLeft > 0) {
-          const trialBanner = document.createElement('div');
-          trialBanner.style.cssText = 'background:rgba(201,168,76,0.08);border-bottom:1px solid rgba(201,168,76,0.15);padding:7px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;';
-          const urgency = daysLeft <= 3 ? 'color:var(--orange)' : 'color:var(--gold)';
-          trialBanner.innerHTML = '<span style="' + urgency + ';">⏱ ' + daysLeft + ' day' + (daysLeft===1?'':'s') + ' left in your free trial</span>' +
-            '<a href="pricing.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
-          // Insert after topbar
-          const topbar = document.querySelector('.topbar');
-          if (topbar && topbar.nextSibling) {
-            topbar.parentNode.insertBefore(trialBanner, topbar.nextSibling);
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+      if (plan === 'trial') {
+        const user = hrznGetUser();
+        const createdAt = user.created_at ? new Date(user.created_at) : null;
+        if (createdAt) {
+          const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+          const now = new Date();
+          const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 14 && daysLeft > 0) {
+            const trialBanner = document.createElement('div');
+            trialBanner.style.cssText = 'background:rgba(201,168,76,0.08);border-bottom:1px solid rgba(201,168,76,0.15);padding:7px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;';
+            const urgency = daysLeft <= 3 ? 'color:var(--orange)' : 'color:var(--gold)';
+            trialBanner.innerHTML = '<span style="' + urgency + ';">⏱ ' + daysLeft + ' day' + (daysLeft===1?'':'s') + ' left in your free trial</span>' +
+              '<a href="pricing.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
+            const topbar = document.querySelector('.topbar');
+            if (topbar && topbar.nextSibling) {
+              topbar.parentNode.insertBefore(trialBanner, topbar.nextSibling);
+            }
           }
         }
       }
