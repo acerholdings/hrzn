@@ -387,10 +387,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDataBadges([{label:'Sales Overview',key:'hrzn-data-csv',oldKey:'hrzn-sales-data'}]);
 
   const d = HRZN.getData();
-  const months = HRZN.getMonths(d);
-  const weekly = Math.round((d.netSales||0) / months / 4.33);
+    const periodDays = d.periodDays || 148;
+  const weeks = periodDays / 7;
+const months = HRZN.getMonths(d);
+  const weekly = Math.round((d.netSales||0) / weeks);
   const daily = Math.round(weekly / 7);
-  const weeklyItems = Math.round((d.itemsSold||0) / months / 4.33);
+  const weeklyItems = Math.round((d.itemsSold||0) / weeks);
   const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
 
   set('page-date-label', period || 'Upload Sales Overview CSV');

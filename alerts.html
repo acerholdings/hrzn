@@ -228,12 +228,14 @@ function makeAlertCard(alert){
 function generateAlerts(){
   const d = HRZN.getData();
   const t = getTargets();
-  const months = HRZN.getMonths(d);
-  const weekly = Math.round((d.netSales||0)/months/4.33);
+    const periodDays = d.periodDays || 148;
+  const weeks = periodDays / 7;
+const months = HRZN.getMonths(d);
+  const weekly = Math.round((d.netSales||0)/weeks);
   const monthly = Math.round((d.netSales||0)/months);
   const tenders = d.tenders||{};
-  const discountPct = parseFloat(d.discountPct||0);
-  const doorDashPct = parseFloat(tenders.doorDashPct||0);
+  const discountPct = d.grossSales > 0 ? parseFloat(((d.discounts||0) / d.grossSales * 100).toFixed(1)) : 0;
+  const doorDashPct = d.amountCollected > 0 ? parseFloat(((tenders.doorDash||0) / d.amountCollected * 100).toFixed(1)) : 0;
   const tipsPct = d.netSales>0 ? (d.tips||0)/d.netSales*100 : 0;
   const avgCheck = parseFloat(d.avgCheck||0);
   const source = d._source||'demo';

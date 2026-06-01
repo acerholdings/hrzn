@@ -252,6 +252,9 @@ function fmt(n){return '$'+Math.round(Math.abs(n)).toLocaleString();}
 function pct(n,total){return total>0?(n/total*100).toFixed(1)+'%':'0%';}
 
 function getMonths(period){
+  // Try to use periodDays from parsed data first
+  const d = HRZN.getData();
+  if (d.periodDays) return d.periodDays / 30.44;
   if(!period)return 1;
   try{
     const parts=period.split(' - ');
@@ -290,7 +293,9 @@ function set(id,val){const el=document.getElementById(id);if(el)el.textContent=v
 function calcAndRender(){
   saveInputs();
   const {revenue,period,filename}=getRevenue();
-  const months=getMonths(period);
+    const periodDays = d.periodDays || 148;
+  const weeks = periodDays / 7;
+const months=getMonths(period);
 
   const cogs=getInputVal('input-cogs')*months;
   const labor=getInputVal('input-labor')*months;
