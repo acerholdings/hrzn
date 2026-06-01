@@ -268,7 +268,8 @@ function getMonths(period){
 
 function getRevenue(){
   const d = HRZN.getData();
-  return {revenue: d.netSales||112599, period: d.period||'May 2026', filename: d._filename||null};
+  const period = d.periodStart ? d.periodStart + (d.periodEnd ? ' - ' + d.periodEnd : '') : 'Jan 1, 2026 - May 28, 2026';
+  return {revenue: d.netSales||0, period, filename: d._filename||null};
 }
 
 function getInputVal(id){return parseFloat(document.getElementById(id)?.value)||0;}

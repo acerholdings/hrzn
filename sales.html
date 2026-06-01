@@ -273,7 +273,7 @@ SALES DATA:
 - Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
 - Items Sold: ${(d.itemsSold||0).toLocaleString()}
 - Avg Item Price: $${d.avgCheck||0}
-- DoorDash: $${Math.round((d.tenders||{}).doorDash||0).toLocaleString()} (${(d.tenders||{}).doorDashPct||0}% of revenue)
+- DoorDash: $${Math.round((d.tenders||{}).doorDash||0).toLocaleString()} (${d.amountCollected > 0 ? (((d.tenders||{}).doorDash||0)/d.amountCollected*100).toFixed(1) : 0}% of revenue)
 - Cash: $${Math.round((d.tenders||{}).cash||0).toLocaleString()}
 
 Focus on: pricing strategy, revenue growth, customer behavior, seasonality, operational efficiency, competitive positioning.
@@ -610,7 +610,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('val-items', d.itemsSold.toLocaleString());
     set('val-avg-check', '$'+(Math.round(d.avgCheck*100)/100).toFixed(2));
     set('val-doordash', fmt(d.tenders.doorDash));
-    set('val-doordash-pct', d.tenders.doorDashPct+'%');
+    const ddPct = d.amountCollected > 0 ? ((d.tenders.doorDash||0) / d.amountCollected * 100).toFixed(1) : '0.0';
+    set('val-doordash-pct', ddPct+'%');
     set('val-cash', fmt(d.tenders.cash));
     set('val-credit', fmt(d.tenders.creditCard));
     set('val-debit', fmt(d.tenders.debitCard));
@@ -641,7 +642,7 @@ SALES DATA:
 - Avg Item Price: $${d.avgCheck}
 - Credit Card: $${Math.round(d.tenders.creditCard).toLocaleString()}
 - Debit Card: $${Math.round(d.tenders.debitCard).toLocaleString()}
-- DoorDash: $${Math.round(d.tenders.doorDash).toLocaleString()} (${d.tenders.doorDashPct}% of revenue)
+- DoorDash: $${Math.round(d.tenders.doorDash).toLocaleString()} (${d.amountCollected > 0 ? (d.tenders.doorDash/d.amountCollected*100).toFixed(1) : 0}% of revenue)
 - Cash: $${Math.round(d.tenders.cash).toLocaleString()}
 
 Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation, just the JSON array.
