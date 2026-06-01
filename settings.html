@@ -373,10 +373,10 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
             <div class="card-body">
               <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--surface2);border-radius:8px;margin-bottom:20px;">
                 <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#000;">SH</div>
-                <div><div style="font-size:14px;font-weight:500;color:var(--text);">Sama Handroll</div><div style="font-size:12px;color:var(--text-dim);">hello@samahandroll.la</div><div style="font-size:11px;color:var(--gold);margin-top:4px;">Starter Plan · $299/mo</div></div>
+                <div><div style="font-size:14px;font-weight:500;color:var(--text);">Sama Handroll</div><div style="font-size:12px;color:var(--text-dim);">hello@samahandroll.la</div><div style="font-size:11px;color:var(--gold);margin-top:4px;">{{ plan }} Plan</div></div>
               </div>
-              <div class="field-row"><div><div class="field-label">Plan</div><div class="field-desc">Your current subscription</div></div><div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12px;color:var(--text);">Starter — $299/month</span><button style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">Upgrade →</button></div></div>
-              <div class="field-row"><div><div class="field-label">Billing</div><div class="field-desc">Next charge date</div></div><span style="font-size:12px;color:var(--text);">June 1, 2026 · Visa ending 4242</span></div>
+              <div class="field-row"><div><div class="field-label">Plan</div><div class="field-desc">Your current subscription</div></div><div style="flex:1;display:flex;align-items:center;justify-content:space-between;"><span id="plan-display" style="font-size:12px;color:var(--text);">Loading...</span><button style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;">Upgrade →</button></div></div>
+              <div class="field-row"><div><div class="field-label">Billing</div><div class="field-desc">Next charge date</div></div><span id="billing-display" style="font-size:12px;color:var(--text);">—</span></div>
               <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
                 <button style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-right:8px;">Change Password</button>
                 <button style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--red-dim);color:var(--red);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;">Sign Out</button>
@@ -451,7 +451,7 @@ function saveAll(){
 function loadSettings(){
   try{
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
-    if(s.bizName) document.getElementById('biz-name').value = s.bizName;
+    if(s.bizName || s.businessName) document.getElementById('biz-name').value = s.bizName || s.businessName;
     if(s.bizLocation) document.getElementById('biz-location').value = s.bizLocation;
     if(s.ownerName) document.getElementById('owner-name').value = s.ownerName;
     if(s.ownerEmail) document.getElementById('owner-email').value = s.ownerEmail;
@@ -463,6 +463,23 @@ function loadSettings(){
       });
     }
   }catch(e){}
+
+  // Update plan display
+  try {
+    const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const plan = s.plan || 'trial';
+    const planDisplay = document.getElementById('plan-display');
+    if (planDisplay) {
+      if (plan === 'pro') planDisplay.textContent = 'Pro — $299/month';
+      else if (plan === 'starter') planDisplay.textContent = 'Starter — $99/month';
+      else planDisplay.textContent = 'Free Trial';
+    }
+    // Also update upgrade button text
+    const upgradeBtn = document.querySelector('.upgrade-btn');
+    if (upgradeBtn && (plan === 'starter' || plan === 'pro')) {
+      upgradeBtn.textContent = 'Manage Plan';
+    }
+  } catch(e) {}
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
