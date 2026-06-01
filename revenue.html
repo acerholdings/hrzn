@@ -339,28 +339,41 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e) {}
 
 
-  // Empty state for new users
+  // Empty state for new users with no data
   if (hrznIsNewUser()) {
-    const contentArea = document.querySelector('.content');
-    if (contentArea) {
-      // Dim existing content
-      Array.from(contentArea.children).forEach(child => {
-        child.style.opacity = '0.08';
-        child.style.pointerEvents = 'none';
-      });
-      // Show empty state overlay
-      contentArea.style.position = 'relative';
-      contentArea.style.minHeight = '400px';
-      const emptyState = document.createElement('div');
-      emptyState.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:10;pointer-events:auto;padding:40px;';
-      emptyState.innerHTML = `
-        <div style="font-size:40px;margin-bottom:16px;">💰</div>
-        <div style="font-size:18px;font-weight:300;color:var(--text);margin-bottom:10px;">No revenue data yet</div>
-        <div style="font-size:13px;color:var(--text-dim);margin-bottom:24px;max-width:360px;line-height:1.7;">Upload your Sales Overview CSV to see daily revenue breakdown, payment types, and trends.</div>
-        <a href="data.html" style="background:var(--gold);color:#000;padding:11px 24px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">Upload Sales CSV →</a>
-      `;
-      contentArea.appendChild(emptyState);
+    // Slim topbar notice
+    const notice = document.createElement('div');
+    notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
+    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+      '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
+    const topbar = document.querySelector('.topbar');
+    if (topbar && topbar.parentNode) {
+      topbar.parentNode.insertBefore(notice, topbar.nextSibling);
     }
+
+    // Replace each data card with an inline empty card
+    const emptyCard = (icon, label) => `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;border:1px dashed rgba(255,255,255,0.07);border-radius:10px;text-align:center;min-height:140px;">
+        <span style="font-size:24px;margin-bottom:8px;opacity:0.4;">${icon}</span>
+        <span style="font-size:12px;color:var(--text-dim);">${label}</span>
+      </div>`;
+
+    // Replace KPI values with dashes
+    document.querySelectorAll('[id^="kpi-"], [id^="perf-"], [id^="cf-"], [id^="rev-"]').forEach(el => {
+      if (!el.querySelector('canvas') && !el.querySelector('div')) {
+        el.textContent = '—';
+      }
+    });
+
+    // Replace canvases with empty cards
+    document.querySelectorAll('canvas').forEach(canvas => {
+      const wrap = canvas.closest('.chart-wrap, .chart-section, .card') || canvas.parentElement;
+      if (wrap) {
+        const empty = document.createElement('div');
+        empty.innerHTML = emptyCard('📊', 'Upload data to see this chart');
+        canvas.replaceWith(empty.firstElementChild);
+      }
+    });
   }
 
   // Show demo banner if in demo mode
