@@ -482,9 +482,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   HRZN.injectBadge('hrzn-source-badge');
 
   const d = HRZN.getData();
-  const months = HRZN.getMonths(d);
-  const monthly = Math.round((d.netSales||0)/months);
-  const weekly = Math.round(monthly/4.33);
+  const periodDays = d.periodDays || (d.rowCount > 20 ? d.rowCount : 148);
+  const weeks = periodDays / 7;
+  const months = weeks / 4.33;
+  const monthly = Math.round((d.netSales||0) / months);
+  const weekly = Math.round((d.netSales||0) / weeks);
   const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
 
   // Get P&L expenses

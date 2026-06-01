@@ -470,9 +470,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDataBadges([{label:'Sales Overview',key:'hrzn-data-csv',oldKey:'hrzn-sales-data'}]);
 
   const d = HRZN.getData();
-  const months = HRZN.getMonths(d);
-  const monthly = Math.round((d.netSales||0)/months);
-  const weekly = Math.round(monthly/4.33);
+  const periodDays = d.periodDays || (d.rowCount > 20 ? d.rowCount : 148);
+  const weeks = periodDays / 7;
+  const months = weeks / 4.33;
+  const monthly = Math.round((d.netSales||0) / months);
+  const weekly = Math.round((d.netSales||0) / weeks);
   const t = d.tenders || {};
 
   // Period
