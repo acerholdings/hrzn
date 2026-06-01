@@ -361,7 +361,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userNameEl && !hrznIsDemo()) userNameEl.textContent = userName;
 
     const userRoleEl = document.querySelector('.user-role');
-    if (userRoleEl && !hrznIsDemo()) userRoleEl.textContent = 'Owner';
+    if (userRoleEl && !hrznIsDemo()) {
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+      const planLabel = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Trial';
+      const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
+      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
+    }
 
     const avatarEl = document.querySelector('.user-avatar');
     if (avatarEl && !hrznIsDemo()) {
