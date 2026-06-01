@@ -117,19 +117,24 @@ async function signIn() {
           }
           if (syncData.data.menuData) localStorage.setItem('hrzn-data-items', JSON.stringify(syncData.data.menuData));
           if (syncData.data.laborData) localStorage.setItem('hrzn-data-employees', JSON.stringify(syncData.data.laborData));
-          if (syncData.data.business && syncData.data.settings) {
-            const s = syncData.data.settings;
+          if (syncData.data.business) {
             const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-            localStorage.setItem('hrzn-settings', JSON.stringify({
+            const updated = {
               ...existing,
               businessName: syncData.data.business.name,
               location: syncData.data.business.location,
-              targets: {
+              plan: syncData.data.business.plan || 'trial',
+              subscription_status: syncData.data.business.subscription_status || 'trial'
+            };
+            if (syncData.data.settings) {
+              const s = syncData.data.settings;
+              updated.targets = {
                 labor: s.target_labor_pct, food: s.target_food_cost_pct,
                 revenue: s.target_weekly_revenue, check: s.target_avg_check,
                 doordash: s.target_doordash_pct, discount: s.target_discount_pct || 5
-              }
-            }));
+              };
+            }
+            localStorage.setItem('hrzn-settings', JSON.stringify(updated));
           }
         }
       } catch(e) { console.warn('Sync failed, using local data'); }
