@@ -12,8 +12,14 @@ export default async function handler(req, res) {
     sales: `You are a data extraction expert. Extract financial data from this POS sales report CSV.
 The CSV may be from any POS system (Clover, Square, Toast, Lightspeed, etc.) in any format.
 Return ONLY a valid JSON object with this exact structure (use 0 for missing values, no $ signs, no commas in numbers):
-{"grossSales":number,"netSales":number,"discounts":number,"taxes":number,"tips":number,"amountCollected":number,"itemsSold":number,"avgCheck":number,"periodStart":"string","periodEnd":"string","tenders":{"creditCard":number,"debitCard":number,"doorDash":number,"cash":number,"giftCard":number},"dailyData":[]}
-Rules: All money = positive numbers. avgCheck = netSales/itemsSold. DoorDash may appear as DOORDASH/Door Dash/DD. Return ONLY the JSON, no markdown, no explanation.`,
+{"grossSales":number,"netSales":number,"discounts":number,"taxes":number,"tips":number,"amountCollected":number,"itemsSold":number,"avgCheck":number,"periodStart":"string","periodEnd":"string","periodDays":number,"tenders":{"creditCard":number,"debitCard":number,"doorDash":number,"cash":number,"giftCard":number},"dailyData":[]}
+Rules:
+- All money = positive numbers (no $ signs, no commas)
+- avgCheck = netSales/itemsSold (or 0)
+- DoorDash may appear as DOORDASH/Door Dash/DD in tender types
+- periodStart and periodEnd = the date range strings from the report header
+- periodDays = EXACT number of days in the report period (calculate from start/end dates). This is critical - do NOT assume 30 days. Count the actual days between start and end dates.
+- Return ONLY the JSON, no markdown, no explanation.`,
 
     items: `Extract item/menu sales data from this POS CSV. Return ONLY valid JSON:
 {"allItems":[{"name":"string","qty":number,"grossSales":number,"netSales":number,"category":"string"}],"categories":[{"name":"string","sales":number,"items":number}],"grossSales":number,"netSales":number,"totalItemsSold":number,"uniqueItems":number,"grossProfit":number,"grossProfitMargin":number}
