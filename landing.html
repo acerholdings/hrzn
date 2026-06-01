@@ -64,12 +64,12 @@ nav {
   color: var(--text-mid);
 }
 
-.nav-links span { cursor: pointer; transition: color 0.2s; }
+.nav-links span { cursor: default; transition: color 0.2s; }
 .nav-links span:hover { color: var(--text); }
 
 .nav-actions { display: flex; gap: 10px; align-items: center; }
 
-.btn-ghost {
+.btn-ghost { position: relative; z-index: 101;
   font-size: 13px;
   padding: 8px 18px;
   border: 1px solid var(--border-dark);
@@ -83,7 +83,7 @@ nav {
 
 .btn-ghost:hover { background: var(--surface); }
 
-.btn-gold {
+.btn-gold { position: relative; z-index: 101;
   font-size: 13px;
   padding: 8px 18px;
   border: 1px solid var(--gold);
