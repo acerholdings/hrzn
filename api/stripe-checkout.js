@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
       customer_email: userEmail || undefined,
       metadata: { userId: userId || '', plan },
-      success_url: `${BASE_URL}/dashboard.html?upgraded=true`,
+      success_url: `${BASE_URL}/login.html?upgraded=true`,
       cancel_url: `${BASE_URL}/pricing.html?cancelled=true`,
     });
 
