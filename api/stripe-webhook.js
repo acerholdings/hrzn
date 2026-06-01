@@ -29,10 +29,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: `Webhook error: ${err.message}` });
   }
 
-  const updateUserPlan = async (userId, plan, status) => {
-    if (!userId) return;
-    // Update businesses table
-    await fetch(`${SUPABASE_URL}/rest/v1/businesses?owner_id=eq.${userId}`, {
+  // Update plan by user ID
+  const updateByUserId = async (userId, plan, status) => {
+    if (!userId) return false;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?owner_id=eq.${userId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -41,6 +41,20 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({ plan, subscription_status: status })
     });
+    return r.ok;
+  };
+
+  // Update plan by customer email (fallback)
+  const updateByEmail = async (email, plan, status) => {
+    if (!email) return false;
+    // Find user in Supabase auth by email
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`, {
+      headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY }
+    });
+    const data = await r.json();
+    const userId = data.users?.[0]?.id;
+    if (!userId) return false;
+    return updateByUserId(userId, plan, status);
   };
 
   try {
@@ -48,27 +62,31 @@ export default async function handler(req, res) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const userId = session.metadata?.userId;
+        const email = session.customer_email || session.customer_details?.email;
         const plan = session.metadata?.plan || 'starter';
-        await updateUserPlan(userId, plan, 'active');
+        const updated = await updateByUserId(userId, plan, 'active');
+        if (!updated) await updateByEmail(email, plan, 'active');
         break;
       }
       case 'customer.subscription.updated': {
         const sub = event.data.object;
-        const userId = sub.metadata?.userId;
+        const customer = await stripe.customers.retrieve(sub.customer);
+        const email = customer.email;
+        const plan = sub.metadata?.plan || 'starter';
         const status = sub.status === 'active' ? 'active' : sub.status;
-        await updateUserPlan(userId, sub.metadata?.plan || 'starter', status);
+        await updateByEmail(email, plan, status);
         break;
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        const userId = sub.metadata?.userId;
-        await updateUserPlan(userId, 'cancelled', 'cancelled');
+        const customer = await stripe.customers.retrieve(sub.customer);
+        await updateByEmail(customer.email, 'cancelled', 'cancelled');
         break;
       }
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        const userId = invoice.metadata?.userId;
-        await updateUserPlan(userId, 'past_due', 'past_due');
+        const customer = await stripe.customers.retrieve(invoice.customer);
+        await updateByEmail(customer.email, 'past_due', 'past_due');
         break;
       }
     }
