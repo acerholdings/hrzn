@@ -309,7 +309,9 @@ function loadData() {
     document.getElementById('no-data').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
 
-    const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    const period = (d.periodStart 
+    ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
+    : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     set('menu-period', period || 'Item Sales loaded');
     set('kpi-period', period);
     set('kpi-sold', (d.totalItemsSold||0).toLocaleString());

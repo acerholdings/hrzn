@@ -478,8 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const t = d.tenders || {};
 
   // Period
-  const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
-  set('dashboard-period', period || 'No data uploaded');
+  const period = (d.periodStart 
+    ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
+    : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+  set('dashboard-period', period || (hrznHasData() ? '' : 'No data uploaded'));
   const periodBtn = document.getElementById('dashboard-period-btn');
   if(periodBtn) periodBtn.textContent = '📅 ' + (period || 'Upload CSV') + ' ⌄';
 

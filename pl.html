@@ -134,22 +134,22 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="kpi-row fade-1">
       <div class="kpi-card">
         <div class="kpi-label">Net Sales Revenue</div>
-        <div class="kpi-value" id="kpi-revenue">$112,599</div>
+        <div class="kpi-value" id="kpi-revenue">—</div>
         <div class="kpi-sub" id="revenue-source">From Sales Report</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Gross Profit</div>
-        <div class="kpi-value" id="kpi-gross" style="color:var(--green);">$76,567</div>
+        <div class="kpi-value" id="kpi-gross" style="color:var(--green);">—</div>
         <div class="kpi-sub">After food cost &middot; <span id="kpi-gross-pct" style="color:var(--green);">68%</span> margin</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total Expenses</div>
-        <div class="kpi-value" id="kpi-expenses">$84,464</div>
+        <div class="kpi-value" id="kpi-expenses">—</div>
         <div class="kpi-sub">All costs for period</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Net Profit</div>
-        <div class="kpi-value" id="kpi-net">$28,135</div>
+        <div class="kpi-value" id="kpi-net">—</div>
         <div class="kpi-sub">Bottom line &middot; <span id="kpi-net-pct">25%</span> margin</div>
       </div>
     </div>
@@ -167,7 +167,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="pl-row"><div class="pl-label">Net Sales</div><div class="pl-pct">100%</div><div class="pl-val" id="pl-revenue" style="color:var(--text);">$112,599</div></div>
         <div class="pl-section-header">Cost of Goods Sold</div>
         <div class="pl-row"><div class="pl-label">Food &amp; Beverage Cost</div><div class="pl-pct" id="pl-cogs-pct">32%</div><div class="pl-val" id="pl-cogs" style="color:var(--red);">-$36,032</div></div>
-        <div class="pl-row subtotal"><div class="pl-label" style="font-weight:500;">Gross Profit</div><div class="pl-pct" id="pl-gross-pct2">68%</div><div class="pl-val" id="pl-gross2" style="color:var(--green);font-weight:500;">$76,567</div></div>
+        <div class="pl-row subtotal"><div class="pl-label" style="font-weight:500;">Gross Profit</div><div class="pl-pct" id="pl-gross-pct2">68%</div><div class="pl-val" id="pl-gross2" style="color:var(--green);font-weight:500;">—</div></div>
         <div class="pl-section-header">Operating Expenses</div>
         <div class="pl-row"><div class="pl-label">Labor (wages + benefits)</div><div class="pl-pct" id="pl-labor-pct">32%</div><div class="pl-val" id="pl-labor" style="color:var(--red);">-$36,032</div></div>
         <div class="pl-row"><div class="pl-label">Rent &amp; Occupancy</div><div class="pl-pct" id="pl-rent-pct">7.5%</div><div class="pl-val" id="pl-rent" style="color:var(--red);">-$8,500</div></div>
@@ -181,7 +181,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="pl-row" id="pl-net-row" style="background:rgba(76,175,125,0.06);border-top:2px solid var(--border-gold);">
           <div class="pl-label" style="font-size:13px;font-weight:600;">Net Profit</div>
           <div class="pl-pct" id="pl-net-pct2" style="font-weight:600;color:var(--green);">25%</div>
-          <div class="pl-val" id="pl-net2" style="font-size:14px;font-weight:700;color:var(--green);">$28,135</div>
+          <div class="pl-val" id="pl-net2" style="font-size:14px;font-weight:700;color:var(--green);">—</div>
         </div>
       </div>
 
@@ -303,9 +303,10 @@ function set(id,val){const el=document.getElementById(id);if(el)el.textContent=v
 function calcAndRender(){
   saveInputs();
   const {revenue,period,filename}=getRevenue();
-    const periodDays = d.periodDays || 148;
+  const d = HRZN.getData();
+  const periodDays = d.periodDays || 148;
   const weeks = periodDays / 7;
-const months=getMonths(period);
+  const months = periodDays / 30.44;
 
   const cogs=getInputVal('input-cogs')*months;
   const labor=getInputVal('input-labor')*months;
@@ -376,6 +377,11 @@ const months=getMonths(period);
     if(bar)bar.style.width=(vals[i]/maxV*100)+'%';
     if(val)val.textContent=fmt(vals[i]);
   });
+} catch(calcErr) {
+    console.error('calcAndRender error:', calcErr);
+    const revEl = document.getElementById('kpi-revenue');
+    if(revEl) revEl.textContent = 'Error: ' + calcErr.message;
+  }
 }
 
 async function generatePLInsights(){

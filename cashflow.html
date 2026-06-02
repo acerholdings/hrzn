@@ -506,7 +506,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   const isPositive = netCashFlow >= 0;
 
   // Period label
-  const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+  const period = (d.periodStart 
+    ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
+    : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   set('cf-period', period || 'Jan 1 – May 28, 2026');
 
   // KPIs

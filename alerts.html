@@ -402,7 +402,9 @@ function renderAlerts(){
   const d = HRZN.getData();
   const subtitle = document.getElementById('alerts-subtitle');
   if(subtitle){
-    const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    const period = (d.periodStart 
+    ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
+    : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     subtitle.textContent = `Based on your ${d._source==='demo'?'demo':d._source==='api'?'live':'uploaded'} data · ${period||'Jan–May 2026'}`;
   }
 

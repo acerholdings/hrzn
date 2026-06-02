@@ -427,14 +427,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
 
     // If they have CSV data, show personalized opening message
-    const csvData = localStorage.getItem('hrzn-data-csv') || localStorage.getItem('hrzn-sales-data');
-    if (csvData && !hrznIsDemo()) {
+    if (hrznHasData() && !hrznIsDemo()) {
       try {
-        const data = JSON.parse(csvData);
-        const weeklyAvg = data.netSales ? Math.round(data.netSales / (data.periodDays ? data.periodDays/7 : 21)).toLocaleString() : null;
+        const data = HRZN.getData();
+        const periodDays = data.periodDays || 148;
+        const weeklyAvg = data.netSales ? Math.round(data.netSales / (periodDays / 7)) : null;
         const initialMsg = document.getElementById('ai-initial-msg');
         if (initialMsg && weeklyAvg) {
-          initialMsg.textContent = `I've analyzed your business data. Revenue is averaging $${parseInt(weeklyAvg).toLocaleString()}/week. What would you like to focus on?`;
+          initialMsg.textContent = `I've analyzed your business data. Revenue is averaging $${weeklyAvg.toLocaleString()}/week. What would you like to focus on?`;
         }
       } catch(e) {}
     }
@@ -511,7 +511,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('op-tips', tipsPct+'%');
     set('op-margin', grossMarginPct);
 
-    const period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    const period = (d.periodStart 
+    ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
+    : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     set('data-period', period || 'Clover POS data');
   } catch(e) {}
 
@@ -519,8 +521,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   try {
     const d = HRZN.getData();
     const t = getTargets();
-    const months = HRZN.getMonths(d);
-    const weekly = Math.round((d.netSales||0) / (months * 4.33));
+    const periodDaysSS = d.periodDays || 148;
+    const months = periodDaysSS / 30.44;
+    const weekly = Math.round((d.netSales||0) / (periodDaysSS / 7));
     const tenders = d.tenders||{};
     const doorDashPct = d.amountCollected > 0 
       ? parseFloat(((tenders.doorDash||0) / d.amountCollected * 100).toFixed(1))
