@@ -390,6 +390,13 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </div>
 
   <button class="save-bar" id="saveBar" onclick="saveAll()">Save Changes</button>
+
+  <!-- DISCLAIMER FOOTER -->
+  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);">
+    <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
+      <strong style="color:var(--text-dim);">Data Disclaimer:</strong> Figures marked ⚠ Est. are projections based on industry averages and your uploaded data — not audited financial statements. Real data requires live integrations (Clover API, Gusto, etc.). AI-generated insights are for informational purposes only and do not constitute professional financial or business advice. See our <a href="terms.html" style="color:var(--text-dim);text-decoration:underline;">Terms of Service</a> for full details.
+    </p>
+  </div>
 </div>
 <script src="hrzn-data.js"></script>
 <script>hrznRequireAuth();</script>
@@ -621,6 +628,37 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   } catch(e) {}
 
+
+  // Fix data source dropdown - hide Demo Data for logged-in users
+  try {
+    if (hrznIsLoggedIn() && !hrznIsDemo()) {
+      const dropdown = document.getElementById('data-source-select');
+      if (dropdown) {
+        // Remove demo data options
+        Array.from(dropdown.options).forEach(opt => {
+          if (opt.value === 'demo' || opt.text.toLowerCase().includes('demo')) {
+            opt.remove();
+          }
+        });
+        // If no CSV uploaded, show placeholder
+        if (!hrznHasData()) {
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'No data — Upload CSV';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          dropdown.insertBefore(placeholder, dropdown.firstChild);
+        }
+      }
+
+      // Also fix the topbar source badge text
+      const badge = document.getElementById('hrzn-source-badge');
+      if (badge && !hrznHasData()) {
+        badge.innerHTML = '<span style="font-size:10px;color:var(--text-dim);padding:3px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px;">No data</span>';
+      }
+    }
+  } catch(e) {}
+
   // Show demo banner if in demo mode
   if (hrznIsDemo()) {
     const banner = document.getElementById('demo-banner');
@@ -657,6 +695,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div style="margin-top:20px;font-size:11px;color:#444;">Questions? <a href="mailto:hello@usehrzn.ai" style="color:#C9A84C;text-decoration:none;">hello@usehrzn.ai</a></div>
   </div>
 </div>
+
 
 </body>
 </html>

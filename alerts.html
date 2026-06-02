@@ -338,7 +338,14 @@ async function generateMoreAlertsInsights() {
       const topBorder = i>=cols?'border-top:1px solid var(--border);':'';
       const div = document.createElement('div');
       div.style.cssText = 'padding:18px;'+border+topBorder;
-      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
+      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'
+  <!-- DISCLAIMER FOOTER -->
+  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);">
+    <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
+      <strong style="color:var(--text-dim);">Data Disclaimer:</strong> Figures marked ⚠ Est. are projections based on industry averages and your uploaded data — not audited financial statements. Real data requires live integrations (Clover API, Gusto, etc.). AI-generated insights are for informational purposes only and do not constitute professional financial or business advice. See our <a href="terms.html" style="color:var(--text-dim);text-decoration:underline;">Terms of Service</a> for full details.
+    </p>
+  </div>
+</div>';
       grid.appendChild(div);
     });
     container.appendChild(grid);
@@ -837,6 +844,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div style="margin-top:20px;font-size:11px;color:#444;">Questions? <a href="mailto:hello@usehrzn.ai" style="color:#C9A84C;text-decoration:none;">hello@usehrzn.ai</a></div>
   </div>
 </div>
+
 
 </body>
 </html>
