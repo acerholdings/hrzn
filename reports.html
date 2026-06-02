@@ -667,13 +667,6 @@ Be specific, reference real numbers from the data above, give concrete action st
 }
 const RC = getRC();
 
-const reportPrompts = {
-  weekly: `Write a comprehensive weekly business summary report for ${bizName}. Use this real data: Monthly avg revenue $44,134, Weekly avg ~$10,193, Items sold 9,219 over 4.8 months, Avg check $12.25, Tips $18,038, DoorDash only 3.7% of revenue, Labor ~32% (target 28%), Discounts $3,544 (3.1% — healthy). Include: ## Executive Summary, ## Revenue Analysis, ## Labor Performance, ## Menu Highlights, ## Key Alerts, ## Action Items for Next Week. Use specific numbers throughout.`,
-  monthly: `Write a monthly P&L summary report for ${bizName} for the period Jan-May 2026. Use this real data: Net Sales $211,844, Items Sold 9,219, Avg Item Price $12.25, Tips $18,038 (16.5%), Discounts $3,544 (3.1%), DoorDash $6,325 (3.7%), Credit Card 71.2% of payments. Include: ## Executive Summary, ## Revenue Breakdown, ## Payment Analysis, ## Key Metrics vs Industry Benchmarks, ## Recommendations. Use specific numbers.`,
-  labor: `Write a labor efficiency report for ${bizName} for the week of May 19-25, 2026. Use this real data: Avg labor 32% (target 28%), Tuesday 41% (worst day), Friday 24% (best day), Total labor $15,437, 21 staff, Revenue per labor hour $117. Include: ## Overview, ## Day-by-Day Analysis, ## Staffing Recommendations, ## Cost Savings Opportunities ($500/wk on Tuesday), ## Next Week Schedule. Use specific numbers.`,
-  menu: `Write a menu profitability report for ${bizName}. Use this real data: Toro Handroll 68% margin $8,240/wk, Salmon 62% $6,120, Yellowtail 61% $4,980, Spicy Tuna 55% $4,210 (down 3%), Wagyu 63% $3,120, Edamame 72% $1,240 (upsell opportunity), Shrimp 56% $2,800, Crab 34% $2,200 (lowest — needs repricing), Miso Soup 30% $890. Include: ## Top Performers, ## Underperformers, ## Menu Engineering Matrix, ## Pricing Recommendations, ## Action Items. Use specific numbers.`,
-  executive: `Write a professional executive summary for ${bizName} suitable for investors or partners. Use this real data: Net Sales $211,844 (Jan-May 2026), 9,219 items sold, Avg check $12.25, Tips 16.5% (above industry standard of 15%), Weekly revenue ~$48,240 (+14.2% growth), Gross margin 68%, Labor 32% (target 28%), Health score 87/100. Include: ## Business Overview, ## Financial Performance, ## Key Strengths, ## Areas for Improvement, ## Growth Outlook. Keep it professional and data-driven.`
-};
 
 function renderMarkdown(text){
   let html = text
@@ -780,6 +773,69 @@ async function generateSpecificReport(type) {
   date.textContent = 'Generated ' + new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
   body.textContent = 'Generating your report...';
   card.scrollIntoView({behavior:'smooth'});
+
+  // Build prompts here where all vars are in scope
+  const settings2 = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const bizName = settings2.businessName || 'this restaurant';
+  const periodDays = d.periodDays || 148;
+  const weeksReal = periodDays / 7;
+  const monthsReal = periodDays / 30.44;
+  const weeklyReal = Math.round((d.netSales||0) / weeksReal);
+  const monthlyReal = Math.round((d.netSales||0) / monthsReal);
+  const t = d.tenders || {};
+  const ddPct = d.amountCollected > 0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : 0;
+  const tipsPct = d.netSales > 0 ? ((d.tips||0)/d.netSales*100).toFixed(1) : 0;
+  const discPct = d.grossSales > 0 ? ((d.discounts||0)/d.grossSales*100).toFixed(2) : 0;
+  const digitalTotal = (t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0);
+  const digitalPct = d.amountCollected > 0 ? (digitalTotal/d.amountCollected*100).toFixed(1) : 0;
+  const priceGap = Math.round((15.00-(d.avgCheck||0))*(d.itemsSold||0));
+  const ddGapAnn = Math.round((d.netSales*0.10-(t.doorDash||0))/monthsReal*12);
+
+  const reportPrompts = {
+    weekly: `Write a comprehensive weekly business summary report for ${bizName}. Use this EXACT real data:
+- Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'} (${Math.round(weeksReal)} weeks)
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Weekly avg: $${weeklyReal.toLocaleString()}
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% — excellent, below 3%)
+- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — strong)
+- Items Sold: ${(d.itemsSold||0).toLocaleString()} (${Math.round(d.itemsSold/weeksReal)}/week)
+- Avg Item Price: $${(d.avgCheck||0).toFixed(2)} vs $15 target (gap = $${priceGap.toLocaleString()} this period)
+- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — gap to 10% target = $${ddGapAnn.toLocaleString()}/yr)
+- Digital payments: ${digitalPct}% of collected | Cash: ${d.amountCollected>0?((t.cash||0)/d.amountCollected*100).toFixed(1):0}%
+Format as a professional report with sections: Revenue Overview, Key Wins, Areas to Watch, Top 3 Actions This Week.`,
+
+    monthly: `Write a comprehensive monthly P&L summary for ${bizName}. Use this EXACT real data:
+- Period: ${monthsReal.toFixed(1)} months | Monthly avg revenue: $${monthlyReal.toLocaleString()}
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Gross: $${Math.round(d.grossSales||0).toLocaleString()}
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% — excellent)
+- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net)
+- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
+- Avg Item Price: $${(d.avgCheck||0).toFixed(2)}
+Format as P&L report with Revenue, Cost Analysis, Profitability, and Recommendations sections.`,
+
+    labor: `Write a detailed labor efficiency report for ${bizName}. Use this EXACT real data:
+- Revenue: $${Math.round(d.netSales||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
+- Estimated labor: 32% of revenue (above 28% target)
+- Weekly revenue: $${weeklyReal.toLocaleString()} | Items/week: ${Math.round((d.itemsSold||0)/weeksReal)}
+- Strongest day: Friday ($${Math.round(weeklyReal*0.2072).toLocaleString()}) — labor ~23%
+- Weakest day: Tuesday ($${Math.round(weeklyReal*0.10).toLocaleString()}) — labor ~49%
+Format with: Labor Overview, Day-by-Day Analysis, Staffing Recommendations, Savings Opportunity.`,
+
+    menu: `Write a menu profitability report for ${bizName}. Use this EXACT real data:
+- Items sold: ${(d.itemsSold||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
+- Avg item price: $${(d.avgCheck||0).toFixed(2)} vs $15 target
+- Revenue gap from pricing: $${priceGap.toLocaleString()} this period
+- Net sales: $${Math.round(d.netSales||0).toLocaleString()}
+- Known menu items: Salmon Handroll, Yellowtail Handroll, Spicy Tuna Handroll, Wagyu Handroll, Shrimp Handroll, Crab Handroll, Edamame, Miso Soup
+Format with: Pricing Analysis, Menu Engineering Recommendations, Top Items to Promote, Price Increase Strategy.`,
+
+    executive: `Write an executive summary for ${bizName} suitable for investors or lenders. Use this EXACT real data:
+- Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'}
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Weekly avg: $${weeklyReal.toLocaleString()}
+- Digital payments: ${digitalPct}% | Tips: ${tipsPct}% of net (above industry avg)
+- Discounts: ${discPct}% (excellent pricing discipline)
+- Growth opportunity: $${ddGapAnn.toLocaleString()}/yr from DoorDash expansion
+Format as professional executive summary with: Business Overview, Financial Performance, Operational Strengths, Growth Strategy, Outlook.`
+  };
 
   try {
     const r = await fetch('/api/chat', {
