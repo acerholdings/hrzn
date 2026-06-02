@@ -290,7 +290,9 @@ Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences wit
         messages:[{role:'user',content:prompt}]
       })
     });
-    const data = await r.json();
+    clearTimeout(timeout);
+      if (!r.ok) throw new Error('API returned ' + r.status);
+      const data = await r.json();
     const text = data.content?.[0]?.text || '[]';
     const clean = text.replace(/```json|```/g,'').trim();
     const insights = JSON.parse(clean);
@@ -422,7 +424,9 @@ document.addEventListener('DOMContentLoaded',()=>{
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ token })
             });
-            const data = await r.json();
+            clearTimeout(timeout);
+      if (!r.ok) throw new Error('API returned ' + r.status);
+      const data = await r.json();
             if (data.url) window.location.href = data.url;
           };
         }
@@ -485,7 +489,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
   // Empty state for new users with no data
-  if (hrznIsNewUser()) {
+  if (hrznIsNewUser() && !hrznHasData()) {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
@@ -650,7 +654,10 @@ Each object must have: "emoji" (1 emoji), "title" (5-8 words), "insight" (2-3 se
 Example format: [{"emoji":"💡","title":"Your title here","insight":"Your insight here."}]`;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       const r = await fetch('/api/chat', {
+        signal: controller.signal,
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -660,6 +667,8 @@ Example format: [{"emoji":"💡","title":"Your title here","insight":"Your insig
           messages: [{role:'user', content: prompt}]
         })
       });
+      clearTimeout(timeout);
+      if (!r.ok) throw new Error('API returned ' + r.status);
       const data = await r.json();
       const text = data.content?.[0]?.text || '[]';
       

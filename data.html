@@ -342,6 +342,10 @@ async function handleFileSelect(event){
 
     // Save to correct key
     localStorage.setItem(key, JSON.stringify(data));
+    // Clear P&L cache so it recalculates with new revenue
+    if(key === 'hrzn-data-csv' || key === 'hrzn-sales-data'){
+      localStorage.removeItem('hrzn-pl-data');
+    }
 
     // If this is sales overview, also update old key for backward compat
     if(key === 'hrzn-data-csv'){

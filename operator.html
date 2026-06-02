@@ -501,8 +501,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('op-net-sales', fmt(d.netSales||0));
     const welcomeRev = document.getElementById('op-welcome-rev');
     const welcomeRev2 = document.getElementById('op-welcome-rev2');
-    if(welcomeRev2) welcomeRev2.textContent = fmt(Math.round((d.netSales||0)/(months*4.33)));
-    if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/(months*4.33)));
+    const opPeriodDays = d.periodDays || 148;
+    const opWeeks = opPeriodDays / 7;
+    if(welcomeRev2) welcomeRev2.textContent = fmt(Math.round((d.netSales||0)/opWeeks));
+    if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/opWeeks));
     set('op-weekly', fmt(weekly));
     set('op-avg-check', '$'+(d.avgCheck||0));
     set('op-items', (d.itemsSold||0).toLocaleString());

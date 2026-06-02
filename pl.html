@@ -277,8 +277,17 @@ function getInputVal(id){return parseFloat(document.getElementById(id)?.value)||
 function loadSavedInputs(){
   try{
     const saved=JSON.parse(localStorage.getItem(PL_KEY)||'{}');
+    const {revenue} = getRevenue();
     const fields=['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
-    fields.forEach(f=>{const el=document.getElementById('input-'+f);if(el&&saved[f]!==undefined)el.value=saved[f];});
+    fields.forEach(f=>{
+      const el=document.getElementById('input-'+f);
+      if(!el) return;
+      // If saved value exists and revenue looks reasonable, use it
+      // Otherwise use defaults (don't load stale values based on wrong revenue)
+      if(saved[f]!==undefined && revenue > 0) {
+        el.value=saved[f];
+      }
+    });
   }catch(e){}
 }
 
@@ -606,7 +615,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
   // Empty state for new users with no data
-  if (hrznIsNewUser()) {
+  if (hrznIsNewUser() && !hrznHasData()) {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';

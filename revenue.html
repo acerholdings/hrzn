@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Empty state for new users with no data
-  if (hrznIsNewUser()) {
+  if (hrznIsNewUser() && !hrznHasData()) {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
