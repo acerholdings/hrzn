@@ -13,8 +13,7 @@ function hrznIsLoggedIn() {
 }
 
 function hrznIsDemo() {
-  return new URLSearchParams(window.location.search).get('demo') === 'true'
-      || HRZN.getSource() === 'demo';
+  return new URLSearchParams(window.location.search).get('demo') === 'true';
 }
 
 function hrznSetupSidebar() {
