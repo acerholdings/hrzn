@@ -286,7 +286,7 @@ Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences wit
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
-        system:'You are a restaurant business analyst. Always respond with pure JSON only, no markdown. Data: '+JSON.stringify(HRZN.getData()).slice(0,500),
+        system: HRZN.getSystemPrompt(HRZN.getData()) + '\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',
         messages:[{role:'user',content:prompt}]
       })
     });
