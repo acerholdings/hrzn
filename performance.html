@@ -166,9 +166,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="score-ring-wrap">
           <svg class="score-ring" viewBox="0 0 140 140" width="140" height="140">
             <circle fill="none" stroke="var(--surface3)" stroke-width="10" cx="70" cy="70" r="56"/>
-            <circle fill="none" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="351" stroke-dashoffset="72" cx="70" cy="70" r="56"/>
+            <circle fill="none" id="health-ring" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 251.2" cx="70" cy="70" r="56"/>
           </svg>
-          <div class="score-center"><div style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">87</div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
+          <div class="score-center"><div id="perf-health-num" style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">—</div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
         </div>
         <div style="font-size:18px;color:var(--gold);margin-bottom:8px;" id="perf-health-label">—</div>
         <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;" id="perf-health-desc">Calculating...</div>
@@ -562,7 +562,7 @@ const months = HRZN.getMonths(d);
   set('perf-health-num', healthNum);
   set('perf-health-label', healthLabel);
   set('perf-health-desc', (d._source==='demo' ? 'Based on demo sample data' : 'Based on your real ' + months.toFixed(1) + '-month data'));
-  set('perf-health-change', (d._source==='demo' ? 'Based on demo sample data' : 'Calculated from real metrics'));
+  set('perf-health-change', (d._source==='demo' ? 'Switch to CSV for real scores' : 'Calculated from real metrics'));
   
   const scoreEl = document.getElementById('perf-health-num');
   if(scoreEl) scoreEl.style.color = healthColor;
