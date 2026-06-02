@@ -180,23 +180,32 @@ async function hrznLoadFromCloud() {
       localStorage.setItem('hrzn-pl-data', JSON.stringify(plFormatted));
     }
 
-    // Load settings
-    if (data.settings && data.business) {
-      const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-      localStorage.setItem('hrzn-settings', JSON.stringify({
-        ...existing,
-        businessName: data.business.name,
-        location: data.business.location,
-        pos: data.business.pos_system,
-        targets: {
-          labor: data.settings.target_labor_pct,
-          food: data.settings.target_food_cost_pct,
-          revenue: data.settings.target_weekly_revenue,
-          check: data.settings.target_avg_check,
-          doordash: data.settings.target_doordash_pct,
-          discount: data.settings.target_discount_pct || 5
-        }
-      }));
+    // Load settings — merge cloud into local, preserving locally-saved values
+    const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const merged = { ...existing };
+    if (data.business) {
+      // Only overwrite if local doesn't already have these set
+      if (data.business.name) merged.businessName = merged.businessName || data.business.name;
+      if (data.business.name) merged.bizName = merged.bizName || data.business.name;
+      if (data.business.location) merged.bizLocation = merged.bizLocation || data.business.location;
+    }
+    if (data.settings) {
+      merged.targets = merged.targets || {};
+      merged.targets.labor = merged.targets.labor || data.settings.target_labor_pct;
+      merged.targets.food = merged.targets.food || data.settings.target_food_cost_pct;
+      merged.targets.revenue = merged.targets.revenue || data.settings.target_weekly_revenue;
+      merged.targets.check = merged.targets.check || data.settings.target_avg_check;
+      merged.targets.doordash = merged.targets.doordash || data.settings.target_doordash_pct;
+      merged.targets.discount = merged.targets.discount || data.settings.target_discount_pct || 5;
+    }
+    if (data.business || data.settings) {
+      localStorage.setItem('hrzn-settings', JSON.stringify(merged));
+    }
+
+    // Restore full user settings if previously synced
+    if (data.userSettings) {
+      const current = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      localStorage.setItem('hrzn-settings', JSON.stringify({ ...data.userSettings, ...current }));
     }
 
     return true;

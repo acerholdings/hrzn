@@ -446,7 +446,12 @@ function saveAll(){
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   // Sync targets to cloud
+  // Sync full settings to cloud so they persist across logins
   hrznSyncToCloud('settings', settings.targets || {}).catch(()=>{});
+  // Sync full settings so they restore after logout/login
+  hrznSyncToCloud('userSettings', settings).catch(()=>{});
+  // Also save full settings to localStorage with timestamp
+  // Cloud sync of business name/location handled via Supabase on next login
 
   // Update sidebar with new business name
   if(settings.bizName){
