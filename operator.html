@@ -98,7 +98,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item" onclick="navigate('settings.html')"><span class="nav-icon">⚙</span> Settings</div>
   </nav>
   <div class="sidebar-bottom">
-    <div class="user-row"><div class="user-avatar">SH</div><div><div class="user-name">Owner</div><div class="user-role">Owner</div></div></div>
+    <div class="user-row"><div class="user-avatar">??</div><div><div class="user-name">Owner</div><div class="user-role">Owner</div></div></div>
     <div onclick="hrznLogout()" style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;color:var(--text-dim);font-size:11px;margin-top:8px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-dim)'">
       <span style="font-size:13px;">⎋</span> Sign Out
     </div>
@@ -303,37 +303,8 @@ function renderDataBadges(sources) {
 document.addEventListener('DOMContentLoaded',()=>{
   
   // Update sidebar with logged-in user info
-  try {
-    const user = hrznGetUser();
-    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const bizName = settings.businessName || 'My Restaurant';
-    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
-    const userEmail = user.email || '';
+  hrznSetupSidebar();
 
-    const bizNameEl = document.querySelector('.business-name');
-    if (bizNameEl && !hrznIsDemo()) bizNameEl.textContent = bizName;
-
-    const userNameEl = document.querySelector('.user-name');
-    if (userNameEl && !hrznIsDemo()) userNameEl.textContent = userName;
-
-    // Also update business location
-    const bizLocEl = document.querySelector('.business-loc');
-    if (bizLocEl && !hrznIsDemo()) bizLocEl.textContent = settings.location || '—';
-
-    const userRoleEl = document.querySelector('.user-role');
-    if (userRoleEl && !hrznIsDemo()) {
-      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-      const plan = settings.plan || 'trial';
-      const planLabel = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Trial';
-      const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
-      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
-    }
-
-    const avatarEl = document.querySelector('.user-avatar');
-    if (avatarEl && !hrznIsDemo()) {
-      avatarEl.textContent = userName.charAt(0).toUpperCase();
-    }
-  } catch(e) {}
 
   // Trial countdown banner - only show if on trial plan
   try {

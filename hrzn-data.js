@@ -13,7 +13,40 @@ function hrznIsLoggedIn() {
 }
 
 function hrznIsDemo() {
-  return new URLSearchParams(window.location.search).get('demo') === 'true';
+  return new URLSearchParams(window.location.search).get('demo') === 'true'
+      || HRZN.getSource() === 'demo';
+}
+
+function hrznSetupSidebar() {
+  // In demo mode show demo branding, otherwise show real user info
+  if (hrznIsDemo()) {
+    document.querySelectorAll('.business-name').forEach(el => el.textContent = 'Demo Restaurant');
+    const userNameEl = document.querySelector('.user-name');
+    if (userNameEl) userNameEl.textContent = 'Demo Mode';
+    const userRoleEl = document.querySelector('.user-role');
+    if (userRoleEl) userRoleEl.innerHTML = 'Exploring HRZN &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--border);padding:1px 6px;border-radius:10px;">Demo</span>';
+    const avatarEl = document.querySelector('.user-avatar');
+    if (avatarEl) avatarEl.textContent = 'D';
+    return;
+  }
+  try {
+    const user = hrznGetUser();
+    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const bizName = settings.businessName || 'My Restaurant';
+    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
+    document.querySelectorAll('.business-name').forEach(el => el.textContent = bizName);
+    const userNameEl = document.querySelector('.user-name');
+    if (userNameEl) userNameEl.textContent = userName;
+    const userRoleEl = document.querySelector('.user-role');
+    if (userRoleEl) {
+      const plan = settings.plan || 'trial';
+      const planLabel = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Trial';
+      const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
+      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
+    }
+    const avatarEl = document.querySelector('.user-avatar');
+    if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
+  } catch(e) {}
 }
 
 function hrznRequireAuth() {
@@ -580,8 +613,14 @@ TARGETS (from operator settings):
   switchSource(source) {
     this.setSource(source);
     document.getElementById('hrzn-source-modal')?.remove();
-    // Hard reload to bypass cache
-    window.location.replace(window.location.pathname);
+    // Add/remove ?demo=true so hrznIsDemo() stays in sync with getSource()
+    const url = new URL(window.location.href);
+    if (source === 'demo') {
+      url.searchParams.set('demo', 'true');
+    } else {
+      url.searchParams.delete('demo');
+    }
+    window.location.replace(url.toString());
   },
 
   // ── INJECT BADGE INTO PAGE ───────────────────
