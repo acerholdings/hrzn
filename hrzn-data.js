@@ -34,7 +34,7 @@ function hrznSetupSidebar() {
   try {
     const user = hrznGetUser();
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const bizName = settings.businessName || 'My Restaurant';
+    const bizName = settings.businessName || settings.bizName || 'My Restaurant';
     const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
     document.querySelectorAll('.business-name').forEach(el => el.textContent = bizName);
     const userNameEl = document.querySelector('.user-name');
@@ -49,7 +49,7 @@ function hrznSetupSidebar() {
     const avatarEl = document.querySelector('.user-avatar');
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
     const locEl = document.querySelector('.business-loc-text');
-    if (locEl) locEl.textContent = settings.bizLocation || settings.businessLocation || '—';
+    if (locEl) locEl.textContent = settings.bizLocation || '—';
   } catch(e) {}
 }
 
