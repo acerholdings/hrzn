@@ -339,12 +339,9 @@ async function generateMoreAlertsInsights() {
       const div = document.createElement('div');
       div.style.cssText = 'padding:18px;'+border+topBorder;
       div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'
-  <!-- DISCLAIMER FOOTER -->
-  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);">
-    <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
-      <strong style="color:var(--text-dim);">Data Disclaimer:</strong> Figures marked ⚠ Est. are projections based on industry averages and your uploaded data — not audited financial statements. Real data requires live integrations (Clover API, Gusto, etc.). AI-generated insights are for informational purposes only and do not constitute professional financial or business advice. See our <a href="terms.html" style="color:var(--text-dim);text-decoration:underline;">Terms of Service</a> for full details.
-    </p>
-  </div>
+  
+
+  
 </div>';
       grid.appendChild(div);
     });
@@ -358,6 +355,13 @@ async function generateMoreAlertsInsights() {
   if(btn){btn.textContent='+ Generate More';btn.disabled=false;}
 }
 </script>
+  <!-- DISCLAIMER FOOTER -->
+  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);width:100%;box-sizing:border-box;">
+    <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
+      <strong style="color:var(--text-dim);">Data Disclaimer:</strong> Figures marked ⚠ Est. are projections based on industry averages and your uploaded data — not audited financial statements. Real data requires live integrations (Clover API, Gusto, etc.). AI-generated insights are for informational purposes only and do not constitute professional financial or business advice. See our <a href="terms.html" style="color:var(--text-dim);text-decoration:underline;">Terms of Service</a> for full details.
+    </p>
+  </div>
+
 <script src="hrzn-data.js"></script>
 <script>hrznRequireAuth();</script>
 <script>
