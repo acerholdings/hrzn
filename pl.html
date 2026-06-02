@@ -277,22 +277,30 @@ function getInputVal(id){return parseFloat(document.getElementById(id)?.value)||
 function loadSavedInputs(){
   try{
     const saved=JSON.parse(localStorage.getItem(PL_KEY)||'{}');
+    const {revenue} = getRevenue();
+
+    // If saved revenue doesn't match current CSV revenue, discard saved expenses
+    // This prevents stale expenses from a previous session polluting the P&L
+    if(saved._revenue && Math.abs(saved._revenue - revenue) > 1000) {
+      localStorage.removeItem(PL_KEY);
+      return; // Use HTML defaults
+    }
+
     const fields=['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
     fields.forEach(f=>{
       const el=document.getElementById('input-'+f);
       if(!el) return;
-      // Only load saved value if it's a real non-zero value
       if(saved[f] !== undefined && saved[f] !== 0 && saved[f] !== '0') {
         el.value = saved[f];
       }
-      // Otherwise keep the HTML default value
     });
   }catch(e){}
 }
 
 function saveInputs(){
+  const {revenue} = getRevenue();
   const fields=['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
-  const data={};
+  const data={_revenue: revenue};
   fields.forEach(f=>{data[f]=getInputVal('input-'+f);});
   localStorage.setItem(PL_KEY,JSON.stringify(data));
 }
