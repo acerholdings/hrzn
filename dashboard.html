@@ -104,7 +104,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div style="display:flex;align-items:center;gap:12px;">
       <div id="page-data-sources" style="display:flex;align-items:center;gap:4px;"></div>
       <div id="hrzn-source-badge"></div>
-      <div class="date-selector" id="dashboard-period-btn" onclick="window.location.href='data.html'">📅 Select period ⌄</div>
+      <div class="date-selector" id="dashboard-period-btn" onclick="HRZN.openSourceSwitcher()" title="Click to change data source" style="cursor:pointer;" id="dashboard-period-btn">📅 <span id="dash-period-label">Jan 1 – May 28, 2026</span> ⌄</div>
     </div>
   </div>
 <div id="demo-banner" style="display:none;background:rgba(201,168,76,0.1);border-bottom:1px solid rgba(201,168,76,0.2);padding:8px 28px;font-size:11px;color:var(--gold);align-items:center;justify-content:space-between;">
@@ -465,7 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
     : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   set('dashboard-period', period || (hrznHasData() ? '' : 'No data uploaded'));
   const periodBtn = document.getElementById('dashboard-period-btn');
-  if(periodBtn) periodBtn.textContent = '📅 ' + (period || 'Upload CSV') + ' ⌄';
+  const periodLabel = document.getElementById('dash-period-label');
+  if(periodLabel) periodLabel.textContent = period || 'Upload CSV';
+  else if(periodBtn) periodBtn.textContent = '📅 ' + (period || 'Upload CSV') + ' ⌄';
 
   // KPIs
   set('kpi-revenue', fmt(d.netSales||0));
