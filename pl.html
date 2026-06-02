@@ -227,6 +227,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="card-title">AI Insights — Profit &amp; Loss Analysis</div>
         <div style="display:flex;align-items:center;gap:12px;">
           <button onclick="generatePLInsights()" id="plInsightsBtn" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Refresh Insights</button>
+          <button onclick="generateMorePLInsights()" id="plMoreInsightsBtn" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Generate More</button>
           <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
         </div>
       </div>
@@ -392,9 +393,10 @@ async function generatePLInsights(){
   if(!container)return;
   if(btn){btn.textContent='Analyzing...';btn.disabled=true;}
   container.innerHTML='<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your P&L...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
-
-  const {revenue,period}=getRevenue();
+  const d=HRZN.getData();
+  const period=d.period||(d.periodStart?(d.periodStart+(d.periodEnd?' - '+d.periodEnd:'')):'');
   const months=getMonths(period);
+  const revenue=d.netSales||0;
   const cogs=getInputVal('input-cogs')*months;
   const labor=getInputVal('input-labor')*months;
   const rent=getInputVal('input-rent')*months;
@@ -404,44 +406,158 @@ async function generatePLInsights(){
   const marketing=getInputVal('input-marketing')*months;
   const other=getInputVal('input-other')*months;
   const debt=getInputVal('input-debt')*months;
-  const grossProfit=revenue-cogs;
   const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;
+  const grossProfit=revenue-cogs;
   const netProfit=revenue-cogs-opex;
   const breakeven=(cogs/months+labor/months+rent/months+utilities/months+insurance/months+supplies/months+marketing/months+other/months+debt/months);
+
+  // Pre-calculate insight numbers so AI uses real figures
+  const laborPct = revenue>0 ? (labor/revenue*100).toFixed(1) : 0;
+  const laborTarget = 28;
+  const laborOverageMo = revenue>0 ? Math.round((labor/revenue - laborTarget/100)*revenue/months) : 0;
+  const laborOverageAnn = laborOverageMo * 12;
+  const debtPct = revenue>0 ? (debt/revenue*100).toFixed(1) : 0;
+  const debtHealthy = revenue*0.08;
+  const debtOverage = Math.round(debt - debtHealthy);
+  const cogsPct = revenue>0 ? (cogs/revenue*100).toFixed(1) : 0;
+  const netPct = revenue>0 ? (netProfit/revenue*100).toFixed(1) : 0;
+  const grossPct = revenue>0 ? (grossProfit/revenue*100).toFixed(1) : 0;
+  const weekly = Math.round(revenue / (months*4.33));
+  const t = d.tenders||{};
+  const ddPct = d.amountCollected>0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : 0;
+  const tipsPct = revenue>0 ? ((d.tips||0)/revenue*100).toFixed(1) : 0;
 
   const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl');
   const prompt = plBasePrompt + `
 
-P&L DATA (${months.toFixed(1)} month period):
-- Revenue: $${Math.round(revenue).toLocaleString()}
-- Food Cost (COGS): $${Math.round(cogs).toLocaleString()} (${(cogs/revenue*100).toFixed(1)}%)
-- Gross Profit: $${Math.round(grossProfit).toLocaleString()} (${(grossProfit/revenue*100).toFixed(1)}%)
-- Labor: $${Math.round(labor).toLocaleString()} (${(labor/revenue*100).toFixed(1)}%)
-- Rent: $${Math.round(rent).toLocaleString()} (${(rent/revenue*100).toFixed(1)}%)
+P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:
+- Revenue (Net Sales): $${Math.round(revenue).toLocaleString()}
+- Food Cost (COGS): $${Math.round(cogs).toLocaleString()} (${cogsPct}% of revenue — ${parseFloat(cogsPct)<25?'✅ EXCELLENT <25%':parseFloat(cogsPct)<32?'✅ healthy 25-32%':'⚠️ above 32%'})
+- Gross Profit: $${Math.round(grossProfit).toLocaleString()} (${grossPct}% margin)
+- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — target ${laborTarget}% — ${laborOverageMo>0?'⚠️ $'+laborOverageMo.toLocaleString()+'/mo OVER target':'✅ at or below target'})
+- Rent: $${Math.round(rent).toLocaleString()} (${revenue>0?(rent/revenue*100).toFixed(1):0}%)
 - Utilities: $${Math.round(utilities).toLocaleString()}
-- Debt Payments: $${Math.round(debt).toLocaleString()} (${(debt/revenue*100).toFixed(1)}%)
+- Insurance: $${Math.round(insurance).toLocaleString()}
+- Supplies: $${Math.round(supplies).toLocaleString()}
+- Marketing: $${Math.round(marketing).toLocaleString()}
+- Other: $${Math.round(other).toLocaleString()}
+- Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% healthy benchmark':'✅ within healthy range'})
 - Total Expenses: $${Math.round(cogs+opex).toLocaleString()}
-- Net Profit: $${Math.round(netProfit).toLocaleString()} (${(netProfit/revenue*100).toFixed(1)}%)
-- Monthly Revenue: $${Math.round(revenue/months).toLocaleString()}/mo
-- Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo`;
+- Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}% margin)
+- Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo
+- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)
+- Weekly Revenue: $${weekly.toLocaleString()}/week
+- DoorDash: ${ddPct}% of revenue
+
+CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your own figures.`;
 
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and clear action."}',messages:[{role:'user',content:prompt}]})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',messages:[{role:'user',content:prompt}]})});
     const data=await r.json();
     const text=data.content?.[0]?.text||'[]';
-    const insights=JSON.parse(text.replace(/```json|```/g,'').trim());
-    let html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;">';
-    insights.forEach((ins,i)=>{
-      const border=i%3!==2?'border-right:1px solid var(--border);':'';
-      const top=i>=3?'border-top:1px solid var(--border);':'';
-      html+=`<div style="padding:18px;${border}${top}"><div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">${ins.emoji} ${ins.title}</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.insight}</div></div>`;
-    });
-    html+='</div>';
-    container.innerHTML=html;
+    const clean=text.replace(/```json|```/g,'').trim();
+    const insights=JSON.parse(clean);
+    renderPLInsights(insights, container);
   }catch(e){
     container.innerHTML='<div style="padding:16px;font-size:12px;color:var(--red);">Error: '+e.message+'</div>';
   }
   if(btn){btn.textContent='+ Refresh Insights';btn.disabled=false;}
+}
+
+function renderPLInsights(insights, container) {
+  const cols = 3;
+  let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;">';
+  insights.forEach((ins, i) => {
+    const border = (i % cols !== cols-1) ? 'border-right:1px solid var(--border);' : '';
+    const topBorder = i >= cols ? 'border-top:1px solid var(--border);' : '';
+    html += '<div style="padding:18px;'+border+topBorder+'">' +
+      '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div>' +
+      '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function generateMorePLInsights(){
+  const container=document.getElementById('plInsightsContainer');
+  const btn=document.getElementById('plMoreInsightsBtn');
+  if(!container)return;
+  if(btn){btn.textContent='Generating...';btn.disabled=true;}
+
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'pl-more-loading';
+  loadingDiv.style.cssText = 'padding:20px;text-align:center;border-top:1px solid var(--border);';
+  loadingDiv.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Generating more insights...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div>';
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
+
+  const d=HRZN.getData();
+  const period=d.period||(d.periodStart?(d.periodStart+(d.periodEnd?' - '+d.periodEnd:'')):'');
+  const months=getMonths(period);
+  const revenue=d.netSales||0;
+  const cogs=getInputVal('input-cogs')*months;
+  const labor=getInputVal('input-labor')*months;
+  const rent=getInputVal('input-rent')*months;
+  const utilities=getInputVal('input-utilities')*months;
+  const insurance=getInputVal('input-insurance')*months;
+  const supplies=getInputVal('input-supplies')*months;
+  const marketing=getInputVal('input-marketing')*months;
+  const other=getInputVal('input-other')*months;
+  const debt=getInputVal('input-debt')*months;
+  const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;
+  const netProfit=revenue-cogs-opex;
+  const cogsPct = revenue>0?(cogs/revenue*100).toFixed(1):0;
+  const netPct = revenue>0?(netProfit/revenue*100).toFixed(1):0;
+  const debtPct = revenue>0?(debt/revenue*100).toFixed(1):0;
+  const laborPct = revenue>0?(labor/revenue*100).toFixed(1):0;
+
+  const morePrompt = `Analyze this P&L data and provide 6 MORE insights focused on growth strategies, cost optimization opportunities, and operational improvements DIFFERENT from typical labor/debt/food cost insights.
+
+P&L DATA — USE THESE EXACT NUMBERS ONLY:
+- Net Sales: $${Math.round(revenue).toLocaleString()}
+- Food Cost: $${Math.round(cogs).toLocaleString()} (${cogsPct}%)
+- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%)
+- Rent: $${Math.round(rent).toLocaleString()} (${revenue>0?(rent/revenue*100).toFixed(1):0}%)
+- Debt: $${Math.round(debt).toLocaleString()} (${debtPct}%)
+- Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%)
+- Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo
+
+Include 3 wins (✅) and 3 opportunities (🎯). Use only the dollar amounts above.
+Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
+
+  const system = HRZN.getSystemPrompt(HRZN.getData());
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:system+'\n\nRespond ONLY with a JSON array. No markdown.',messages:[{role:'user',content:morePrompt}]})});
+    const data=await r.json();
+    const text=data.content?.[0]?.text||'[]';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const insights=JSON.parse(clean);
+    const loading=document.getElementById('pl-more-loading');
+    if(loading)loading.remove();
+    const divider=document.createElement('div');
+    divider.style.cssText='padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+    divider.textContent='Additional Insights';
+    container.appendChild(divider);
+    const cols=3;
+    const grid=document.createElement('div');
+    grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+    insights.forEach((ins,i)=>{
+      const border=(i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
+      const topBorder=i>=cols?'border-top:1px solid var(--border);':'';
+      const div=document.createElement('div');
+      div.style.cssText='padding:18px;'+border+topBorder;
+      div.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
+      grid.appendChild(div);
+    });
+    container.appendChild(grid);
+    container.scrollTop=container.scrollHeight;
+  }catch(e){
+    const loading=document.getElementById('pl-more-loading');
+    if(loading)loading.remove();
+    console.error('Error:',e);
+  }
+  if(btn){btn.textContent='+ Generate More';btn.disabled=false;}
 }
 
 
