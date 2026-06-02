@@ -26,7 +26,7 @@ function hrznSetupSidebar() {
     if (userRoleEl) userRoleEl.innerHTML = 'Exploring HRZN &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--border);padding:1px 6px;border-radius:10px;">Demo</span>';
     const avatarEl = document.querySelector('.user-avatar');
     if (avatarEl) avatarEl.textContent = 'D';
-    const locEl = document.querySelector('.business-loc-text');
+    const locEl = document.querySelector('.business-loc-text') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = 'Los Angeles, CA';
     return;
   }
@@ -37,8 +37,14 @@ function hrznSetupSidebar() {
     // Prefer saved owner name from settings, fall back to Supabase metadata
     const userName = settings.ownerName || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
     document.querySelectorAll('.business-name').forEach(el => el.textContent = bizName);
+    // Settings page uses different element IDs
+    const accountNameEl = document.getElementById('account-name');
+    if (accountNameEl) accountNameEl.textContent = bizName;
     const userNameEl = document.querySelector('.user-name');
     if (userNameEl) userNameEl.textContent = userName;
+    // Settings page uses account-name span
+    const accountNameEl2 = document.getElementById('account-name');
+    if (accountNameEl2) accountNameEl2.textContent = userName;
     const userRoleEl = document.querySelector('.user-role');
     if (userRoleEl) {
       const plan = settings.plan || 'trial';
@@ -46,9 +52,9 @@ function hrznSetupSidebar() {
       const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
       userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
     }
-    const avatarEl = document.querySelector('.user-avatar');
+    const avatarEl = document.querySelector('.user-avatar') || document.getElementById('s-avatar');
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
-    const locEl = document.querySelector('.business-loc-text');
+    const locEl = document.querySelector('.business-loc-text') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = settings.bizLocation || '—';
   } catch(e) {}
 }
