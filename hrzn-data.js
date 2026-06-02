@@ -34,7 +34,8 @@ function hrznSetupSidebar() {
     const user = hrznGetUser();
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
     const bizName = settings.businessName || settings.bizName || 'My Restaurant';
-    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
+    // Prefer saved owner name from settings, fall back to Supabase metadata
+    const userName = settings.ownerName || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
     document.querySelectorAll('.business-name').forEach(el => el.textContent = bizName);
     const userNameEl = document.querySelector('.user-name');
     if (userNameEl) userNameEl.textContent = userName;
