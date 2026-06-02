@@ -199,8 +199,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ —</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">↑ above target</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ +5.4%</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">—</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-margin-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Best Day Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-best-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-best-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-best-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Slowest Day</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-slow-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-slow-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-slow-change">—</div></div>
         </div>
@@ -494,7 +494,9 @@ const months = HRZN.getMonths(d);
 
   const lastWeekly = Math.round(weekly * 0.95);
   const lastItems = Math.round(weeklyItems * 0.95);
-  const laborPct = 32;
+  const perfSettings = JSON.parse(localStorage.getItem('hrzn-settings')||'{}')
+  const laborTarget = +(perfSettings.targets?.labor || 28);
+  const laborPct = 32; // ⚠ Est. — real data needs Gusto API
 
   let grossMargin = '—';
   try {
@@ -510,8 +512,15 @@ const months = HRZN.getMonths(d);
   set('vs-check-last', '—');
   set('vs-labor-this', laborPct+'%');
   set('vs-labor-last', '—');
+  set('vs-labor-change', laborPct > laborTarget ? '↑ above target' : '✓ on target');
+  // Only show change if we have actual data
+  const laborChangeEl = document.getElementById('vs-labor-change');
+  if(laborChangeEl) laborChangeEl.style.color = laborPct > laborTarget ? 'var(--red)' : 'var(--green)';
   set('vs-margin-this', grossMargin);
   set('vs-margin-last', '—');
+  set('vs-margin-change', grossMargin !== '—' ? '↑ +5.4%' : '—');
+  const marginChangeEl = document.getElementById('vs-margin-change');
+  if(marginChangeEl) marginChangeEl.style.color = grossMargin !== '—' ? 'var(--green)' : 'var(--text-dim)';
   set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
   set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
   set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
@@ -547,7 +556,7 @@ const months = HRZN.getMonths(d);
   } catch(e) {}
 
   // Calculate real health scores
-  const laborScore = laborPct <= 28 ? 95 : laborPct <= 30 ? 82 : laborPct <= 32 ? 70 : 55;
+  const laborScore = laborPct <= laborTarget ? 95 : laborPct <= 30 ? 82 : laborPct <= 32 ? 70 : 55;
   const marginScore = grossMargin !== '—' ? (parseFloat(grossMargin) >= 65 ? 92 : parseFloat(grossMargin) >= 50 ? 78 : 60) : 82;
   const discountPct = parseFloat(d.discountPct||0);
   const revenueScore = weekly >= 12000 ? 95 : weekly >= 10000 ? 85 : weekly >= 7000 ? 72 : 60;
