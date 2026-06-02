@@ -208,7 +208,7 @@ function renderAlertsInsights(insights, container) {
 }
 
 function buildAlertsContext(d) {
-  const t = d.tenders || {};
+  const tnd = d.tenders || {};
   const days = d.periodDays || 148;
   const weeks = days / 7;
   const months = days / 30.44;
@@ -218,10 +218,11 @@ function buildAlertsContext(d) {
   const tips = d.tips || 0;
   const collected = d.amountCollected || 0;
   const items = d.itemsSold || 0;
-  const credit = t.creditCard || 0;
-  const debit = t.debitCard || 0;
-  const dd = t.doorDash || 0;
-  const cash = t.cash || 0;
+  const credit = tnd.creditCard || 0;
+  const debit = tnd.debitCard || 0;
+  const dd = tnd.doorDash || 0;
+  const cash = tnd.cash || 0;
+
   const digitalTotal = credit + debit + dd;
   const digitalPct = collected > 0 ? (digitalTotal/collected*100).toFixed(1) : 0;
   const cashPct = collected > 0 ? (cash/collected*100).toFixed(1) : 0;
@@ -232,27 +233,36 @@ function buildAlertsContext(d) {
   const weeklyGap = 12000 - weeklyRev;
   const annualGap = Math.round(weeklyGap * 52);
   const periodGap = Math.round(weeklyGap * weeks);
-  const priceGapPeriod = Math.round((15.00 - (net>0&&items>0?net/items:0)) * items);
+  const avgPrice = net > 0 && items > 0 ? net/items : 0;
+  const priceGapPeriod = Math.round((15.00 - avgPrice) * items);
   const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
   const ddGapPeriod = Math.round(net * 0.10 - dd);
   const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
+  const combinedPeriod = periodGap + ddGapPeriod + priceGapPeriod;
+  const combinedAnnual = Math.round(combinedPeriod / months * 12);
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
   const bizName = settings.businessName || 'this restaurant';
 
-  return `Identify the 3 most critical issues and 3 strongest wins for ${bizName}. Use ONLY the pre-calculated numbers below.
-
-EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:
-Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'} (${Math.round(weeks)} weeks, ${months.toFixed(1)} months)
-Net Sales: $${Math.round(net).toLocaleString()} | Weekly avg: $${weeklyRev.toLocaleString()} vs $12,000 target — gap $${weeklyGap.toLocaleString()}/wk ($${annualGap.toLocaleString()}/yr, $${periodGap.toLocaleString()} this period)
-Discounts: $${Math.round(disc).toLocaleString()} = ${discPct}% of gross — EXCELLENT WIN (below 3%)
-Tips: $${Math.round(tips).toLocaleString()} = ${tipsPct}% of net sales — ${parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'}
-Digital payments (credit+debit+DoorDash): $${Math.round(digitalTotal).toLocaleString()} = ${digitalPct}% of collected — cash only ${cashPct}%
-DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% — gap to 10% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)
-Avg Item Price: $${net>0&&items>0?(net/items).toFixed(2):0} vs $15 target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)
-Items Sold: ${items.toLocaleString()} (${Math.round(items/weeks)}/week)
-
-Total addressable opportunity this period: $${(periodGap + ddGapPeriod + priceGapPeriod).toLocaleString()} ($${Math.round((periodGap + ddGapPeriod + priceGapPeriod)/months*12).toLocaleString()}/yr combined)\n\nRULES: Use ONLY numbers above. Never recalculate. When referencing total opportunity, always use the combined figure above. Include exactly 3 wins (✅) and 3 opportunities (🎯).\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}\`;
+  const lines = [
+    'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
+    '',
+    'EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:',
+    'Period: ' + (d.periodStart||'Jan 1') + ' – ' + (d.periodEnd||'May 28, 2026') + ' (' + Math.round(weeks) + ' weeks, ' + months.toFixed(1) + ' months)',
+    'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $12,000 target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
+    'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross — EXCELLENT WIN (below 3%)',
+    'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'),
+    'Digital payments (credit+debit+DoorDash): $' + Math.round(digitalTotal).toLocaleString() + ' = ' + digitalPct + '% of collected — cash only ' + cashPct + '%',
+    'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to 10% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)',
+    'Avg Item Price: $' + avgPrice.toFixed(2) + ' vs $15 target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)',
+    'Items Sold: ' + items.toLocaleString() + ' (' + Math.round(items/weeks) + '/week)',
+    'COMBINED addressable opportunity: $' + combinedPeriod.toLocaleString() + ' this period ($' + combinedAnnual.toLocaleString() + '/yr) = revenue gap + DoorDash gap + price gap',
+    '',
+    'RULES: Use ONLY numbers above. Never recalculate. When referencing total opportunity, use $' + combinedPeriod.toLocaleString() + ' this period. Include exactly 3 wins and 3 opportunities.',
+    'Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}'
+  ];
+  return lines.join('\n');
 }
+
 
 async function generateAlertsInsights() {
   const container = document.getElementById('alertsInsightsContainer');
