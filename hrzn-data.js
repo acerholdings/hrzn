@@ -196,6 +196,246 @@ const HRZN = {
     }
   },
 
+
+  // ── MASTER AI SYSTEM PROMPT ──────────────────
+  // Single source of truth for all AI insights across every page.
+  // Every page must use HRZN.getSystemPrompt(d) instead of writing its own.
+
+  BENCHMARKS: {
+    food:      { excellent: 28, healthy: [28, 35], warning: 35 },
+    labor:     { excellent: 25, healthy: [25, 35], warning: 35 },
+    discounts: { excellent: 3,  healthy: [3, 6],   warning: 6  },
+    tips_net:  { strong: 15,    avg: [12, 15],      low: 12     },
+    doordash:  { opportunity: 5, good: [5, 15],     high: 20    },
+    rent:      { healthy: 8,    monitor: [8, 12],   problem: 12 },
+    net_margin:{ healthy: [3, 9] }
+  },
+
+  getBenchmarkContext() {
+    return `
+RESTAURANT & BUSINESS INDUSTRY BENCHMARKS:
+
+REVENUE HEALTH:
+- Weekly revenue vs target: >15% below = critical, 5-15% below = warning, on target = healthy
+- Revenue trend: improving week-over-week = positive signal, declining 2+ weeks = alert
+- Monthly consistency: >20% variance between months = investigate seasonality or operations
+
+COST STRUCTURE (Restaurant):
+- Food Cost (COGS): <25% = excellent, 25-32% = healthy, 32-38% = monitor, >38% = problem
+- Labor Cost: <25% = excellent, 25-32% = healthy, 32-38% = warning, >38% = critical
+- Rent/Occupancy: <6% = excellent, 6-10% = healthy, 10-15% = monitor, >15% = problem
+- Total Prime Cost (food + labor): <55% = excellent, 55-65% = healthy, >65% = problem
+
+COST STRUCTURE (Retail):
+- COGS: <50% = excellent, 50-65% = healthy, >65% = problem
+- Labor: <15% = excellent, 15-25% = healthy, >25% = monitor
+- Rent: <8% = healthy, >12% = problem
+
+COST STRUCTURE (Service Business):
+- COGS/Materials: <20% = excellent
+- Labor: <40% = healthy (higher than restaurant due to skill premium)
+- Overhead: <25% = healthy
+
+DISCOUNTS & PROMOTIONS:
+- <2% = excellent — strong pricing power, no discounting needed
+- 2-4% = healthy — strategic discounting, well controlled
+- 4-6% = monitor — approaching problematic levels
+- >6% = problem — undermining brand value and margins
+- NEVER flag discounts under 4% as a problem
+
+TIPS & SERVICE QUALITY (always calculate vs NET SALES):
+- >18% = exceptional — guests are extremely satisfied, luxury service level
+- 15-18% = strong — above industry average, great service
+- 12-15% = average — meeting expectations
+- <12% = low — investigate service quality or average check size
+- Tip rate declining = early warning sign for guest satisfaction issues
+
+PAYMENT MIX & CHANNEL HEALTH:
+- Credit card 60-80% = healthy digital mix
+- Cash >15% = high — consider promoting digital, cash handling risk
+- DoorDash/Delivery:
+  * <3% = underutilized — growth opportunity
+  * 3-8% = developing — room to grow
+  * 8-20% = healthy mix
+  * >25% = over-reliant — margin risk (platforms take 15-30% commission)
+- Digital payments (credit + debit) >85% = excellent data quality for insights
+
+PRICING POWER SIGNALS:
+- Avg item price growing + discounts flat = strong pricing power
+- Avg item price flat + discounts rising = pricing pressure, investigate
+- Avg item price declining = customers trading down or menu mix shifting
+- Price increase of 5-10% on high-margin items typically retains 90%+ of volume
+
+PROFITABILITY:
+- Net margin 8-15% = excellent restaurant
+- Net margin 3-8% = healthy restaurant
+- Net margin 0-3% = thin — vulnerable to cost increases
+- Net margin negative = urgent action required
+- Gross margin >70% = strong (before labor/overhead)
+- Gross margin 60-70% = healthy
+- Gross margin <55% = investigate food costs
+
+CASH FLOW & DEBT:
+- Debt service <8% of revenue = manageable
+- Debt service 8-15% = monitor — limiting reinvestment
+- Debt service >15% = critical — restructure immediately
+- Monthly runway = cash / monthly burn (>6 months = healthy)
+
+VOLUME & EFFICIENCY:
+- Items/transaction: increasing = good upselling, decreasing = investigate
+- Avg check increasing without volume loss = successful price increase
+- Avg check decreasing = customers trading down or menu mix shift
+- Revenue per labor dollar >$3.50 = efficient, <$2.50 = overstaffed
+
+SEASONALITY CONTEXT:
+- Q1 (Jan-Mar) = typically slowest for restaurants, adjust benchmarks -10-15%
+- Q4 (Oct-Dec) = typically strongest, expect +15-20% vs annual avg
+- Summer (Jun-Aug) = varies by market — beach/tourist markets peak, office areas slow
+- Do not flag low revenue as a problem if it is historically a slow period
+
+MULTI-LOCATION SIGNALS (if applicable):
+- Revenue variance >20% between locations = investigate underperformer
+- Labor variance >5% between locations = scheduling inefficiency somewhere
+- Discount variance >2% between locations = inconsistent training or management
+
+GROWTH OPPORTUNITIES (prioritize in this order):
+1. Fix bleeding costs first (labor, food cost, debt)
+2. Then optimize pricing (avg check, discount rate)
+3. Then grow volume (covers, delivery, catering)
+4. Then expand channels (new locations, catering, events)
+
+CRITICAL ANALYSIS RULES:
+- ALWAYS label wins clearly — if a metric is healthy or excellent, say so
+- NEVER flag healthy metrics as problems just to fill insight slots
+- Tips % MUST be calculated vs net sales, never vs total collected
+- Discounts under 4% are NEVER a problem
+- Mix wins (✅) and opportunities (🎯) in every response — aim for 3 of each
+- Every insight needs: exact dollar amount + why it matters + one specific action
+- If data is estimated (no payroll, no daily breakdown), say so and focus on what IS real
+- Be direct and confident — operators need clear guidance, not vague suggestions
+- Do not repeat the same insight type in multiple responses in one session`;
+  },
+
+,
+
+  getSystemPrompt(d) {
+    const settings = typeof localStorage !== 'undefined'
+      ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}')
+      : {};
+    const bizName = settings.businessName || 'this restaurant';
+    const bizType = settings.businessType || 'restaurant';
+    const isDemo = d._source === 'demo';
+
+    // Core calculations
+    const periodDays = d.periodDays || 148;
+    const weeks = periodDays / 7;
+    const months = periodDays / 30.44;
+    const weekly = d.netSales ? Math.round(d.netSales / weeks) : 0;
+    const monthly = d.netSales ? Math.round(d.netSales / months) : 0;
+    const daily = d.netSales ? Math.round(d.netSales / periodDays) : 0;
+    const t = d.tenders || {};
+
+    // Percentage calculations
+    const ddPct = d.amountCollected > 0
+      ? ((t.doorDash||0) / d.amountCollected * 100).toFixed(1) : 0;
+    const discPct = d.grossSales > 0
+      ? ((d.discounts||0) / d.grossSales * 100).toFixed(1) : 0;
+    const tipsPct = d.netSales > 0
+      ? ((d.tips||0) / d.netSales * 100).toFixed(1) : 0;
+    const cashPct = d.amountCollected > 0
+      ? Math.round((t.cash||0) / d.amountCollected * 100) : 0;
+    const digitalPct = d.amountCollected > 0
+      ? Math.round(((t.creditCard||0) + (t.debitCard||0)) / d.amountCollected * 100) : 0;
+
+    // Performance signals
+    const discLabel = parseFloat(discPct) < 2 ? '✅ EXCELLENT pricing discipline'
+      : parseFloat(discPct) < 4 ? '✅ HEALTHY discount rate'
+      : parseFloat(discPct) < 6 ? '⚠️ monitor — approaching warning threshold'
+      : '🚨 HIGH — undermining margins';
+
+    const tipsLabel = parseFloat(tipsPct) > 18 ? '✅ EXCEPTIONAL — luxury service level'
+      : parseFloat(tipsPct) > 15 ? '✅ STRONG — above industry average'
+      : parseFloat(tipsPct) > 12 ? 'average — meeting expectations'
+      : '⚠️ LOW — investigate service quality';
+
+    const ddLabel = parseFloat(ddPct) < 3 ? '🎯 underutilized — significant growth opportunity'
+      : parseFloat(ddPct) < 8 ? '🎯 developing — room to grow'
+      : parseFloat(ddPct) < 20 ? '✅ healthy delivery mix'
+      : '⚠️ over-reliant — margin risk from platform fees';
+
+    const cashLabel = cashPct > 15 ? '⚠️ HIGH cash % — handling risk, promote digital'
+      : cashPct > 8 ? 'moderate cash use'
+      : '✅ low cash — good digital adoption';
+
+    // Targets from settings
+    const targets = settings.targets || {};
+    const laborTarget = targets.labor || 28;
+    const revenueTarget = targets.revenue || 0;
+    const checkTarget = targets.check || 0;
+    const ddTarget = targets.doordash || 10;
+
+    // Target comparison strings
+    const revenueVsTarget = revenueTarget > 0
+      ? `$${weekly.toLocaleString()} vs $${revenueTarget.toLocaleString()} target (${weekly >= revenueTarget ? '✅ above' : `⚠️ $${(revenueTarget-weekly).toLocaleString()} below`})`
+      : `$${weekly.toLocaleString()}/week`;
+
+    return \`You are HRZN, an elite AI business operator for \${bizName}\${isDemo ? ' (demo mode)' : ''}. Business type: \${bizType}.
+\${this.getBenchmarkContext()}
+
+REAL BUSINESS DATA (\${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, \${d.periodStart ? d.periodStart + (d.periodEnd ? ' to ' + d.periodEnd : '') : 'reporting period'}):
+
+REVENUE:
+- Gross Sales: $\${Math.round(d.grossSales||0).toLocaleString()}
+- Discounts: -$\${Math.round(d.discounts||0).toLocaleString()} (\${discPct}% of gross — \${discLabel})
+- Net Sales: $\${Math.round(d.netSales||0).toLocaleString()}
+- Tips: $\${Math.round(d.tips||0).toLocaleString()} (\${tipsPct}% of net sales — \${tipsLabel})
+- Taxes & Fees: $\${Math.round(d.taxes||0).toLocaleString()}
+- Total Collected: $\${Math.round(d.amountCollected||0).toLocaleString()}
+
+VOLUME & PRICING:
+- Items Sold: \${(d.itemsSold||0).toLocaleString()} (\${Math.round(d.itemsSold/weeks)} items/week avg)
+- Avg Item Price: $\${(d.avgCheck||0).toFixed ? parseFloat(d.avgCheck||0).toFixed(2) : d.avgCheck|0}\${checkTarget > 0 ? ' (target: $' + checkTarget + ')' : ''}
+
+PERIOD & VELOCITY:
+- Period: \${months.toFixed(1)} months (\${Math.round(weeks)} weeks, \${periodDays} days)
+- Weekly Avg Revenue: \${revenueVsTarget}
+- Monthly Avg Revenue: $\${monthly.toLocaleString()}
+- Daily Avg Revenue: $\${daily.toLocaleString()}
+
+PAYMENT CHANNELS:
+- Credit Card: $\${Math.round(t.creditCard||0).toLocaleString()} (\${d.amountCollected > 0 ? Math.round((t.creditCard||0)/d.amountCollected*100) : 0}%)
+- Debit Card: $\${Math.round(t.debitCard||0).toLocaleString()} (\${d.amountCollected > 0 ? Math.round((t.debitCard||0)/d.amountCollected*100) : 0}%)
+- DoorDash/Delivery: $\${Math.round(t.doorDash||0).toLocaleString()} (\${ddPct}% — \${ddLabel})
+- Cash: $\${Math.round(t.cash||0).toLocaleString()} (\${cashPct}% — \${cashLabel})
+- Digital payments total: \${digitalPct}% of revenue (\${digitalPct > 85 ? '✅ excellent data quality' : digitalPct > 70 ? 'good' : '⚠️ high cash use'})
+
+TARGETS (from operator settings):
+- Labor target: \${laborTarget}%\${targets.labor ? '' : ' (default — set in Settings)'}
+- Weekly revenue target: \${revenueTarget > 0 ? '$' + revenueTarget.toLocaleString() : 'not set'}
+- Avg check target: \${checkTarget > 0 ? '$' + checkTarget : 'not set'}
+- DoorDash target: \${ddTarget}%\`;
+  },
+
+  getInsightPrompt(type, extra) {
+    const d = this.getData();
+    const system = this.getSystemPrompt(d);
+    const jsonFormat = 'Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation. Each object: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact dollar amounts and one specific action."}';
+    const mixRule = 'Include a mix: aim for 3 wins (✅) and 3 opportunities (🎯). Do not make every insight negative.';
+
+    const prompts = {
+      sales: `Analyze the sales and payment data. Identify what is performing well and what needs attention. ${mixRule} ${jsonFormat}`,
+      pl: `Analyze the profit & loss data. Focus on cost structure vs industry benchmarks, margin health, and the single highest-impact action to improve profitability. ${mixRule} ${jsonFormat}`,
+      operator: 'You are a real-time AI business advisor. Answer the user question directly using the business data provided. Be concise, specific, and actionable. Use exact numbers from the data.',
+      reports: 'Generate a comprehensive business analysis using the data provided. Use exact numbers, compare against industry benchmarks, and provide prioritized recommendations.',
+      alerts: `Identify the 3 most critical issues and 3 strongest wins from the business data. Be specific with dollar amounts. ${jsonFormat}`,
+      menu: `Analyze menu performance and item mix. Identify top performers to promote, underperformers to cut or reprice, and pricing opportunities. ${mixRule} ${jsonFormat}`,
+    };
+
+    const basePrompt = prompts[type] || prompts.sales;
+    const fullPrompt = extra ? basePrompt + '\n\nADDITIONAL CONTEXT: ' + extra : basePrompt;
+    return { system, prompt: fullPrompt };
+  },
+
   // ── GET ACTIVE SOURCE ────────────────────────
   getSource() {
     return localStorage.getItem(this.KEYS.SOURCE) || 'csv';
@@ -255,48 +495,12 @@ const HRZN = {
 
   // ── BUILD AI CONTEXT STRING ──────────────────
   getAIContext() {
+    // Use master system prompt for consistency
     const d = this.getData();
-    const months = this.getMonths(d);
-    const monthly = Math.round((d.netSales || 0) / months);
-    const weekly  = Math.round((d.netSales || 0) / (months * 4.33));
-    const t = d.tenders || {};
-    // Calculate doordash pct if not stored
-    const ddPct = d.amountCollected > 0 
-      ? ((t.doorDash||0) / d.amountCollected * 100).toFixed(1)
-      : (t.doorDashPct || 0);
-    const discPct = d.grossSales > 0 
-      ? ((d.discounts||0) / d.grossSales * 100).toFixed(1)
-      : 0;
-
-    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const bizName = hrznIsDemo() ? 'Sama Handroll LA' : (settings.businessName || 'this restaurant');
-    const periodLabel = d.periodStart || d.period || 'Jan–May 2026';
-    return `You are HRZN, an elite AI business operator for ${bizName}.
-
-REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, ${periodLabel}):
-- Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
-- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% of gross)
-- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
-- Tips: $${Math.round(d.tips||0).toLocaleString()} (${d.netSales > 0 ? (d.tips/d.netSales*100).toFixed(1) : 0}% of net)
-- Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
-- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
-- Items Sold: ${(d.itemsSold||0).toLocaleString()}
-- Avg Item Price: $${d.avgCheck||0}
-- Monthly Average: ~$${monthly.toLocaleString()}/month
-- Weekly Average: ~$${weekly.toLocaleString()}/week
-- Period: ${d.period || 'N/A'} (${months.toFixed(1)} months)
-
-PAYMENT METHODS:
-- Credit Card: $${Math.round(t.creditCard||0).toLocaleString()} (${d.amountCollected > 0 ? ((t.creditCard||0)/d.amountCollected*100).toFixed(1) : 0}%)
-- Debit Card: $${Math.round(t.debitCard||0).toLocaleString()}
-- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${t.doorDashPct||0}% — industry avg is 15-20%)
-- Cash: $${Math.round(t.cash||0).toLocaleString()}
-
-LABOR: ~32% avg (target 28%). Tuesday overstaffed. ~21 staff total.
-MENU: Toro Handroll, Salmon Handroll, Yellowtail, Spicy Tuna, Wagyu Handroll, Shrimp Handroll, Crab Handroll (low margin), Edamame (high margin upsell), Miso Soup.
-
-Be specific, reference real numbers, give concrete actions.`;
+    return this.getSystemPrompt(d) + this.getBenchmarkContext();
   },
+
+,
 
   // ── SOURCE BADGE HTML ────────────────────────
   getSourceBadge() {
