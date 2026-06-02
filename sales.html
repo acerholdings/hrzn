@@ -267,7 +267,13 @@ async function generateMoreInsights() {
   const container = document.getElementById('insightsContainer');
   if(btn){ btn.textContent='Generating...'; btn.disabled=true; }
   if(!container) return;
-  container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Generating fresh insights...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
+  // Show loading indicator APPENDED below existing content, not replacing it
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'more-insights-loading';
+  loadingDiv.style.cssText = 'padding:20px;text-align:center;border-top:1px solid var(--border);';
+  loadingDiv.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Generating more insights...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div>';
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
   try {
     const morePrompt = 'Analyze the sales and payment data. Focus on growth strategies, operational improvements, and hidden opportunities that are DIFFERENT from typical credit card, discount, and tip insights. Identify what is performing well and what needs attention. Include a mix: aim for 3 wins (✅) and 3 opportunities (🎯). Do not make every insight negative. Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation. Each object: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact dollar amounts and one specific action."}';
     const d = HRZN.getData();
@@ -284,6 +290,9 @@ async function generateMoreInsights() {
     const text = data.content?.[0]?.text || '[]';
     const clean = text.replace(/```json|```/g,'').trim();
     const insights = JSON.parse(clean);
+    // Remove loading indicator
+    const loading = document.getElementById('more-insights-loading');
+    if(loading) loading.remove();
     // Append divider + new insights instead of replacing
     const divider = document.createElement('div');
     divider.style.cssText = 'padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
@@ -304,6 +313,8 @@ async function generateMoreInsights() {
     container.scrollTop = container.scrollHeight;
     if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
   } catch(e){
+    const loading2 = document.getElementById('more-insights-loading');
+    if(loading2) loading2.remove();
     if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
     console.error('Error:', e);
   }
