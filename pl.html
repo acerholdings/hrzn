@@ -164,12 +164,12 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div style="font-size:10px;color:var(--text-dim);" id="period-months-label">Period: 1 month</div>
         </div>
         <div class="pl-section-header">Revenue</div>
-        <div class="pl-row"><div class="pl-label">Net Sales</div><div class="pl-pct">100%</div><div class="pl-val" id="pl-revenue" style="color:var(--text);">$112,599</div></div>
+        <div class="pl-row"><div class="pl-label">Net Sales</div><div class="pl-pct">100%</div><div class="pl-val" id="pl-revenue" style="color:var(--text);">—</div></div>
         <div class="pl-section-header">Cost of Goods Sold</div>
-        <div class="pl-row"><div class="pl-label">Food &amp; Beverage Cost</div><div class="pl-pct" id="pl-cogs-pct">32%</div><div class="pl-val" id="pl-cogs" style="color:var(--red);">-$36,032</div></div>
+        <div class="pl-row"><div class="pl-label">Food &amp; Beverage Cost</div><div class="pl-pct" id="pl-cogs-pct">—</div><div class="pl-val" id="pl-cogs" style="color:var(--red);">—</div></div>
         <div class="pl-row subtotal"><div class="pl-label" style="font-weight:500;">Gross Profit</div><div class="pl-pct" id="pl-gross-pct2">68%</div><div class="pl-val" id="pl-gross2" style="color:var(--green);font-weight:500;">—</div></div>
         <div class="pl-section-header">Operating Expenses</div>
-        <div class="pl-row"><div class="pl-label">Labor (wages + benefits)</div><div class="pl-pct" id="pl-labor-pct">32%</div><div class="pl-val" id="pl-labor" style="color:var(--red);">-$36,032</div></div>
+        <div class="pl-row"><div class="pl-label">Labor (wages + benefits)</div><div class="pl-pct" id="pl-labor-pct">—</div><div class="pl-val" id="pl-labor" style="color:var(--red);">—</div></div>
         <div class="pl-row"><div class="pl-label">Rent &amp; Occupancy</div><div class="pl-pct" id="pl-rent-pct">7.5%</div><div class="pl-val" id="pl-rent" style="color:var(--red);">-$8,500</div></div>
         <div class="pl-row"><div class="pl-label">Utilities</div><div class="pl-pct" id="pl-utilities-pct">1.1%</div><div class="pl-val" id="pl-utilities" style="color:var(--red);">-$1,200</div></div>
         <div class="pl-row"><div class="pl-label">Insurance</div><div class="pl-pct" id="pl-insurance-pct">0.7%</div><div class="pl-val" id="pl-insurance" style="color:var(--red);">-$800</div></div>
@@ -377,11 +377,6 @@ function calcAndRender(){
     if(bar)bar.style.width=(vals[i]/maxV*100)+'%';
     if(val)val.textContent=fmt(vals[i]);
   });
-} catch(calcErr) {
-    console.error('calcAndRender error:', calcErr);
-    const revEl = document.getElementById('kpi-revenue');
-    if(revEl) revEl.textContent = 'Error: ' + calcErr.message;
-  }
 }
 
 async function generatePLInsights(){
