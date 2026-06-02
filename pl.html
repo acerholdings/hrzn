@@ -426,6 +426,18 @@ async function generatePLInsights(){
   const t = d.tenders||{};
   const ddPct = d.amountCollected>0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : 0;
   const tipsPct = revenue>0 ? ((d.tips||0)/revenue*100).toFixed(1) : 0;
+  const ddAmt = (d.tenders||{}).doorDash||0;
+  const ddGapPeriod = Math.round(revenue*0.10 - ddAmt);
+  const ddGapAnnual = Math.round(ddGapPeriod/months*12);
+  const ddNet10pct = Math.round(revenue*0.10*0.80);
+  const debtMoDrag = Math.round((debt-revenue*0.08)/months);
+  const foodAdvantage = Math.round(revenue*0.25 - cogs);
+  const mktMo = Math.round(marketing/months);
+  const mktAt2pct = Math.round(revenue*0.02/months);
+  const mktExtra = Math.max(0, mktAt2pct - mktMo);
+  const priceGapPeriod = Math.round((15.00 - parseFloat(d.avgCheck||0)) * (d.itemsSold||0));
+  const priceGapAnnual = Math.round(priceGapPeriod/months*12);
+  const moProfitFinal = Math.round(netProfit/months);
 
   const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl');
   const prompt = plBasePrompt + `
@@ -439,9 +451,9 @@ P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:
 - Utilities: $${Math.round(utilities).toLocaleString()}
 - Insurance: $${Math.round(insurance).toLocaleString()}
 - Supplies: $${Math.round(supplies).toLocaleString()}
-- Marketing: $${Math.round(marketing).toLocaleString()}
+- Marketing: $${Math.round(marketing).toLocaleString()} ($${mktMo.toLocaleString()}/mo — room to grow to 2% = $${mktAt2pct.toLocaleString()}/mo, $${mktExtra.toLocaleString()}/mo extra budget available)
 - Other: $${Math.round(other).toLocaleString()}
-- Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% healthy benchmark':'✅ within healthy range'})
+- Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% benchmark — $'+debtMoDrag.toLocaleString()+'/mo drag':'✅ within healthy range'})
 - Total Expenses: $${Math.round(cogs+opex).toLocaleString()}
 - Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}% margin)
 - Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo
@@ -512,43 +524,52 @@ async function generateMorePLInsights(){
   const debtPct = revenue>0?(debt/revenue*100).toFixed(1):0;
   const laborPct = revenue>0?(labor/revenue*100).toFixed(1):0;
 
-  // Pre-calculate all figures for accurate insights
+  // Pre-calculate ALL figures with correct bases
   const rentPct = revenue>0?(rent/revenue*100).toFixed(1):0;
   const utilPct = revenue>0?(utilities/revenue*100).toFixed(1):0;
   const mktPct = revenue>0?(marketing/revenue*100).toFixed(1):0;
   const grossPct2 = revenue>0?((revenue-cogs)/revenue*100).toFixed(1):0;
   const laborOverageMo2 = revenue>0?Math.round((labor/revenue-0.28)*revenue/months):0;
+  const laborOverageAnn = laborOverageMo2*12;
   const debtOverage2 = Math.round(debt-revenue*0.08);
-  const debtAt12 = Math.round(revenue*0.12);
-  const debtSavingMo = Math.round((debt-debtAt12)/months);
-  const avgPrice = 13.70;
-  const avgTarget = 15.00;
-  const items = (HRZN.getData().itemsSold||0);
-  const priceGap = Math.round((avgTarget-avgPrice)*items);
-  const moProfitCalc = Math.round(netProfit/months);
-  const ddGapAnn = Math.round((revenue*0.10-(HRZN.getData().tenders||{}).doorDash||0)/months*12);
+  const debtAt12pct = Math.round(revenue*0.12);
+  const debtSavingPeriod = Math.round(debt-debtAt12pct);
+  const debtSavingMo2 = Math.round((debt-debtAt12pct)/months);
   const d2 = HRZN.getData();
+  const avgItemPrice = 13.70;
+  const avgTarget2 = 15.00;
+  const itemsSold2 = d2.itemsSold||0;
+  const priceGapPeriod2 = Math.round((avgTarget2-avgItemPrice)*itemsSold2);
+  const priceGapAnnual2 = Math.round(priceGapPeriod2/months*12);
+  const dd2 = (d2.tenders||{}).doorDash||0;
+  const ddGapPeriod2 = Math.round(revenue*0.10-dd2);
+  const ddGapAnnual2 = Math.round(ddGapPeriod2/months*12);
+  const ddAt10net = Math.round(revenue*0.10*0.80); // after 20% commission
   const tipsPct2 = revenue>0?((d2.tips||0)/revenue*100).toFixed(1):0;
+  const mktAt2pct = Math.round(revenue*0.02/months);
+  const mktBudgetExtra = Math.max(0, mktAt2pct - Math.round(marketing/months));
+  const moProfitCalc2 = Math.round(netProfit/months);
+  const foodAdv = Math.round(revenue*0.25-cogs); // vs 25% benchmark
 
-  const morePrompt = `Analyze this P&L and provide 6 MORE insights focused on growth strategies and operational improvements DIFFERENT from labor/debt/food cost. Use ONLY the numbers below — do not calculate your own.
+  const morePrompt = `Analyze this P&L and provide 6 MORE insights on growth strategies, operational improvements, and opportunities DIFFERENT from labor/debt/food cost. Use ONLY the pre-calculated numbers below.
 
-P&L DATA — EXACT NUMBERS ONLY:
-- Net Sales: $${Math.round(revenue).toLocaleString()} over ${months.toFixed(1)} months
-- Food Cost: $${Math.round(cogs).toLocaleString()} (${cogsPct}% — excellent, <25% benchmark)
-- Gross Profit: $${Math.round(revenue-cogs).toLocaleString()} (${grossPct2}% margin)
-- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — $${laborOverageMo2.toLocaleString()}/mo over 28% target)
-- Rent: $${Math.round(rent).toLocaleString()} (${rentPct}% — $${Math.round(rent/months).toLocaleString()}/mo)
-- Utilities: $${Math.round(utilities).toLocaleString()} (${utilPct}%)
-- Marketing: $${Math.round(marketing).toLocaleString()} (${mktPct}% — $${Math.round(marketing/months).toLocaleString()}/mo)
-- Debt: $${Math.round(debt).toLocaleString()} (${debtPct}% — $${debtOverage2.toLocaleString()} over 8% benchmark)
-- Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}% — $${moProfitCalc.toLocaleString()}/mo)
-- Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo
-- Tips: $${Math.round((HRZN.getData().tips||0)).toLocaleString()} (${tipsPct2}% of net sales)
-- Avg Item Price: $${avgPrice} vs $${avgTarget} target — $${priceGap.toLocaleString()} revenue gap over period
-- DoorDash: $${Math.round((d2.tenders||{}).doorDash||0).toLocaleString()} (${debtPct}% of revenue)
-- Debt reduction to 12% would save: $${debtSavingMo.toLocaleString()}/mo
+EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:
+Period: ${months.toFixed(1)} months
+Net Sales: $${Math.round(revenue).toLocaleString()}
+Food Cost: $${Math.round(cogs).toLocaleString()} (${cogsPct}%) — advantage vs 25% benchmark = $${foodAdv.toLocaleString()} this period
+Gross Profit: $${Math.round(revenue-cogs).toLocaleString()} (${grossPct2}% margin)
+Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%) — overage = $${laborOverageMo2.toLocaleString()}/mo ($${laborOverageAnn.toLocaleString()}/yr)
+Rent: $${Math.round(rent).toLocaleString()} (${rentPct}%) = $${Math.round(rent/months).toLocaleString()}/mo
+Utilities: $${Math.round(utilities).toLocaleString()} (${utilPct}%) = $${Math.round(utilities/months).toLocaleString()}/mo
+Marketing: $${Math.round(marketing).toLocaleString()} (${mktPct}%) = $${Math.round(marketing/months).toLocaleString()}/mo — room to grow to $${mktAt2pct.toLocaleString()}/mo (2% of revenue = $${mktBudgetExtra.toLocaleString()}/mo extra budget)
+Debt: $${Math.round(debt).toLocaleString()} (${debtPct}%) — overage vs 8% = $${debtOverage2.toLocaleString()} — reducing to 12% saves $${debtSavingMo2.toLocaleString()}/mo
+Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%) = $${moProfitCalc2.toLocaleString()}/mo
+Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo
+Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)
+Avg Item Price: $${avgItemPrice} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)
+DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution
 
-Include 3 wins (✅) and 3 opportunities (🎯). Use ONLY the dollar amounts listed above.
+RULES: Use ONLY numbers above. Never recalculate. Include 3 wins (✅) and 3 opportunities (🎯).
 Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
 
   const system = HRZN.getSystemPrompt(HRZN.getData());
