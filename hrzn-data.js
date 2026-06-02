@@ -316,8 +316,6 @@ CRITICAL ANALYSIS RULES:
 - Do not repeat the same insight type in multiple responses in one session`;
   },
 
-,
-
   getSystemPrompt(d) {
     const settings = typeof localStorage !== 'undefined'
       ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}')
@@ -379,41 +377,41 @@ CRITICAL ANALYSIS RULES:
       ? `$${weekly.toLocaleString()} vs $${revenueTarget.toLocaleString()} target (${weekly >= revenueTarget ? '✅ above' : `⚠️ $${(revenueTarget-weekly).toLocaleString()} below`})`
       : `$${weekly.toLocaleString()}/week`;
 
-    return \`You are HRZN, an elite AI business operator for \${bizName}\${isDemo ? ' (demo mode)' : ''}. Business type: \${bizType}.
-\${this.getBenchmarkContext()}
+    return `You are HRZN, an elite AI business operator for ${bizName}${isDemo ? ' (demo mode)' : ''}. Business type: ${bizType}.
+${this.getBenchmarkContext()}
 
-REAL BUSINESS DATA (\${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, \${d.periodStart ? d.periodStart + (d.periodEnd ? ' to ' + d.periodEnd : '') : 'reporting period'}):
+REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, ${d.periodStart ? d.periodStart + (d.periodEnd ? ' to ' + d.periodEnd : '') : 'reporting period'}):
 
 REVENUE:
-- Gross Sales: $\${Math.round(d.grossSales||0).toLocaleString()}
-- Discounts: -$\${Math.round(d.discounts||0).toLocaleString()} (\${discPct}% of gross — \${discLabel})
-- Net Sales: $\${Math.round(d.netSales||0).toLocaleString()}
-- Tips: $\${Math.round(d.tips||0).toLocaleString()} (\${tipsPct}% of net sales — \${tipsLabel})
-- Taxes & Fees: $\${Math.round(d.taxes||0).toLocaleString()}
-- Total Collected: $\${Math.round(d.amountCollected||0).toLocaleString()}
+- Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
+- Discounts: -$${Math.round(d.discounts||0).toLocaleString()} (${discPct}% of gross — ${discLabel})
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
+- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — ${tipsLabel})
+- Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
+- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
 
 VOLUME & PRICING:
-- Items Sold: \${(d.itemsSold||0).toLocaleString()} (\${Math.round(d.itemsSold/weeks)} items/week avg)
-- Avg Item Price: $\${(d.avgCheck||0).toFixed ? parseFloat(d.avgCheck||0).toFixed(2) : d.avgCheck|0}\${checkTarget > 0 ? ' (target: $' + checkTarget + ')' : ''}
+- Items Sold: ${(d.itemsSold||0).toLocaleString()} (${Math.round(d.itemsSold/weeks)} items/week avg)
+- Avg Item Price: $${(d.avgCheck||0).toFixed ? parseFloat(d.avgCheck||0).toFixed(2) : d.avgCheck|0}${checkTarget > 0 ? ' (target: $' + checkTarget + ')' : ''}
 
 PERIOD & VELOCITY:
-- Period: \${months.toFixed(1)} months (\${Math.round(weeks)} weeks, \${periodDays} days)
-- Weekly Avg Revenue: \${revenueVsTarget}
-- Monthly Avg Revenue: $\${monthly.toLocaleString()}
-- Daily Avg Revenue: $\${daily.toLocaleString()}
+- Period: ${months.toFixed(1)} months (${Math.round(weeks)} weeks, ${periodDays} days)
+- Weekly Avg Revenue: ${revenueVsTarget}
+- Monthly Avg Revenue: $${monthly.toLocaleString()}
+- Daily Avg Revenue: $${daily.toLocaleString()}
 
 PAYMENT CHANNELS:
-- Credit Card: $\${Math.round(t.creditCard||0).toLocaleString()} (\${d.amountCollected > 0 ? Math.round((t.creditCard||0)/d.amountCollected*100) : 0}%)
-- Debit Card: $\${Math.round(t.debitCard||0).toLocaleString()} (\${d.amountCollected > 0 ? Math.round((t.debitCard||0)/d.amountCollected*100) : 0}%)
-- DoorDash/Delivery: $\${Math.round(t.doorDash||0).toLocaleString()} (\${ddPct}% — \${ddLabel})
-- Cash: $\${Math.round(t.cash||0).toLocaleString()} (\${cashPct}% — \${cashLabel})
-- Digital payments total: \${digitalPct}% of revenue (\${digitalPct > 85 ? '✅ excellent data quality' : digitalPct > 70 ? 'good' : '⚠️ high cash use'})
+- Credit Card: $${Math.round(t.creditCard||0).toLocaleString()} (${d.amountCollected > 0 ? Math.round((t.creditCard||0)/d.amountCollected*100) : 0}%)
+- Debit Card: $${Math.round(t.debitCard||0).toLocaleString()} (${d.amountCollected > 0 ? Math.round((t.debitCard||0)/d.amountCollected*100) : 0}%)
+- DoorDash/Delivery: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — ${ddLabel})
+- Cash: $${Math.round(t.cash||0).toLocaleString()} (${cashPct}% — ${cashLabel})
+- Digital payments total: ${digitalPct}% of revenue (${digitalPct > 85 ? '✅ excellent data quality' : digitalPct > 70 ? 'good' : '⚠️ high cash use'})
 
 TARGETS (from operator settings):
-- Labor target: \${laborTarget}%\${targets.labor ? '' : ' (default — set in Settings)'}
-- Weekly revenue target: \${revenueTarget > 0 ? '$' + revenueTarget.toLocaleString() : 'not set'}
-- Avg check target: \${checkTarget > 0 ? '$' + checkTarget : 'not set'}
-- DoorDash target: \${ddTarget}%\`;
+- Labor target: ${laborTarget}%${targets.labor ? '' : ' (default — set in Settings)'}
+- Weekly revenue target: ${revenueTarget > 0 ? '$' + revenueTarget.toLocaleString() : 'not set'}
+- Avg check target: ${checkTarget > 0 ? '$' + checkTarget : 'not set'}
+- DoorDash target: ${ddTarget}%`;
   },
 
   getInsightPrompt(type, extra) {
@@ -499,8 +497,6 @@ TARGETS (from operator settings):
     const d = this.getData();
     return this.getSystemPrompt(d) + this.getBenchmarkContext();
   },
-
-,
 
   // ── SOURCE BADGE HTML ────────────────────────
   getSourceBadge() {
