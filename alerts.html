@@ -175,6 +175,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 
   </div>
 </div>
+
+<div style="padding:0 28px 24px;margin-left:var(--sidebar-w);">
     <!-- AI INSIGHTS CARD -->
     <div class="card fade-4" style="margin-top:0;" id="alertsInsightsCard">
       <div class="card-header">
@@ -207,20 +209,70 @@ function renderAlertsInsights(insights, container) {
   container.innerHTML = html;
 }
 
+function buildAlertsContext(d) {
+  const t = d.tenders || {};
+  const days = d.periodDays || 148;
+  const weeks = days / 7;
+  const months = days / 30.44;
+  const net = d.netSales || 0;
+  const gross = d.grossSales || 0;
+  const disc = d.discounts || 0;
+  const tips = d.tips || 0;
+  const collected = d.amountCollected || 0;
+  const items = d.itemsSold || 0;
+  const credit = t.creditCard || 0;
+  const debit = t.debitCard || 0;
+  const dd = t.doorDash || 0;
+  const cash = t.cash || 0;
+  const digitalTotal = credit + debit + dd;
+  const digitalPct = collected > 0 ? (digitalTotal/collected*100).toFixed(1) : 0;
+  const cashPct = collected > 0 ? (cash/collected*100).toFixed(1) : 0;
+  const discPct = gross > 0 ? (disc/gross*100).toFixed(2) : 0;
+  const tipsPct = net > 0 ? (tips/net*100).toFixed(1) : 0;
+  const ddPct = collected > 0 ? (dd/collected*100).toFixed(1) : 0;
+  const weeklyRev = Math.round(net/weeks);
+  const weeklyGap = 12000 - weeklyRev;
+  const annualGap = Math.round(weeklyGap * 52);
+  const periodGap = Math.round(weeklyGap * weeks);
+  const priceGapPeriod = Math.round((15.00 - (net>0&&items>0?net/items:0)) * items);
+  const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
+  const ddGapPeriod = Math.round(net * 0.10 - dd);
+  const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
+  const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const bizName = settings.businessName || 'this restaurant';
+
+  return `Identify the 3 most critical issues and 3 strongest wins for ${bizName}. Use ONLY the pre-calculated numbers below.
+
+EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:
+Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'} (${Math.round(weeks)} weeks, ${months.toFixed(1)} months)
+Net Sales: $${Math.round(net).toLocaleString()} | Weekly avg: $${weeklyRev.toLocaleString()} vs $12,000 target — gap $${weeklyGap.toLocaleString()}/wk ($${annualGap.toLocaleString()}/yr, $${periodGap.toLocaleString()} this period)
+Discounts: $${Math.round(disc).toLocaleString()} = ${discPct}% of gross — EXCELLENT WIN (below 3%)
+Tips: $${Math.round(tips).toLocaleString()} = ${tipsPct}% of net sales — ${parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'}
+Digital payments (credit+debit+DoorDash): $${Math.round(digitalTotal).toLocaleString()} = ${digitalPct}% of collected — cash only ${cashPct}%
+DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% — gap to 10% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)
+Avg Item Price: $${net>0&&items>0?(net/items).toFixed(2):0} vs $15 target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)
+Items Sold: ${items.toLocaleString()} (${Math.round(items/weeks)}/week)
+
+RULES: Use ONLY numbers above. Never recalculate. Include exactly 3 wins (✅) and 3 opportunities (🎯).
+Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
+}
+
 async function generateAlertsInsights() {
   const container = document.getElementById('alertsInsightsContainer');
   const btn = document.getElementById('refreshAlertsBtn');
   if(!container) return;
   if(btn){btn.textContent='Analyzing...';btn.disabled=true;}
   container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your business...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
-  const { system, prompt } = HRZN.getInsightPrompt('alerts');
+  const d = HRZN.getData();
+  const calcCtx = buildAlertsContext(d);
+  const system = HRZN.getSystemPrompt(d);
   try {
     const r = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
         system: system + '\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',
-        messages:[{role:'user', content: prompt}]
+        messages:[{role:'user', content: calcCtx}]
       })
     });
     const data = await r.json();
@@ -245,8 +297,13 @@ async function generateMoreAlertsInsights() {
   loadingDiv.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Generating more insights...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div>';
   container.appendChild(loadingDiv);
   container.scrollTop = container.scrollHeight;
-  const morePrompt = 'Identify 6 MORE business insights focused on growth opportunities, competitive advantages, and operational improvements DIFFERENT from typical alert-type warnings. Include 3 wins (✅) and 3 opportunities (🎯). Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}';
-  const system = HRZN.getSystemPrompt(HRZN.getData());
+  const d2 = HRZN.getData();
+  const moreCtx = buildAlertsContext(d2).replace(
+    'Identify the 3 most critical issues and 3 strongest wins',
+    'Identify 6 MORE insights focused on growth opportunities and operational improvements DIFFERENT from the previous alerts'
+  );
+  const system = HRZN.getSystemPrompt(d2);
+  const morePrompt = moreCtx;
   try {
     const r = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},

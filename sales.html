@@ -381,4 +381,168 @@ async function generateMoreInsights() {
   if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
 }
 
->
+function renderDataBadges(sources) {
+  const container = document.getElementById('page-data-sources');
+  if (!container) return;
+  container.innerHTML = sources.map(s => {
+    const stored = localStorage.getItem(s.key) || localStorage.getItem(s.oldKey || '');
+    const loaded = !!stored;
+    const color = loaded ? 'var(--green)' : 'var(--text-dim)';
+    const bg = loaded ? 'var(--green-dim)' : 'rgba(128,128,128,0.08)';
+    const border = loaded ? 'rgba(76,175,125,0.2)' : 'rgba(128,128,128,0.15)';
+    const dot = loaded ? '●' : '○';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">' +
+      '<span style="font-size:8px;">'+dot+'</span>' + s.label + (loaded ? '' : ' — not uploaded') + '</span>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  // Sidebar user info
+  try {
+    const user = hrznGetUser();
+    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const bizName = settings.businessName || 'My Restaurant';
+    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
+    document.querySelectorAll('.business-name').forEach(el => { if(!hrznIsDemo()) el.textContent = bizName; });
+    const userNameEl = document.querySelector('.user-name');
+    if (userNameEl && !hrznIsDemo()) userNameEl.textContent = userName;
+    const userRoleEl = document.querySelector('.user-role');
+    if (userRoleEl && !hrznIsDemo()) {
+      const plan = settings.plan || 'trial';
+      const planLabel = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Trial';
+      const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
+      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
+    }
+    const avatarEl = document.querySelector('.user-avatar');
+    if (avatarEl && !hrznIsDemo()) avatarEl.textContent = userName.charAt(0).toUpperCase();
+  } catch(e) {}
+
+  // Trial banner
+  try {
+    if (!hrznIsDemo() && hrznIsLoggedIn()) {
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+      if (plan === 'trial') {
+        const user = hrznGetUser();
+        const createdAt = user.created_at ? new Date(user.created_at) : null;
+        if (createdAt) {
+          const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+          const daysLeft = Math.ceil((trialEnd - new Date()) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 14 && daysLeft > 0) {
+            const trialBanner = document.createElement('div');
+            trialBanner.style.cssText = 'background:rgba(201,168,76,0.08);border-bottom:1px solid rgba(201,168,76,0.15);padding:7px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;';
+            const urgency = daysLeft <= 3 ? 'color:var(--orange)' : 'color:var(--gold)';
+            trialBanner.innerHTML = '<span style="' + urgency + ';">⏱ ' + daysLeft + ' day' + (daysLeft===1?'':'s') + ' left in your free trial</span><a href="pricing.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
+            const topbar = document.querySelector('.topbar');
+            if (topbar && topbar.nextSibling) topbar.parentNode.insertBefore(trialBanner, topbar.nextSibling);
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Demo banner
+  if (hrznIsDemo()) {
+    const banner = document.getElementById('demo-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+
+  // New user empty state
+  if (hrznIsNewUser() && !hrznHasData()) {
+    const notice = document.createElement('div');
+    notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
+    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span><a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
+    const topbar = document.querySelector('.topbar');
+    if (topbar && topbar.parentNode) topbar.parentNode.insertBefore(notice, topbar.nextSibling);
+  }
+
+  renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
+  HRZN.injectBadge('hrzn-source-badge');
+  applyTheme(getTheme());
+
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('csvInput');
+  const status = document.getElementById('uploadStatus');
+
+  // Load existing data
+  try {
+    const d = HRZN.getData();
+    if(d._source !== 'demo') {
+      updateDashboard(d);
+      if(status){ status.textContent='✓ Showing data from '+(d._filename||d._source); status.style.color='var(--green)'; }
+      if(zone){ zone.style.borderColor='var(--green)'; }
+    } else {
+      generateInsights(d);
+    }
+  } catch(e) { console.error('Error loading data:', e); }
+
+  // File upload handlers
+  if(zone){
+    zone.addEventListener('click',()=>input.click());
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragging');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('dragging'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragging');const file=e.dataTransfer.files[0];if(file)processFile(file);});
+    input.addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0]);});
+  }
+
+  async function processFile(file){
+    if(!file.name.endsWith('.csv')){status.textContent='Please upload a CSV file.';status.style.color='var(--red)';return;}
+    status.textContent='Reading file...';status.style.color='var(--text-dim)';
+    const text = await file.text();
+    try{
+      const res = await fetch('/api/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text,type:'sales'})});
+      const data = await res.json();
+      if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
+      data._filename = file.name;
+      HRZN.saveCSV(data);
+      localStorage.removeItem('hrzn-pl-data');
+      hrznSyncToCloud('sales', data).catch(()=>{});
+      HRZN.injectBadge('hrzn-source-badge');
+      updateDashboard(data);
+      status.textContent='✓ Data updated from '+file.name;
+      status.style.color='var(--green)';
+      zone.style.borderColor='var(--green)';
+    }catch(e){status.textContent='Error: '+e.message;status.style.color='var(--red)';}
+  }
+
+  function updateDashboard(d){
+    const set = (id,val)=>{document.querySelectorAll('#'+id).forEach(el=>el.textContent=val);};
+    const fmt = n=>'$'+Math.round(n).toLocaleString();
+    const t = d.tenders || {};
+    const period = (d.periodStart ? d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : '') : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    set('val-period', period || 'Upload CSV ⌄');
+    set('val-net-sales', fmt(d.netSales||0));
+    set('val-net-sales2', fmt(d.netSales||0));
+    set('val-gross-sales', fmt(d.grossSales||0));
+    set('val-collected', fmt(d.amountCollected||0));
+    set('val-collected2', fmt(d.amountCollected||0));
+    set('val-tips', fmt(d.tips||0));
+    set('val-discounts', '-'+fmt(d.discounts||0));
+    set('val-taxes', fmt(d.taxes||0));
+    set('val-items', (d.itemsSold||0).toLocaleString());
+    set('val-avg-check', '$'+(Math.round((d.avgCheck||0)*100)/100).toFixed(2));
+    set('val-doordash', fmt(t.doorDash||0));
+    const ddPct = d.amountCollected > 0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : '0.0';
+    set('val-doordash-pct', ddPct+'%');
+    set('val-cash', fmt(t.cash||0));
+    set('val-credit', fmt(t.creditCard||0));
+    set('val-debit', fmt(t.debitCard||0));
+    const discLabel = document.getElementById('val-discount-label');
+    if(discLabel) discLabel.textContent = '('+fmt(d.discounts||0)+' off)';
+    generateInsights(d);
+  }
+});
+</script>
+<div id="paywall-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:#0f0f0f;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:48px;max-width:480px;width:90%;text-align:center;">
+    <div style="font-size:32px;margin-bottom:16px;">⏱</div>
+    <div style="font-size:22px;font-weight:300;letter-spacing:-0.02em;margin-bottom:10px;">Your free trial has ended</div>
+    <div style="font-size:13px;color:#666;margin-bottom:32px;line-height:1.7;">Upgrade to keep access to your dashboard, analytics, AI operator, and all your data.</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="window.location.href='pricing.html'" style="background:#C9A84C;color:#000;border:none;padding:13px 28px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">View Plans →</button>
+      <button onclick="window.location.href='pricing.html?plan=starter'" style="background:transparent;color:#999;border:1px solid rgba(255,255,255,0.1);padding:13px 28px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;">Start at $99/mo</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
