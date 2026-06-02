@@ -171,7 +171,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           </div>
           <div style="flex:1;">
             <div style="font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px;" id="dash-health-label">Calculating...</div>
-            <div style="font-size:11px;color:var(--text-dim);line-height:1.6;" id="dash-health-desc">Based on your real business data</div>
+            <div style="font-size:11px;color:var(--text-dim);line-height:1.6;" id="dash-health-desc">Based on your business data</div>
             <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="dash-score-breakdown"></div>
           </div>
         </div>
@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   set('dash-health-score', health);
   set('dash-health-label', healthLabel);
-  set('dash-health-desc', 'Based on '+months.toFixed(1)+' months of real data');
+  set('dash-health-desc', 'Based on '+(d._source==='demo' ? 'demo data' : months.toFixed(1)+' months of real data'));
   const ring = document.getElementById('dash-health-ring');
   if(ring) { ring.setAttribute('stroke-dasharray', Math.round(health/100*251.2)+' 251.2'); ring.setAttribute('stroke', healthColor); }
   const scoreEl = document.getElementById('dash-health-score');
@@ -584,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(weekly*(laborPct-tgt.labor)/100))+'/week savings',link:'labor.html'});
   if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(((d.netSales||0)*tgt.doordash/100-(t.doorDash||0))/((d.periodDays||148)/7)))+'/week upside',link:'data.html'});
   if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round((d.itemsSold||0)/months/4.33))+'/week',link:'menu.html'});
-  recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Based on your real data',link:'operator.html'});
+  recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
   if(recsList) {
