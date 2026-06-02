@@ -642,7 +642,27 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
-  loadSettings();
+  if (hrznIsDemo()) {
+    // In demo mode, show demo placeholder values (read-only)
+    const demoFields = {
+      'biz-name': 'Demo Restaurant',
+      'biz-location': 'Los Angeles, CA',
+      'owner-name': 'Demo User',
+      'owner-email': 'demo@usehrzn.ai',
+    };
+    Object.entries(demoFields).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) { el.value = val; el.disabled = true; el.style.opacity = '0.6'; }
+    });
+    // Show demo notice
+    const notice = document.createElement('div');
+    notice.style.cssText = 'background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--gold);margin-bottom:20px;';
+    notice.textContent = '👀 Viewing demo mode — settings are read-only. Sign up to configure your own business.';
+    const content = document.querySelector('.content');
+    if (content) content.insertBefore(notice, content.firstChild);
+  } else {
+    loadSettings();
+  }
 
   // Show current source
   const srcLabel = document.getElementById('current-source-label');
