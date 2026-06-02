@@ -648,6 +648,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
+  // Strip ?demo=true from URL — settings page must always be saveable
+  if (window.location.search.includes('demo=true')) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('demo');
+    window.history.replaceState({}, '', url.toString());
+  }
   if (hrznIsDemo()) {
     // In demo mode, show demo placeholder values (read-only)
     const demoFields = {

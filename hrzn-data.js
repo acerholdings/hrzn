@@ -70,7 +70,10 @@ function hrznRequireAuth() {
 
 function hrznNavigate(p) {
   const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
-  window.location.href = isDemo && !p.includes('?') ? p + '?demo=true' : p;
+  // Never carry demo param to settings, data, or auth pages
+  const noDemo = ['settings.html','data.html','login.html','signup.html','pricing.html'];
+  const stripDemo = noDemo.some(pg => p.includes(pg));
+  window.location.href = isDemo && !p.includes('?') && !stripDemo ? p + '?demo=true' : p;
 }
 
 function hrznLogout() {
