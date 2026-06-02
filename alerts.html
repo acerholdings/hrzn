@@ -251,8 +251,7 @@ DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% — gap to 10% target 
 Avg Item Price: $${net>0&&items>0?(net/items).toFixed(2):0} vs $15 target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)
 Items Sold: ${items.toLocaleString()} (${Math.round(items/weeks)}/week)
 
-RULES: Use ONLY numbers above. Never recalculate. Include exactly 3 wins (✅) and 3 opportunities (🎯).
-Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
+Total addressable opportunity this period: $${(periodGap + ddGapPeriod + priceGapPeriod).toLocaleString()} ($${Math.round((periodGap + ddGapPeriod + priceGapPeriod)/months*12).toLocaleString()}/yr combined)\n\nRULES: Use ONLY numbers above. Never recalculate. When referencing total opportunity, always use the combined figure above. Include exactly 3 wins (✅) and 3 opportunities (🎯).\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}\`;
 }
 
 async function generateAlertsInsights() {
@@ -469,12 +468,15 @@ const months = HRZN.getMonths(d);
   // ── OPPORTUNITIES ────────────────────────────────
   // DoorDash underperforming
   if(doorDashPct < t.doordash){
-    const potentialWeekly = Math.round(weekly * (t.doordash/100 - doorDashPct/100));
+    const ddTargetAmt = (d.netSales||0) * (t.doordash/100);
+    const ddGapPeriod = Math.round(ddTargetAmt - (tenders.doorDash||0));
+    const ddGapWeekly = Math.round(ddGapPeriod / weeks);
+    const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
     opportunity.push({
       type:'opportunity', category:'Delivery',
-      title:`DoorDash at ${doorDashPct}% — ${fmt(potentialWeekly*52)} annual revenue untapped`,
-      desc:`DoorDash generates only ${doorDashPct}% of your revenue vs your ${t.doordash}% target. Industry average for comparable LA restaurants is 15–20%. Closing this gap to just ${t.doordash}% would add approximately ${fmt(potentialWeekly)}/week — ${fmt(potentialWeekly*52)}/year.`,
-      value:`+${fmt(potentialWeekly)}/week potential`,
+      title:`DoorDash at ${doorDashPct}% — ${fmt(ddGapAnnual)} annual revenue untapped`,
+      desc:`DoorDash generates only ${doorDashPct}% of your revenue vs your ${t.doordash}% target. Closing this gap to ${t.doordash}% would add approximately ${fmt(ddGapWeekly)}/week — ${fmt(ddGapAnnual)}/year.`,
+      value:`+${fmt(ddGapWeekly)}/week potential`,
       action:"navigate('sales.html')", actionLabel:'View Breakdown →'
     });
   }
@@ -534,14 +536,15 @@ const months = HRZN.getMonths(d);
     });
   }
 
-  // Strong credit card adoption
-  const cardPct = d.amountCollected>0 ? ((tenders.creditCard||0)+(tenders.debitCard||0))/d.amountCollected*100 : 0;
-  if(cardPct > 85){
+  // Strong digital adoption (credit + debit + DoorDash)
+  const digitalAmt = (tenders.creditCard||0)+(tenders.debitCard||0)+(tenders.doorDash||0);
+  const digitalPctWin = d.amountCollected>0 ? digitalAmt/d.amountCollected*100 : 0;
+  if(digitalPctWin > 85){
     wins.push({
       type:'win', category:'Payments',
-      title:`${cardPct.toFixed(0)}% digital payments — excellent trackability`,
-      desc:`${cardPct.toFixed(0)}% of revenue comes through trackable digital channels (credit + debit). This gives HRZN high-quality data for insights and makes it easier to identify trends and anomalies.`,
-      value:`${cardPct.toFixed(0)}% digital`
+      title:`${digitalPctWin.toFixed(0)}% digital payments — excellent trackability`,
+      desc:`${digitalPctWin.toFixed(0)}% of revenue flows through trackable digital channels (credit, debit, and delivery). Cash is only ${(100-digitalPctWin).toFixed(0)}% (${fmt(tenders.cash||0)}), minimizing handling risk and giving HRZN high-quality data for insights.`,
+      value:`${digitalPctWin.toFixed(0)}% digital`
     });
   }
 
