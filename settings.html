@@ -420,7 +420,11 @@ function markDirty(){
 }
 
 function saveAll(){
-  const settings = {
+  // Guard: don't save in demo mode
+  if (hrznIsDemo()) return;
+  // Merge with existing to preserve plan, subscription_status, etc.
+  const existing = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+  const settings = { ...existing,
     bizName: document.getElementById('biz-name')?.value,
     businessName: document.getElementById('biz-name')?.value,
     bizLocation: document.getElementById('biz-location')?.value,
