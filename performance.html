@@ -197,7 +197,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
         <div class="card-header"><div class="card-title">This Week vs Last Week <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div><div style="display:flex;gap:16px;font-size:10px;"><span style="color:var(--text);">This week</span><span style="color:var(--text-dim);">Last week</span></div></div>
         <div class="card-body">
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);">↑ —</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-margin-change">—</div></div>
@@ -512,15 +512,16 @@ const months = HRZN.getMonths(d);
   set('vs-check-last', '—');
   set('vs-labor-this', laborPct+'%');
   set('vs-labor-last', '—');
-  set('vs-labor-change', laborPct > laborTarget ? '↑ above target' : '✓ on target');
-  // Only show change if we have actual data
+  // Labor: show target status, no WoW arrow since last week data is estimated
+  set('vs-labor-change', laborPct > laborTarget ? 'above target' : 'on target');
   const laborChangeEl = document.getElementById('vs-labor-change');
   if(laborChangeEl) laborChangeEl.style.color = laborPct > laborTarget ? 'var(--red)' : 'var(--green)';
   set('vs-margin-this', grossMargin);
   set('vs-margin-last', '—');
-  set('vs-margin-change', grossMargin !== '—' ? '↑ +5.4%' : '—');
+  // Gross margin: only show if we have real data
+  set('vs-margin-change', '—');
   const marginChangeEl = document.getElementById('vs-margin-change');
-  if(marginChangeEl) marginChangeEl.style.color = grossMargin !== '—' ? 'var(--green)' : 'var(--text-dim)';
+  if(marginChangeEl) marginChangeEl.style.color = 'var(--text-dim)';
   set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
   set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
   set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
