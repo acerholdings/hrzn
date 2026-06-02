@@ -192,9 +192,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
           <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Auto-fill labor from CSV</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter <strong style="color:var(--text);">monthly</strong> amounts. HRZN scales to your CSV period (<span id="period-months">1.0</span> months).</div>
-            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="Monthly" value="0" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" value="0" placeholder="Monthly" oninput="calcAndRender()"/></div>
-            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" placeholder="Monthly" value="0" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="Monthly" value="8000" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" value="10000" placeholder="Monthly" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" placeholder="Monthly" value="5000" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" placeholder="Monthly" value="1200" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Insurance</div><input class="input-field" id="input-insurance" type="number" placeholder="Monthly" value="800" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Supplies</div><input class="input-field" id="input-supplies" type="number" placeholder="Monthly" value="600" oninput="calcAndRender()"/></div>
@@ -277,16 +277,15 @@ function getInputVal(id){return parseFloat(document.getElementById(id)?.value)||
 function loadSavedInputs(){
   try{
     const saved=JSON.parse(localStorage.getItem(PL_KEY)||'{}');
-    const {revenue} = getRevenue();
     const fields=['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'];
     fields.forEach(f=>{
       const el=document.getElementById('input-'+f);
       if(!el) return;
-      // If saved value exists and revenue looks reasonable, use it
-      // Otherwise use defaults (don't load stale values based on wrong revenue)
-      if(saved[f]!==undefined && revenue > 0) {
-        el.value=saved[f];
+      // Only load saved value if it's a real non-zero value
+      if(saved[f] !== undefined && saved[f] !== 0 && saved[f] !== '0') {
+        el.value = saved[f];
       }
+      // Otherwise keep the HTML default value
     });
   }catch(e){}
 }
