@@ -175,7 +175,118 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 
   </div>
 </div>
+    <!-- AI INSIGHTS CARD -->
+    <div class="card fade-4" style="margin-top:0;" id="alertsInsightsCard">
+      <div class="card-header">
+        <div class="card-title">AI Analysis — Critical Issues &amp; Wins</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button id="refreshAlertsBtn" onclick="generateAlertsInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Refresh</button>
+          <button id="moreAlertsBtn" onclick="generateMoreAlertsInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Generate More</button>
+          <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);"><span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated</div>
+        </div>
+      </div>
+      <div id="alertsInsightsContainer" style="max-height:400px;overflow-y:auto;">
+        <div style="padding:32px;text-align:center;font-size:12px;color:var(--text-dim);">Loading analysis...</div>
+      </div>
+    </div>
 
+
+<script>
+function renderAlertsInsights(insights, container) {
+  const cols = 3;
+  let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;">';
+  insights.forEach((ins, i) => {
+    const border = (i % cols !== cols-1) ? 'border-right:1px solid var(--border);' : '';
+    const topBorder = i >= cols ? 'border-top:1px solid var(--border);' : '';
+    html += '<div style="padding:18px;'+border+topBorder+'">' +
+      '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div>' +
+      '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function generateAlertsInsights() {
+  const container = document.getElementById('alertsInsightsContainer');
+  const btn = document.getElementById('refreshAlertsBtn');
+  if(!container) return;
+  if(btn){btn.textContent='Analyzing...';btn.disabled=true;}
+  container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your business...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
+  const { system, prompt } = HRZN.getInsightPrompt('alerts');
+  try {
+    const r = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:1500,
+        system: system + '\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',
+        messages:[{role:'user', content: prompt}]
+      })
+    });
+    const data = await r.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(clean);
+    renderAlertsInsights(insights, container);
+  } catch(e) {
+    container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Error: '+e.message+'</div>';
+  }
+  if(btn){btn.textContent='+ Refresh';btn.disabled=false;}
+}
+
+async function generateMoreAlertsInsights() {
+  const container = document.getElementById('alertsInsightsContainer');
+  const btn = document.getElementById('moreAlertsBtn');
+  if(!container) return;
+  if(btn){btn.textContent='Generating...';btn.disabled=true;}
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'alerts-more-loading';
+  loadingDiv.style.cssText = 'padding:20px;text-align:center;border-top:1px solid var(--border);';
+  loadingDiv.innerHTML = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Generating more insights...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div>';
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
+  const morePrompt = 'Identify 6 MORE business insights focused on growth opportunities, competitive advantages, and operational improvements DIFFERENT from typical alert-type warnings. Include 3 wins (✅) and 3 opportunities (🎯). Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}';
+  const system = HRZN.getSystemPrompt(HRZN.getData());
+  try {
+    const r = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:1500,
+        system: system + '\n\nRespond ONLY with a JSON array. No markdown.',
+        messages:[{role:'user', content: morePrompt}]
+      })
+    });
+    const data = await r.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(clean);
+    const loading = document.getElementById('alerts-more-loading');
+    if(loading) loading.remove();
+    const divider = document.createElement('div');
+    divider.style.cssText = 'padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+    divider.textContent = 'Additional Insights';
+    container.appendChild(divider);
+    const cols = 3;
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+    insights.forEach((ins, i) => {
+      const border = (i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
+      const topBorder = i>=cols?'border-top:1px solid var(--border);':'';
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:18px;'+border+topBorder;
+      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
+      grid.appendChild(div);
+    });
+    container.appendChild(grid);
+    container.scrollTop = container.scrollHeight;
+  } catch(e) {
+    const loading = document.getElementById('alerts-more-loading');
+    if(loading) loading.remove();
+    console.error('Error:', e);
+  }
+  if(btn){btn.textContent='+ Generate More';btn.disabled=false;}
+}
+</script>
 <script src="hrzn-data.js"></script>
 <script>hrznRequireAuth();</script>
 <script>
@@ -641,6 +752,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
   renderAlerts();
+  generateAlertsInsights();
 });
 </script>
 

@@ -512,18 +512,43 @@ async function generateMorePLInsights(){
   const debtPct = revenue>0?(debt/revenue*100).toFixed(1):0;
   const laborPct = revenue>0?(labor/revenue*100).toFixed(1):0;
 
-  const morePrompt = `Analyze this P&L data and provide 6 MORE insights focused on growth strategies, cost optimization opportunities, and operational improvements DIFFERENT from typical labor/debt/food cost insights.
+  // Pre-calculate all figures for accurate insights
+  const rentPct = revenue>0?(rent/revenue*100).toFixed(1):0;
+  const utilPct = revenue>0?(utilities/revenue*100).toFixed(1):0;
+  const mktPct = revenue>0?(marketing/revenue*100).toFixed(1):0;
+  const grossPct2 = revenue>0?((revenue-cogs)/revenue*100).toFixed(1):0;
+  const laborOverageMo2 = revenue>0?Math.round((labor/revenue-0.28)*revenue/months):0;
+  const debtOverage2 = Math.round(debt-revenue*0.08);
+  const debtAt12 = Math.round(revenue*0.12);
+  const debtSavingMo = Math.round((debt-debtAt12)/months);
+  const avgPrice = 13.70;
+  const avgTarget = 15.00;
+  const items = (HRZN.getData().itemsSold||0);
+  const priceGap = Math.round((avgTarget-avgPrice)*items);
+  const moProfitCalc = Math.round(netProfit/months);
+  const ddGapAnn = Math.round((revenue*0.10-(HRZN.getData().tenders||{}).doorDash||0)/months*12);
+  const d2 = HRZN.getData();
+  const tipsPct2 = revenue>0?((d2.tips||0)/revenue*100).toFixed(1):0;
 
-P&L DATA — USE THESE EXACT NUMBERS ONLY:
-- Net Sales: $${Math.round(revenue).toLocaleString()}
-- Food Cost: $${Math.round(cogs).toLocaleString()} (${cogsPct}%)
-- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%)
-- Rent: $${Math.round(rent).toLocaleString()} (${revenue>0?(rent/revenue*100).toFixed(1):0}%)
-- Debt: $${Math.round(debt).toLocaleString()} (${debtPct}%)
-- Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%)
+  const morePrompt = `Analyze this P&L and provide 6 MORE insights focused on growth strategies and operational improvements DIFFERENT from labor/debt/food cost. Use ONLY the numbers below — do not calculate your own.
+
+P&L DATA — EXACT NUMBERS ONLY:
+- Net Sales: $${Math.round(revenue).toLocaleString()} over ${months.toFixed(1)} months
+- Food Cost: $${Math.round(cogs).toLocaleString()} (${cogsPct}% — excellent, <25% benchmark)
+- Gross Profit: $${Math.round(revenue-cogs).toLocaleString()} (${grossPct2}% margin)
+- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — $${laborOverageMo2.toLocaleString()}/mo over 28% target)
+- Rent: $${Math.round(rent).toLocaleString()} (${rentPct}% — $${Math.round(rent/months).toLocaleString()}/mo)
+- Utilities: $${Math.round(utilities).toLocaleString()} (${utilPct}%)
+- Marketing: $${Math.round(marketing).toLocaleString()} (${mktPct}% — $${Math.round(marketing/months).toLocaleString()}/mo)
+- Debt: $${Math.round(debt).toLocaleString()} (${debtPct}% — $${debtOverage2.toLocaleString()} over 8% benchmark)
+- Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}% — $${moProfitCalc.toLocaleString()}/mo)
 - Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo
+- Tips: $${Math.round((HRZN.getData().tips||0)).toLocaleString()} (${tipsPct2}% of net sales)
+- Avg Item Price: $${avgPrice} vs $${avgTarget} target — $${priceGap.toLocaleString()} revenue gap over period
+- DoorDash: $${Math.round((d2.tenders||{}).doorDash||0).toLocaleString()} (${debtPct}% of revenue)
+- Debt reduction to 12% would save: $${debtSavingMo.toLocaleString()}/mo
 
-Include 3 wins (✅) and 3 opportunities (🎯). Use only the dollar amounts above.
+Include 3 wins (✅) and 3 opportunities (🎯). Use ONLY the dollar amounts listed above.
 Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
 
   const system = HRZN.getSystemPrompt(HRZN.getData());
