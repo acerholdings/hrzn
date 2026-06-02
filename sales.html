@@ -1,30 +1,4 @@
-You are HRZN, an elite AI business operator for restaurants. Analyze this real sales data and provide exactly 6 MORE specific, actionable insights that are DIFFERENT from typical insights about credit cards, discounts, and tips — focus on growth strategies, operational improvements, and hidden opportunities. Each must reference actual numbers and give a clear action.
-
-CRITICAL ANALYSIS RULES:
-- Discount rate under 3% = HEALTHY WIN, praise it, do not flag as problem
-- Tips over 15% of net sales = STRONG performance, praise it
-- Tips % should be calculated vs NET SALES not total collected
-- DoorDash under 5% = growth opportunity (not a crisis)
-- Mix wins and opportunities — not everything is a problem
-- Be specific: use exact dollar amounts from the data
-
-SALES DATA:
-- Period: \${periodLabel}
-- Gross Sales: \$\${Math.round(d.grossSales||0).toLocaleString()}
-- Discounts: \$\${Math.round(d.discounts||0).toLocaleString()} (\${discPct}% of gross)
-- Net Sales: \$\${Math.round(d.netSales||0).toLocaleString()}
-- Tips: \$\${Math.round(d.tips||0).toLocaleString()} (\${tipsPct}% of NET sales)
-- Taxes & Fees: \$\${Math.round(d.taxes||0).toLocaleString()}
-- Total Collected: \$\${Math.round(d.amountCollected||0).toLocaleString()}
-- Items Sold: \${(d.itemsSold||0).toLocaleString()}
-- Avg Item Price: \$\${d.avgCheck||0}
-- Credit Card: \$\${Math.round(t.creditCard||0).toLocaleString()} (\${Math.round((t.creditCard||0)/(d.amountCollected||1)*100)}% of collected)
-- Debit: \$\${Math.round(t.debitCard||0).toLocaleString()} (\${Math.round((t.debitCard||0)/(d.amountCollected||1)*100)}%)
-- DoorDash: \$\${Math.round(t.doorDash||0).toLocaleString()} (\${ddPct}% of revenue)
-- Cash: \$\${Math.round(t.cash||0).toLocaleString()} (\${Math.round((t.cash||0)/(d.amountCollected||1)*100)}%)
-
-Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation, just the JSON array.
-Each object must have: "emoji" (1 emoji), "title" (5-8 words), "insight" (2-3 sentences with specific numbers and a clear action).<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -287,13 +261,396 @@ async function generateMoreInsights(){
     };
   } catch(e){ d = {}; }
 
-      const { system, prompt } = HRZN.getInsightPrompt('sales');
+  const prompt = `You are HRZN, an elite AI business operator for restaurants. Analyze this real sales data and provide exactly 6 MORE specific, actionable insights that are DIFFERENT from typical insights about credit cards, DoorDash, discounts, and tips. Focus on growth strategies, operational improvements, and hidden opportunities.
 
-        try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
+SALES DATA:
+- Period: ${d.period}
+- Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${d.discountPct||0}% of gross)
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
+- Tips: $${Math.round(d.tips||0).toLocaleString()}
+- Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
+- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
+- Items Sold: ${(d.itemsSold||0).toLocaleString()}
+- Avg Item Price: $${d.avgCheck||0}
+- DoorDash: $${Math.round((d.tenders||{}).doorDash||0).toLocaleString()} (${d.amountCollected > 0 ? (((d.tenders||{}).doorDash||0)/d.amountCollected*100).toFixed(1) : 0}% of revenue)
+- Cash: $${Math.round((d.tenders||{}).cash||0).toLocaleString()}
+
+Focus on: pricing strategy, revenue growth, customer behavior, seasonality, operational efficiency, competitive positioning.
+
+Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation.
+Each object: {"emoji":"1 emoji","title":"5-8 words","insight":"2-3 sentences with specific numbers and clear action."}`;
+
+  try {
+    const r = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001', max_tokens:1500,
+        system:'You are a restaurant business analyst. Always respond with pure JSON only, no markdown. Data: '+JSON.stringify(HRZN.getData()).slice(0,500),
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await r.json();
+    const text = data.content?.[0]?.text || '[]';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(clean);
+
+    const container = document.getElementById('insightsContainer');
+    if(!container) return;
+
+    // Add divider
+    const divider = document.createElement('div');
+    divider.style.cssText = 'padding:10px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+    divider.textContent = 'Additional Insights';
+    container.appendChild(divider);
+
+    // Add new insights
+    const cols = 3;
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+    insights.forEach((ins, i) => {
+      const border = (i % cols !== cols-1) ? 'border-right:1px solid var(--border);' : '';
+      const topBorder = i >= cols ? 'border-top:1px solid var(--border);' : '';
+      const div = document.createElement('div');
+      div.style.cssText = `padding:18px;${border}${topBorder}`;
+      div.innerHTML = `<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">${ins.emoji} ${ins.title}</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">${ins.insight}</div>`;
+      grid.appendChild(div);
+    });
+    container.appendChild(grid);
+    container.scrollTop = container.scrollHeight;
+
+    if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
+  } catch(e){
+    if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
+    console.error('Error generating more insights:', e);
+  }
+}
+
+
+function renderDataBadges(sources) {
+  const container = document.getElementById('page-data-sources');
+  if (!container) return;
+  container.innerHTML = sources.map(s => {
+    const stored = localStorage.getItem(s.key) || localStorage.getItem(s.oldKey || '');
+    const loaded = !!stored;
+    const color = loaded ? 'var(--green)' : 'var(--text-dim)';
+    const bg = loaded ? 'var(--green-dim)' : 'rgba(128,128,128,0.08)';
+    const border = loaded ? 'rgba(76,175,125,0.2)' : 'rgba(128,128,128,0.15)';
+    const dot = loaded ? '●' : '○';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">' +
+      '<span style="font-size:8px;">'+dot+'</span>' + s.label + (loaded ? '' : ' — not uploaded') +
+    '</span>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  
+  // Update sidebar with logged-in user info
+  try {
+    const user = hrznGetUser();
+    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const bizName = settings.businessName || 'My Restaurant';
+    const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Owner';
+    const userEmail = user.email || '';
+
+    const bizNameEl = document.querySelector('.business-name');
+    if (bizNameEl && !hrznIsDemo()) bizNameEl.textContent = bizName;
+
+    const userNameEl = document.querySelector('.user-name');
+    if (userNameEl && !hrznIsDemo()) userNameEl.textContent = userName;
+
+    const userRoleEl = document.querySelector('.user-role');
+    if (userRoleEl && !hrznIsDemo()) {
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+      const planLabel = plan === 'pro' ? 'Pro' : plan === 'starter' ? 'Starter' : 'Trial';
+      const planColor = plan === 'trial' ? 'rgba(201,168,76,0.6)' : '#C9A84C';
+      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
+    }
+
+    const avatarEl = document.querySelector('.user-avatar');
+    if (avatarEl && !hrznIsDemo()) {
+      avatarEl.textContent = userName.charAt(0).toUpperCase();
+    }
+  } catch(e) {}
+
+  // Trial countdown banner - only show if on trial plan
+  try {
+    if (!hrznIsDemo() && hrznIsLoggedIn()) {
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+      if (plan === 'trial') {
+        const user = hrznGetUser();
+        const createdAt = user.created_at ? new Date(user.created_at) : null;
+        if (createdAt) {
+          const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+          const now = new Date();
+          const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 14 && daysLeft > 0) {
+            const trialBanner = document.createElement('div');
+            trialBanner.style.cssText = 'background:rgba(201,168,76,0.08);border-bottom:1px solid rgba(201,168,76,0.15);padding:7px 28px;font-size:11px;color:var(--gold);display:flex;align-items:center;justify-content:space-between;';
+            const urgency = daysLeft <= 3 ? 'color:var(--orange)' : 'color:var(--gold)';
+            trialBanner.innerHTML = '<span style="' + urgency + ';">⏱ ' + daysLeft + ' day' + (daysLeft===1?'':'s') + ' left in your free trial</span>' +
+              '<a href="pricing.html" style="font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;">Upgrade →</a>';
+            const topbar = document.querySelector('.topbar');
+            if (topbar && topbar.nextSibling) {
+              topbar.parentNode.insertBefore(trialBanner, topbar.nextSibling);
+            }
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  
+  // Check trial status and show paywall if expired
+  try {
+    if (!hrznIsDemo() && hrznIsLoggedIn()) {
+      const user = hrznGetUser();
+      const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const plan = settings.plan || 'trial';
+
+      // If already on a paid plan, show manage subscription option
+      if (plan === 'starter' || plan === 'pro') {
+        const upgradeBtn = document.querySelector('.upgrade-btn');
+        if (upgradeBtn) {
+          upgradeBtn.textContent = 'Manage Plan';
+          upgradeBtn.onclick = async () => {
+            const token = localStorage.getItem('hrzn_token');
+            const r = await fetch('/api/stripe-portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+            const data = await r.json();
+            if (data.url) window.location.href = data.url;
+          };
+        }
+      }
+
+      // Check if trial expired
+      const createdAt = user.created_at ? new Date(user.created_at) : null;
+      if (createdAt) {
+        const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        if (now > trialEnd && plan === 'trial') {
+          const modal = document.getElementById('paywall-modal');
+          if (modal) modal.style.display = 'flex';
+        }
+      }
+
+      // Show upgrade success banner if redirected from Stripe
+      if (window.location.search.includes('upgraded=true')) {
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:rgba(76,175,125,0.1);border-bottom:1px solid rgba(76,175,125,0.2);padding:8px 28px;font-size:12px;color:#4caf7d;text-align:center;';
+        banner.textContent = '🎉 Welcome to HRZN! Your subscription is now active.';
+        const topbar = document.querySelector('.topbar');
+        if (topbar && topbar.nextSibling) topbar.parentNode.insertBefore(banner, topbar.nextSibling);
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  } catch(e) {}
+
+
+  // Fix data source dropdown - hide Demo Data for logged-in users
+  try {
+    if (hrznIsLoggedIn() && !hrznIsDemo()) {
+      const dropdown = document.getElementById('data-source-select');
+      if (dropdown) {
+        // Remove demo data options
+        Array.from(dropdown.options).forEach(opt => {
+          if (opt.value === 'demo' || opt.text.toLowerCase().includes('demo')) {
+            opt.remove();
+          }
+        });
+        // If no CSV uploaded, show placeholder
+        if (!hrznHasData()) {
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'No data — Upload CSV';
+          placeholder.disabled = true;
+          placeholder.selected = true;
+          dropdown.insertBefore(placeholder, dropdown.firstChild);
+        }
+      }
+
+      // Also fix the topbar source badge text
+      const badge = document.getElementById('hrzn-source-badge');
+      if (badge && !hrznHasData()) {
+        badge.innerHTML = '<span style="font-size:10px;color:var(--text-dim);padding:3px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px;">No data</span>';
+      }
+    }
+  } catch(e) {}
+
+
+  // Empty state for new users with no data
+  if (hrznIsNewUser()) {
+    // Slim topbar notice
+    const notice = document.createElement('div');
+    notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
+    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+      '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
+    const topbar = document.querySelector('.topbar');
+    if (topbar && topbar.parentNode) {
+      topbar.parentNode.insertBefore(notice, topbar.nextSibling);
+    }
+
+    // Replace each data card with an inline empty card
+    const emptyCard = (icon, label) => `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;border:1px dashed rgba(255,255,255,0.07);border-radius:10px;text-align:center;min-height:140px;">
+        <span style="font-size:24px;margin-bottom:8px;opacity:0.4;">${icon}</span>
+        <span style="font-size:12px;color:var(--text-dim);">${label}</span>
+      </div>`;
+
+    // Replace KPI values with dashes
+    document.querySelectorAll('[id^="kpi-"], [id^="perf-"], [id^="cf-"], [id^="rev-"]').forEach(el => {
+      if (!el.querySelector('canvas') && !el.querySelector('div')) {
+        el.textContent = '—';
+      }
+    });
+
+    // Replace canvases with empty cards
+    document.querySelectorAll('canvas').forEach(canvas => {
+      const wrap = canvas.closest('.chart-wrap, .chart-section, .card') || canvas.parentElement;
+      if (wrap) {
+        const empty = document.createElement('div');
+        empty.innerHTML = emptyCard('📊', 'Upload data to see this chart');
+        canvas.replaceWith(empty.firstElementChild);
+      }
+    });
+  }
+
+  // Show demo banner if in demo mode
+  if (hrznIsDemo()) {
+    const banner = document.getElementById('demo-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+
+  renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
+  HRZN.injectBadge('hrzn-source-badge');
+  try {
+    const d = HRZN.getData();
+    const p = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+    const el = document.getElementById('sales-period-label');
+    if(el && p) el.textContent = p;
+  } catch(e) {}
+  HRZN.injectBadge('hrzn-source-badge');
+  applyTheme(getTheme());
+
+  const zone = document.getElementById('uploadZone');
+  const input = document.getElementById('csvInput');
+  const status = document.getElementById('uploadStatus');
+
+  // Load data through HRZN data layer
+  try {
+    const data = HRZN.getData();
+    if(data._source !== 'demo') {
+      updateDashboard(data);
+      if(status){ status.textContent='✓ Showing data from '+(data._filename||data._source); status.style.color='var(--green)'; }
+      if(zone){ zone.style.borderColor='var(--green)'; }
+    }
+    generateInsights(data);
+  } catch(e) {
+    console.error('Error loading data:', e);
+  }
+  
+  if(zone){
+    zone.addEventListener('click',()=>input.click());
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragging');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('dragging'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragging');const file=e.dataTransfer.files[0];if(file)processFile(file);});
+    input.addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0]);});
+  }
+  
+  function loadSavedData(){
+    try{
+      const saved = localStorage.getItem(SALES_KEY);
+      if(saved){
+        const data = JSON.parse(saved);
+        updateDashboard(data);
+        if(status) status.textContent='✓ Showing data from '+data._filename;
+        if(status) status.style.color='var(--green)';
+        if(zone) zone.style.borderColor='var(--green)';
+      }
+    }catch(e){}
+  }
+
+  async function processFile(file){
+    if(!file.name.endsWith('.csv')){status.textContent='Please upload a CSV file.';status.style.color='var(--red)';return;}
+    status.textContent='Reading file...';status.style.color='var(--text-dim)';
+    const text = await file.text();
+    try{
+      const res = await fetch('/api/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:text})});
+      const data = await res.json();
+      if(data.error){status.textContent='Error: '+data.error;status.style.color='var(--red)';return;}
+      // Save through HRZN data layer
+      data._filename = file.name;
+      HRZN.saveCSV(data);
+      hrznSyncToCloud('sales', data).catch(()=>{});
+      HRZN.injectBadge('hrzn-source-badge');
+      updateDashboard(data);
+      status.textContent='✓ Data updated from '+file.name;
+      status.style.color='var(--green)';
+      zone.style.borderColor='var(--green)';
+    }catch(e){status.textContent='Error: '+e.message;status.style.color='var(--red)';}
+  }
+  
+  function updateDashboard(d){
+    const set = (id,val)=>{document.querySelectorAll('#'+id).forEach(el=>el.textContent=val);};
+    const fmt = n=>'$'+Math.round(n).toLocaleString();
+    set('val-net-sales', fmt(d.netSales));
+    set('val-net-sales2', fmt(d.netSales));
+    set('val-gross-sales', fmt(d.grossSales));
+    set('val-collected', fmt(d.amountCollected));
+    set('val-collected2', fmt(d.amountCollected));
+    set('val-tips', fmt(d.tips));
+    set('val-discounts', '-'+fmt(d.discounts));
+    set('val-taxes', fmt(d.taxes));
+    set('val-items', d.itemsSold.toLocaleString());
+    set('val-avg-check', '$'+(Math.round(d.avgCheck*100)/100).toFixed(2));
+    set('val-doordash', fmt(d.tenders.doorDash));
+    const ddPct = d.amountCollected > 0 ? ((d.tenders.doorDash||0) / d.amountCollected * 100).toFixed(1) : '0.0';
+    set('val-doordash-pct', ddPct+'%');
+    set('val-cash', fmt(d.tenders.cash));
+    set('val-credit', fmt(d.tenders.creditCard));
+    set('val-debit', fmt(d.tenders.debitCard));
+    set('val-period', d.period);
+    set('val-discount-pct', '('+fmt(d.discounts)+' off)');
+    // Generate AI insights from real data
+    generateInsights(d);
+  }
+
+  async function generateInsights(d){
+    const container = document.getElementById('insightsContainer');
+    if(!container) return;
+    
+    // Show loading state
+    container.innerHTML = `<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your data...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>`;
+
+    const prompt = `You are HRZN, an elite AI business operator for restaurants. Analyze this real sales data and provide exactly 6 specific, actionable insights. Each insight must reference the actual numbers.
+
+SALES DATA:
+- Period: ${d.period}
+- Gross Sales: $${Math.round(d.grossSales).toLocaleString()}
+- Discounts: $${Math.round(d.discounts).toLocaleString()} (${d.discountPct}% of gross)
+- Net Sales: $${Math.round(d.netSales).toLocaleString()}
+- Tips: $${Math.round(d.tips).toLocaleString()}
+- Taxes & Fees: $${Math.round(d.taxes).toLocaleString()}
+- Total Collected: $${Math.round(d.amountCollected).toLocaleString()}
+- Items Sold: ${d.itemsSold.toLocaleString()}
+- Avg Item Price: $${d.avgCheck}
+- Credit Card: $${Math.round(d.tenders.creditCard).toLocaleString()}
+- Debit Card: $${Math.round(d.tenders.debitCard).toLocaleString()}
+- DoorDash: $${Math.round(d.tenders.doorDash).toLocaleString()} (${d.amountCollected > 0 ? (d.tenders.doorDash/d.amountCollected*100).toFixed(1) : 0}% of revenue)
+- Cash: $${Math.round(d.tenders.cash).toLocaleString()}
+
+Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation, just the JSON array.
+Each object must have: "emoji" (1 emoji), "title" (5-8 words), "insight" (2-3 sentences with specific numbers and a clear action).
+Example format: [{"emoji":"💡","title":"Your title here","insight":"Your insight here."}]`;
+
+    try {
       const r = await fetch('/api/chat', {
-        signal: controller.signal,
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -303,8 +660,6 @@ async function generateMoreInsights(){
           messages: [{role:'user', content: prompt}]
         })
       });
-      clearTimeout(timeout);
-      if (!r.ok) throw new Error('API returned ' + r.status);
       const data = await r.json();
       const text = data.content?.[0]?.text || '[]';
       
