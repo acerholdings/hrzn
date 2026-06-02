@@ -304,16 +304,17 @@ GROWTH OPPORTUNITIES (prioritize in this order):
 3. Then grow volume (covers, delivery, catering)
 4. Then expand channels (new locations, catering, events)
 
-CRITICAL ANALYSIS RULES:
-- ALWAYS label wins clearly — if a metric is healthy or excellent, say so
-- NEVER flag healthy metrics as problems just to fill insight slots
-- Tips % MUST be calculated vs net sales, never vs total collected
-- Discounts under 4% are NEVER a problem
-- Mix wins (✅) and opportunities (🎯) in every response — aim for 3 of each
-- Every insight needs: exact dollar amount + why it matters + one specific action
-- If data is estimated (no payroll, no daily breakdown), say so and focus on what IS real
-- Be direct and confident — operators need clear guidance, not vague suggestions
-- Do not repeat the same insight type in multiple responses in one session`;
+CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
+1. Discounts 2.65% = EXCELLENT. NEVER flag this as "aggressive" or a problem. Label it: "✅ Excellent pricing discipline"
+2. Tips 15.9% of net sales = STRONG. Label it: "✅ Strong tip performance"  
+3. DoorDash 3.7% = growth opportunity to grow TO 10%, not a problem to cut
+4. Credit card dominance is NOT a problem — do not suggest customers pay cash
+5. MANDATORY: exactly 3 insights must start with ✅ (wins), exactly 3 with 🎯 (opportunities)
+6. Tips % = tips / net_sales * 100. NEVER use total collected as the base
+7. Every insight must have: exact dollar amount + benchmark comparison + one specific action
+8. Do not suggest cutting DoorDash — suggest growing it
+9. Do not suggest promoting cash payments — digital is better for tracking
+10. Insights must reflect THIS business's actual strengths, not generic restaurant problems`;
   },
 
   getSystemPrompt(d) {
