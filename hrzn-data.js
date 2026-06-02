@@ -89,7 +89,7 @@ function hrznLogout() {
   localStorage.removeItem('hrzn_refresh');
   localStorage.removeItem('hrzn_user');
   // Clear all user data so next user starts fresh
-  const keysToKeep = ['hrzn-theme']; // only keep theme preference
+  const keysToKeep = ['hrzn-theme', 'hrzn-settings']; // keep theme + settings (not sensitive)
   Object.keys(localStorage).forEach(key => {
     if (!keysToKeep.includes(key)) localStorage.removeItem(key);
   });
@@ -197,6 +197,12 @@ async function hrznLoadFromCloud() {
       merged.targets.check = merged.targets.check || data.settings.target_avg_check;
       merged.targets.doordash = merged.targets.doordash || data.settings.target_doordash_pct;
       merged.targets.discount = merged.targets.discount || data.settings.target_discount_pct || 5;
+      // Also restore business info if synced
+      if (data.settings.biz_name) merged.bizName = merged.bizName || data.settings.biz_name;
+      if (data.settings.biz_name) merged.businessName = merged.businessName || data.settings.biz_name;
+      if (data.settings.biz_location) merged.bizLocation = merged.bizLocation || data.settings.biz_location;
+      if (data.settings.owner_name) merged.ownerName = merged.ownerName || data.settings.owner_name;
+      if (data.settings.owner_email) merged.ownerEmail = merged.ownerEmail || data.settings.owner_email;
     }
     if (data.business || data.settings) {
       localStorage.setItem('hrzn-settings', JSON.stringify(merged));

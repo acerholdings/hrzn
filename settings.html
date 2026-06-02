@@ -447,9 +447,14 @@ function saveAll(){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   // Sync targets to cloud
   // Sync full settings to cloud so they persist across logins
-  hrznSyncToCloud('settings', settings.targets || {}).catch(()=>{});
-  // Sync full settings so they restore after logout/login
-  hrznSyncToCloud('userSettings', settings).catch(()=>{});
+  // Sync targets + business info to cloud
+  hrznSyncToCloud('settings', {
+    ...(settings.targets || {}),
+    biz_name: settings.bizName,
+    biz_location: settings.bizLocation,
+    owner_name: settings.ownerName,
+    owner_email: settings.ownerEmail,
+  }).catch(()=>{});
   // Also save full settings to localStorage with timestamp
   // Cloud sync of business name/location handled via Supabase on next login
 
