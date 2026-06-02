@@ -177,6 +177,9 @@ const HRZN = {
     _source: 'demo',
     _filename: 'Demo Data',
     period: 'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+    periodDays: 365,
+    periodStart: 'Jan 1, 2025',
+    periodEnd: 'Dec 31, 2025',
     grossSales: 485000,
     discounts: 9700,
     discountPct: 2.0,
@@ -447,6 +450,10 @@ TARGETS (from operator settings):
 
   // ── GET ACTIVE DATA ──────────────────────────
   getData() {
+    // If demo mode via URL param, always return demo data
+    if (new URLSearchParams(window.location.search).get('demo') === 'true') {
+      return { ...this.DEMO_DATA, _source: 'demo' };
+    }
     const source = this.getSource();
     try {
       if (source === 'api') {
