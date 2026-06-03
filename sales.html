@@ -271,12 +271,10 @@ async function generateInsights(d) {
   }
 }
 
-function buildSalesContext(d, m) {
-  m = m || HRZN.getMetrics(d);
+function buildSalesContext(d) {
+  const m = HRZN.getMetrics(d);
   const t = d.tenders || {};
-  const { weeks, months, weeklyGap, annualGap, periodGap, ddGapPeriod, ddGapAnnual,
-          priceGapPeriod, priceGapAnnual, digitalTotal, digitalPct, cashPct,
-          discPct, tipsPct, ddPct } = m;
+  // calcs via HRZN.getMetrics in buildSalesContext
   const net = d.netSales || 0;
   const gross = d.grossSales || 0;
   const disc = d.discounts || 0;
@@ -344,8 +342,7 @@ async function generateMoreInsights() {
   container.scrollTop = container.scrollHeight;
   try {
     const d = HRZN.getData();
-    const m = HRZN.getMetrics(d);
-    const calcCtx = buildSalesContext(d, m);
+    const calcCtx = buildSalesContext(d);
     const system = HRZN.getSystemPrompt(d);
     const morePrompt = calcCtx.replace(
       'provide exactly 6 specific insights',

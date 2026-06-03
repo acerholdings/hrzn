@@ -538,7 +538,7 @@ TARGETS (from operator settings):
     const itemsPerWeek = weeks  > 0 ? itemsSold / weeks  : 0;
 
     // ── TARGETS (from settings, with defaults) ──
-    const settings       = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const settings       = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}') : {};
     const targetRevenue  = +(settings.targets?.revenue  || 12000);
     const targetCheck    = +(settings.targets?.check    || 15);
     const targetLabor    = +(settings.targets?.labor    || 28);
