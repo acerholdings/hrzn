@@ -273,19 +273,23 @@ async function generateInsights(d) {
 
 function buildSalesContext(d) {
   const m = HRZN.getMetrics(d);
+  const { weeks, months, weekly, avgPrice: avgP, itemsPerWeek,
+          discPct: dPct, tipsPct: tPct, ddPct: ddP, digitalPct: digP,
+          cashPct: caPct, weeklyGap, annualGap, periodGap,
+          ddGapPeriod, ddGapAnnual, priceGapPeriod, priceGapAnnual,
+          combinedPeriod, combinedAnnual, targetRevenue, targetCheck, targetDoorDash } = m;
   const t = d.tenders || {};
-  // calcs via HRZN.getMetrics in buildSalesContext
-  const net = d.netSales || 0;
-  const gross = d.grossSales || 0;
-  const disc = d.discounts || 0;
-  const tips = d.tips || 0;
-  const collected = d.amountCollected || 0;
-  const items = d.itemsSold || 0;
-  const avgPrice = net > 0 && items > 0 ? (net/items).toFixed(2) : 0;
-  const credit = t.creditCard || 0;
-  const debit = t.debitCard || 0;
-  const dd = t.doorDash || 0;
-  const cash = t.cash || 0;
+  const net = m.netSales;
+  const gross = m.grossSales;
+  const disc = m.discounts;
+  const tips = m.tips;
+  const collected = m.collected;
+  const items = m.itemsSold;
+  const avgPrice = avgP ? avgP.toFixed(2) : '0';
+  const credit = m.credit;
+  const debit = m.debit;
+  const dd = m.dd;
+  const cash = m.cash;
 
   // Pre-calculated — exact numbers only
   const digitalTotal = credit + debit + dd;
@@ -294,17 +298,13 @@ function buildSalesContext(d) {
   const discPct = gross > 0 ? (disc/gross*100).toFixed(2) : 0;
   const tipsPct = net > 0 ? (tips/net*100).toFixed(1) : 0;
   const ddPct = collected > 0 ? (dd/collected*100).toFixed(1) : 0;
-  const weeklyRev = Math.round(net/weeks);
-  const weeklyTarget = 12000;
-  const weeklyGap = weeklyTarget - weeklyRev;
-  const annualGap = Math.round(weeklyGap * 52);
-  const periodGap = Math.round(weeklyGap * weeks);
-  const avgTarget = 15.00;
-  const priceGapPeriod = Math.round((avgTarget - parseFloat(avgPrice)) * items);
-  const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
-  const ddTarget = 0.10;
-  const ddGapPeriod = Math.round(net * ddTarget - dd);
-  const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
+  const weeklyRev = Math.round(m.weekly);
+  const weeklyTarget = m.targetRevenue;
+  // weeklyGap from m
+  // annualGap from m
+  // periodGap from m
+  // Gaps from m (single source of truth)
+  const avgTarget = m.targetCheck;
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
   const bizName = settings.businessName || 'this restaurant';
 

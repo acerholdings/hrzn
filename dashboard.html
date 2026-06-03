@@ -451,13 +451,43 @@ document.addEventListener('DOMContentLoaded', () => {
   HRZN.injectBadge('hrzn-source-badge');
   renderDataBadges([{label:'Sales Overview',key:'hrzn-data-csv',oldKey:'hrzn-sales-data'}]);
 
+  try {
   const d = HRZN.getData();
-  const m = HRZN.getMetrics(d);
+  const t = d.tenders || {};
+  // Universal metrics - safe fallback if getMetrics unavailable
+  const m = typeof HRZN.getMetrics === 'function' ? HRZN.getMetrics(d) : (() => {
+    const days = d.periodDays || 148;
+    const weeks = days / 7;
+    const months = days / 30.44;
+    const net = d.netSales || 0;
+    const coll = d.amountCollected || 0;
+    const weekly = net / weeks;
+    const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const tgt = { revenue: +(settings.targets?.revenue||12000), check: +(settings.targets?.check||15),
+                  labor: +(settings.targets?.labor||28), doordash: +(settings.targets?.doordash||10) };
+    const ddGapWeekly = Math.max(0, (net * tgt.doordash/100 - (t.doorDash||0)) / weeks);
+    return {
+      weeks, months, weekly, monthly: net/months, daily: weekly/7,
+      avgPrice: d.itemsSold > 0 ? net/d.itemsSold : 0,
+      itemsPerWeek: d.itemsSold > 0 ? d.itemsSold/weeks : 0,
+      discPct: d.grossSales > 0 ? (d.discounts||0)/d.grossSales*100 : 0,
+      tipsPct: net > 0 ? (d.tips||0)/net*100 : 0,
+      ddPct: coll > 0 ? (t.doorDash||0)/coll*100 : 0,
+      cashPct: coll > 0 ? (t.cash||0)/coll*100 : 0,
+      digitalTotal: (t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0),
+      digitalPct: coll > 0 ? ((t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0))/coll*100 : 0,
+      weeklyGap: tgt.revenue - weekly, annualGap: (tgt.revenue-weekly)*52,
+      ddGapWeekly, ddGapAnnual: ddGapWeekly*52,
+      priceGapPeriod: (tgt.check - (d.itemsSold>0?net/d.itemsSold:0)) * (d.itemsSold||0),
+      laborExcessWeekly: weekly * Math.max(0, 32-tgt.labor) / 100,
+      targetRevenue: tgt.revenue, targetCheck: tgt.check,
+      targetLabor: tgt.labor, targetDoorDash: tgt.doordash,
+    };
+  })();
   const { weeks, months, weekly, monthly, daily, avgPrice, itemsPerWeek,
           discPct, tipsPct, ddPct, digitalTotal, digitalPct, cashPct,
           weeklyGap, annualGap, ddGapWeekly, ddGapAnnual, priceGapPeriod,
           laborExcessWeekly, targetRevenue, targetCheck, targetLabor, targetDoorDash } = m;
-  const t = d.tenders || {};
 
   // Period
   const period = (d.periodStart 
@@ -560,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const recs = [];
   if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
   if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek)/months/4.33))+'/week',link:'menu.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'menu.html'});
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
@@ -581,6 +611,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Nav badge
   const navBadge = document.getElementById('nav-alert-count');
   if(navBadge) navBadge.textContent = alerts.filter(a=>a.color!=='var(--green)').length;
+  } catch(err) {
+    console.error('Dashboard error:', err);
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText = 'padding:20px;color:#e05555;font-family:monospace;font-size:11px;background:#1a0a0a;border:1px solid #e05555;border-radius:8px;margin:20px;';
+    errDiv.innerHTML = '<strong>Dashboard Error:</strong><br>' + err.message + '<br><small>' + (err.stack||'no stack').slice(0,200) + '</small>';
+    document.querySelector('.content')?.prepend(errDiv);
+  }
 });
 </script>
 
