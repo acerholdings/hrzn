@@ -413,9 +413,9 @@ async function generateSpecificReport(type) {
     return;
   }
   const d = HRZN.getData();
-  const months = HRZN.getMonths(d);
-  const monthly = Math.round((d.netSales||0)/months);
-  const weekly = Math.round(monthly/4.33);
+  const m = HRZN.getMetrics(d);
+  const { months, weekly, monthly, weeklyGap, ddGapAnnual, priceGapPeriod,
+          digitalPct, tipsPct, discPct } = m;
   const period = d.period || 'Jan–May 2026';
   const shortPeriod = period.replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   const settings2 = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');

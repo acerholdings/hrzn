@@ -464,6 +464,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   HRZN.injectBadge('hrzn-source-badge');
 
   const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
   const periodDays = d.periodDays || (d.rowCount > 20 ? d.rowCount : 148);
   const weeks = periodDays / 7;
   const months = weeks / 4.33;

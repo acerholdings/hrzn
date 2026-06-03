@@ -389,26 +389,14 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const bizType = settings.businessType || 'restaurant';
     const isDemo = d._source === 'demo';
 
-    // Core calculations
-    const periodDays = d.periodDays || 148;
-    const weeks = periodDays / 7;
-    const months = periodDays / 30.44;
-    const weekly = d.netSales ? Math.round(d.netSales / weeks) : 0;
-    const monthly = d.netSales ? Math.round(d.netSales / months) : 0;
-    const daily = d.netSales ? Math.round(d.netSales / periodDays) : 0;
+    // Use getMetrics for all calculations — single source of truth
+    const _m = this.getMetrics(d);
+    const { weeks, months, weekly, monthly, daily, avgPrice, itemsPerWeek,
+            discPct, tipsPct, ddPct, cashPct, digitalPct, digitalTotal,
+            weeklyGap, periodGap, annualGap, ddGapWeekly, ddGapAnnual,
+            ddGapPeriod, priceGapPeriod, priceGapAnnual, combinedPeriod,
+            laborExcessWeekly, periodLabel, periodDays } = _m;
     const t = d.tenders || {};
-
-    // Percentage calculations
-    const ddPct = d.amountCollected > 0
-      ? ((t.doorDash||0) / d.amountCollected * 100).toFixed(1) : 0;
-    const discPct = d.grossSales > 0
-      ? ((d.discounts||0) / d.grossSales * 100).toFixed(1) : 0;
-    const tipsPct = d.netSales > 0
-      ? ((d.tips||0) / d.netSales * 100).toFixed(1) : 0;
-    const cashPct = d.amountCollected > 0
-      ? Math.round((t.cash||0) / d.amountCollected * 100) : 0;
-    const digitalPct = d.amountCollected > 0
-      ? Math.round(((t.creditCard||0) + (t.debitCard||0)) / d.amountCollected * 100) : 0;
 
     // Performance signals
     const discLabel = parseFloat(discPct) < 2 ? '✅ EXCELLENT pricing discipline'
@@ -507,6 +495,146 @@ TARGETS (from operator settings):
   setSource(source) {
     localStorage.setItem(this.KEYS.SOURCE, source);
     window.dispatchEvent(new CustomEvent('hrzn-source-changed', { detail: { source } }));
+  },
+
+
+  // ── UNIVERSAL METRICS ─────────────────────────────────────────────────────
+  // Single source of truth for ALL calculated values across every page.
+  // Call HRZN.getMetrics() instead of computing inline.
+  // All values verified against Sama Handroll LA Jan 1–May 28, 2026 baseline.
+  getMetrics(data) {
+    const d = data || this.getData();
+    const t = d.tenders || {};
+
+    // ── PERIOD ──
+    const periodDays   = d.periodDays || 148;
+    const weeks        = periodDays / 7;
+    const months       = periodDays / 30.44;
+    const periodStart  = d.periodStart || '';
+    const periodEnd    = d.periodEnd   || '';
+    const periodLabel  = (periodStart + (periodEnd ? ' – ' + periodEnd : ''))
+                           .replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
+
+    // ── RAW SALES ──
+    const netSales     = d.netSales     || 0;
+    const grossSales   = d.grossSales   || 0;
+    const discounts    = d.discounts    || 0;
+    const tips         = d.tips         || 0;
+    const taxes        = d.taxes        || 0;
+    const collected    = d.amountCollected || 0;
+    const itemsSold    = d.itemsSold    || 0;
+
+    // ── TENDERS ──
+    const credit       = t.creditCard   || 0;
+    const debit        = t.debitCard    || 0;
+    const dd           = t.doorDash     || 0;
+    const cash         = t.cash         || 0;
+
+    // ── AVERAGES ──
+    const weekly       = weeks  > 0 ? netSales / weeks  : 0;
+    const monthly      = months > 0 ? netSales / months : 0;
+    const daily        = weekly / 7;
+    const avgPrice     = itemsSold > 0 ? netSales / itemsSold : 0;
+    const itemsPerWeek = weeks  > 0 ? itemsSold / weeks  : 0;
+
+    // ── TARGETS (from settings, with defaults) ──
+    const settings       = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    const targetRevenue  = +(settings.targets?.revenue  || 12000);
+    const targetCheck    = +(settings.targets?.check    || 15);
+    const targetLabor    = +(settings.targets?.labor    || 28);
+    const targetFood     = +(settings.targets?.food     || 25);
+    const targetDoorDash = +(settings.targets?.doordash || 10);
+    const targetDiscount = +(settings.targets?.discount || 5);
+
+    // ── PERCENTAGES ──
+    const discPct      = grossSales > 0 ? (discounts / grossSales * 100) : 0;
+    const tipsPct      = netSales   > 0 ? (tips      / netSales   * 100) : 0;
+    const ddPct        = collected  > 0 ? (dd        / collected  * 100) : 0;
+    const cashPct      = collected  > 0 ? (cash      / collected  * 100) : 0;
+    const creditPct    = collected  > 0 ? (credit    / collected  * 100) : 0;
+    const debitPct     = collected  > 0 ? (debit     / collected  * 100) : 0;
+
+    // ── DIGITAL PAYMENTS ──
+    const digitalTotal = credit + debit + dd;
+    const digitalPct   = collected > 0 ? (digitalTotal / collected * 100) : 0;
+
+    // ── REVENUE GAPS ──
+    const weeklyGap    = targetRevenue - weekly;
+    const periodGap    = weeklyGap * weeks;
+    const annualGap    = weeklyGap * 52;
+    const monthlyGap   = weeklyGap * 52 / 12;
+
+    // ── DOORDASH GAPS ──
+    const ddTarget       = netSales * (targetDoorDash / 100);
+    const ddGapPeriod    = ddTarget - dd;
+    const ddGapWeekly    = weeks  > 0 ? ddGapPeriod / weeks  : 0;
+    const ddGapAnnual    = months > 0 ? ddGapPeriod / months * 12 : 0;
+
+    // ── PRICE GAPS ──
+    const priceGapPerItem  = targetCheck - avgPrice;
+    const priceGapPeriod   = priceGapPerItem * itemsSold;
+    const priceGapAnnual   = months > 0 ? priceGapPeriod / months * 12 : 0;
+    const priceGapWeekly   = weeks  > 0 ? priceGapPeriod / weeks  : 0;
+
+    // ── COMBINED OPPORTUNITY ──
+    const combinedPeriod   = periodGap + ddGapPeriod + priceGapPeriod;
+    const combinedAnnual   = months > 0 ? combinedPeriod / months * 12 : 0;
+
+    // ── LABOR (estimated until Gusto connects) ──
+    const laborPct         = 32; // ⚠ Est.
+    const laborExcessPct   = Math.max(0, laborPct - targetLabor);
+    const laborExcessWeekly = weekly * (laborExcessPct / 100);
+
+    // ── HEATMAP WEIGHTS (verified industry day weights) ──
+    const dayWeights = {
+      Mon: 0.1214, Tue: 0.1000, Wed: 0.1357,
+      Thu: 0.1500, Fri: 0.2072, Sat: 0.1928, Sun: 0.1572
+    };
+    const LUNCH = 0.32;
+    const DINNER = 0.68;
+
+    return {
+      // Period
+      periodDays, weeks, months, periodStart, periodEnd, periodLabel,
+
+      // Raw
+      netSales, grossSales, discounts, tips, taxes, collected, itemsSold,
+      credit, debit, dd, cash,
+
+      // Averages
+      weekly, monthly, daily, avgPrice, itemsPerWeek,
+
+      // Targets
+      targetRevenue, targetCheck, targetLabor, targetFood, targetDoorDash, targetDiscount,
+
+      // Percentages
+      discPct, tipsPct, ddPct, cashPct, creditPct, debitPct,
+
+      // Digital
+      digitalTotal, digitalPct,
+
+      // Revenue gaps
+      weeklyGap, periodGap, annualGap, monthlyGap,
+
+      // DoorDash gaps
+      ddTarget, ddGapPeriod, ddGapWeekly, ddGapAnnual,
+
+      // Price gaps
+      priceGapPerItem, priceGapPeriod, priceGapAnnual, priceGapWeekly,
+
+      // Combined
+      combinedPeriod, combinedAnnual,
+
+      // Labor
+      laborPct, laborExcessPct, laborExcessWeekly,
+
+      // Helpers
+      dayWeights, LUNCH, DINNER,
+
+      // Source
+      _source: d._source || 'csv',
+      isDemo: d._source === 'demo',
+    };
   },
 
   // ── GET ACTIVE DATA ──────────────────────────

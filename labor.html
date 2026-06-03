@@ -383,6 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ]);
 
   const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
     const periodDays = d.periodDays || 148;
   const weeks = periodDays / 7;
 const months = HRZN.getMonths(d);

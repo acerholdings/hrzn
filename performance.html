@@ -446,6 +446,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   HRZN.injectBadge('hrzn-source-badge');
 
   const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
   const _period = (d.period||'').replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   const _dateEl = document.getElementById('perf-date-label');
   if(_dateEl && _period) _dateEl.textContent = '📅 ' + _period;

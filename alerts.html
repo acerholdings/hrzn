@@ -229,8 +229,8 @@ function buildAlertsContext(d) {
   const discPct = gross > 0 ? (disc/gross*100).toFixed(2) : 0;
   const tipsPct = net > 0 ? (tips/net*100).toFixed(1) : 0;
   const ddPct = collected > 0 ? (dd/collected*100).toFixed(1) : 0;
-  const weeklyRev = Math.round(net/weeks);
-  const weeklyGap = 12000 - weeklyRev;
+  const weeklyRev = Math.round(m.weekly);
+  // weeklyGap from m
   const annualGap = Math.round(weeklyGap * 52);
   const periodGap = Math.round(weeklyGap * weeks);
   const avgPrice = net > 0 && items > 0 ? net/items : 0;
@@ -489,15 +489,14 @@ const months = HRZN.getMonths(d);
   // ── OPPORTUNITIES ────────────────────────────────
   // DoorDash underperforming
   if(doorDashPct < t.doordash){
-    const ddTargetAmt = (d.netSales||0) * (t.doordash/100);
-    const ddGapPeriod = Math.round(ddTargetAmt - (tenders.doorDash||0));
-    const ddGapWeekly = Math.round(ddGapPeriod / weeks);
-    const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
+    const ddGapPeriodAmt = Math.round(m.ddGapPeriod);
+    const ddGapWeeklyAmt = Math.round(m.ddGapWeekly);
+    const ddGapAnnualAmt = Math.round(m.ddGapAnnual);
     opportunity.push({
       type:'opportunity', category:'Delivery',
-      title:`DoorDash at ${doorDashPct}% — ${fmt(ddGapAnnual)} annual revenue untapped`,
-      desc:`DoorDash generates only ${doorDashPct}% of your revenue vs your ${t.doordash}% target. Closing this gap to ${t.doordash}% would add approximately ${fmt(ddGapWeekly)}/week — ${fmt(ddGapAnnual)}/year.`,
-      value:`+${fmt(ddGapWeekly)}/week potential`,
+      title:`DoorDash at ${doorDashPct}% — ${fmt(ddGapAnnualAmt)} annual revenue untapped`,
+      desc:`DoorDash generates only ${doorDashPct}% of your revenue vs your ${t.doordash}% target. Closing this gap to ${t.doordash}% would add approximately ${fmt(ddGapWeeklyAmt)}/week — ${fmt(ddGapAnnualAmt)}/year.`,
+      value:`+${fmt(ddGapWeeklyAmt)}/week potential`,
       action:"navigate('sales.html')", actionLabel:'View Breakdown →'
     });
   }

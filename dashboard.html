@@ -452,11 +452,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDataBadges([{label:'Sales Overview',key:'hrzn-data-csv',oldKey:'hrzn-sales-data'}]);
 
   const d = HRZN.getData();
-  const periodDays = d.periodDays || (d.rowCount > 20 ? d.rowCount : 148);
-  const weeks = periodDays / 7;
-  const months = weeks / 4.33;
-  const monthly = Math.round((d.netSales||0) / months);
-  const weekly = Math.round((d.netSales||0) / weeks);
+  const m = HRZN.getMetrics(d);
+  const { weeks, months, weekly, monthly, daily, avgPrice, itemsPerWeek,
+          discPct, tipsPct, ddPct, digitalTotal, digitalPct, cashPct,
+          weeklyGap, annualGap, ddGapWeekly, ddGapAnnual, priceGapPeriod,
+          laborExcessWeekly, targetRevenue, targetCheck, targetLabor, targetDoorDash,
+          periodLabel } = m;
   const t = d.tenders || {};
 
   // Period
@@ -511,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Critical Alerts
   const alerts = [];
   if(laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(((d.netSales||0)*tgt.doordash/100-(t.doorDash||0))/((d.periodDays||148)/7)))+'/week revenue gap',link:'sales.html'});
+  if(doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
   if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'menu.html'});
   if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
 
@@ -558,9 +559,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Top Recommendations
   const recs = [];
-  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(weekly*(laborPct-tgt.labor)/100))+'/week savings',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(((d.netSales||0)*tgt.doordash/100-(t.doorDash||0))/((d.periodDays||148)/7)))+'/week upside',link:'data.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round((d.itemsSold||0)/months/4.33))+'/week',link:'menu.html'});
+  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
+  if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek)/months/4.33))+'/week',link:'menu.html'});
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
