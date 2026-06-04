@@ -99,9 +99,9 @@ function hrznLogout() {
     'hrzn-data-discounts',                   // Discounts
     'hrzn-pl-data',                          // P&L expenses
   ]; // CSVs persist across logout — user responsibility to clear if needed
-  Object.keys(localStorage).forEach(key => {
-    if (!keysToKeep.includes(key)) localStorage.removeItem(key);
-  });
+  // Collect keys first to avoid mutation during iteration
+  const keysToRemove = Object.keys(localStorage).filter(key => !keysToKeep.includes(key));
+  keysToRemove.forEach(key => localStorage.removeItem(key));
   window.location.href = 'login.html';
 }
 
@@ -159,13 +159,19 @@ async function hrznLoadFromCloud() {
 
     // Load sales data into localStorage
     if (data.salesData) {
-      localStorage.setItem('hrzn-data-csv', JSON.stringify(data.salesData));
-      localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
+      // Only restore if nothing local
+      if (!localStorage.getItem('hrzn-data-csv')) {
+        localStorage.setItem('hrzn-data-csv', JSON.stringify(data.salesData));
+
+      }      localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
     }
 
     // Load menu data
     if (data.menuData) {
-      localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
+      // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
+      if (!localStorage.getItem('hrzn-data-items')) {
+        localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
+      }
     }
 
     // Load labor data
