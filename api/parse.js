@@ -23,7 +23,7 @@ Rules:
 
     items: `Extract item/product sales data from this POS CSV. Return ONLY valid JSON with no markdown.
 IMPORTANT: Escape all special characters in string values. Replace apostrophes and quotes in item names with spaces if needed to ensure valid JSON.
-{"allItems":[{"name":"string","qty":number,"grossSales":number,"netSales":number,"sold":number,"category":"string","avgPrice":number,"pctOfNet":number}],"categories":[{"name":"string","netSales":number,"sold":number,"itemCount":number,"pctOfNet":number}],"grossSales":number,"netSales":number,"totalItemsSold":number,"uniqueItems":number,"grossProfit":number,"grossProfitMargin":number}
+{"allItems":[{"name":"string","sold":number,"grossSales":number,"netSales":number,"category":"string","avgPrice":number,"pctOfNet":number}],"categories":[{"name":"string","netSales":number,"sold":number,"itemCount":number,"pctOfNet":number}],"grossSales":number,"netSales":number,"totalItemsSold":number,"uniqueItems":number,"grossProfit":number,"grossProfitMargin":number}
 Rules:
 - Sort allItems by netSales descending
 - grossProfit = netSales * 0.65 if not in CSV
