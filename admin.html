@@ -74,6 +74,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:500;
   letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;}
 .badge-pro{color:var(--gold);background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);}
+.badge-starter{color:var(--blue);background:rgba(76,143,175,0.1);border:1px solid rgba(76,143,175,0.2);}
 .badge-trial{color:var(--text-dim);background:var(--surface3);border:1px solid var(--border);}
 .badge-expired{color:var(--red);background:var(--red-dim);border:1px solid rgba(224,85,85,0.2);}
 .badge-yes{color:var(--green);background:var(--green-dim);}
@@ -197,8 +198,8 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     <div class="modal-sub" id="plan-modal-sub">Update plan for this user.</div>
     <select class="modal-select" id="plan-select">
       <option value="trial">Trial</option>
-      <option value="starter">Starter ($49/mo)</option>
-      <option value="pro">Pro ($99/mo)</option>
+      <option value="starter">Starter ($99/mo)</option>
+      <option value="pro">Pro ($299/mo)</option>
     </select>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
@@ -296,9 +297,11 @@ function renderTable(users) {
           const isExpired = u.plan === 'trial' && u.daysLeftInTrial <= 0;
           const planBadge = u.plan === 'pro'
             ? '<span class="badge badge-pro">● Pro</span>'
-            : isExpired
-              ? '<span class="badge badge-expired">Expired</span>'
-              : '<span class="badge badge-trial">Trial</span>';
+            : u.plan === 'starter'
+              ? '<span class="badge badge-starter">● Starter</span>'
+              : isExpired
+                ? '<span class="badge badge-expired">Expired</span>'
+                : '<span class="badge badge-trial">Trial</span>';
           const trialCell = u.plan === 'pro' ? '—' 
             : isExpired ? '<span style="color:var(--red)">Expired</span>'
             : `${u.daysLeftInTrial}d left`;
@@ -331,7 +334,7 @@ function renderTable(users) {
             </td>
             <td>
               <div class="actions-cell">
-                <button class="action-btn ${u.plan !== 'pro' ? 'promote' : ''}" 
+                <button class="action-btn" 
                   onclick="openPlanModal('${u.businessId}','${u.email}','${u.plan}')">
                   Manage Plan
                 </button>
