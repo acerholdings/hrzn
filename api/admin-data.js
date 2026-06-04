@@ -24,6 +24,17 @@ export default async function handler(req, res) {
     if (!ADMIN_EMAILS.includes(user.email)) return res.status(403).json({ error: 'Not authorized' });
 
     // ── GET: Fetch all users and business data ──
+    if (req.method === 'GET' && req.query?.debug === 'true') {
+      // Debug endpoint - return raw Supabase data
+      const bizRes = await fetch(`${SUPABASE_URL}/rest/v1/businesses?select=*&limit=3`,
+        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
+      const businesses = await bizRes.json();
+      const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&limit=3`,
+        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
+      const profiles = await profRes.json();
+      return res.status(200).json({ businesses, profiles });
+    }
+
     if (req.method === 'GET') {
       // Get all businesses
       const bizRes = await fetch(
