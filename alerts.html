@@ -208,6 +208,7 @@ function renderAlertsInsights(insights, container) {
 }
 
 function buildAlertsContext(d) {
+  const m = HRZN.getMetrics(d);
   const tnd = d.tenders || {};
   const days = d.periodDays || 148;
   const weeks = days / 7;
@@ -230,8 +231,8 @@ function buildAlertsContext(d) {
   const tipsPct = net > 0 ? (tips/net*100).toFixed(1) : 0;
   const ddPct = collected > 0 ? (dd/collected*100).toFixed(1) : 0;
   const weeklyRev = Math.round(m.weekly);
-  // weeklyGap from m
-  const annualGap = Math.round(weeklyGap * 52);
+  const weeklyGap = m.weeklyGap;
+  const annualGap = Math.round(m.annualGap);
   const periodGap = Math.round(weeklyGap * weeks);
   const avgPrice = net > 0 && items > 0 ? net/items : 0;
   const priceGapPeriod = Math.round((15.00 - avgPrice) * items);
