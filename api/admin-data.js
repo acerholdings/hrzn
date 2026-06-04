@@ -24,17 +24,6 @@ export default async function handler(req, res) {
     if (!ADMIN_EMAILS.includes(user.email)) return res.status(403).json({ error: 'Not authorized' });
 
     // ── GET: Fetch all users and business data ──
-    if (req.method === 'GET' && req.query?.debug === 'true') {
-      // Debug endpoint - return raw Supabase data
-      const bizRes = await fetch(`${SUPABASE_URL}/rest/v1/businesses?select=*&limit=3`,
-        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
-      const businesses = await bizRes.json();
-      const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=*&limit=3`,
-        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
-      const profiles = await profRes.json();
-      return res.status(200).json({ businesses, profiles });
-    }
-
     if (req.method === 'GET') {
       // Get all businesses
       const bizRes = await fetch(
@@ -82,15 +71,20 @@ export default async function handler(req, res) {
       const menuMap = {};
       menuData.forEach(m => { menuMap[m.business_id] = true; });
 
-      // Build owner_id map as fallback (some users may not have profiles entry)
-      const ownerMap = {};
+      // Build lookup maps
+      const ownerMap = {};  // auth user id → business
       businesses.forEach(b => { if (b.owner_id) ownerMap[b.owner_id] = b; });
+
+      const profileEmailMap = {}; // email → business_id
+      profiles.forEach(p => { if (p.email && p.business_id) profileEmailMap[p.email] = p.business_id; });
 
       // Merge everything into user records
       const users = authUsers.map(u => {
-        const bizId = profileMap[u.id];
-        // Fallback: find business directly by owner_id
-        const biz = (bizId ? businesses.find(b => b.id === bizId) : null) || ownerMap[u.id] || {};
+        const bizId = profileMap[u.id]                          // profiles.id match
+                   || profileEmailMap[u.email];                  // profiles.email match
+        const biz = (bizId ? businesses.find(b => b.id === bizId) : null)
+                 || ownerMap[u.id]                               // businesses.owner_id match
+                 || {};
         const resolvedBizId = biz.id || bizId;
         const sales = salesMap[bizId] || null;
         const hasMenu = menuMap[bizId] || false;
