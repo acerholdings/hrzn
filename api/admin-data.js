@@ -135,13 +135,12 @@ export default async function handler(req, res) {
 
     // ── POST: Admin actions ──
     if (req.method === 'POST') {
-      console.log('POST body:', JSON.stringify(req.body));
-    const { action, businessId, plan } = req.body || {};
+      const { action, businessId, plan } = req.body || {};
 
       if (action === 'set_plan') {
         // Manually set a user's plan
         if (!businessId || businessId === 'undefined' || businessId === 'null') {
-          return res.status(400).json({ error: 'Body: ' + JSON.stringify(req.body) });
+          return res.status(400).json({ error: 'No business ID for this user' });
         }
         const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}`, {
           method: 'PATCH',
@@ -154,7 +153,6 @@ export default async function handler(req, res) {
           body: JSON.stringify({ plan, subscription_status: plan === 'pro' ? 'active' : 'trialing' })
         });
         const patchText = await r.text();
-        console.log('Supabase PATCH status:', r.status, 'body:', patchText);
         if (!r.ok) return res.status(500).json({ error: 'Supabase PATCH failed (' + r.status + '): ' + patchText });
         return res.status(200).json({ ok: true });
       }
