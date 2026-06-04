@@ -135,7 +135,8 @@ export default async function handler(req, res) {
 
     // ── POST: Admin actions ──
     if (req.method === 'POST') {
-      const { action, businessId, plan } = req.body;
+      console.log('POST body:', JSON.stringify(req.body));
+    const { action, businessId, plan } = req.body || {};
 
       if (action === 'set_plan') {
         // Manually set a user's plan
