@@ -153,7 +153,8 @@ export default async function handler(req, res) {
           body: JSON.stringify({ plan, subscription_status: plan === 'pro' ? 'active' : 'trialing' })
         });
         const patchText = await r.text();
-        if (!r.ok) return res.status(500).json({ error: 'Supabase error: ' + patchText });
+        console.log('Supabase PATCH status:', r.status, 'body:', patchText);
+        if (!r.ok) return res.status(500).json({ error: 'Supabase PATCH failed (' + r.status + '): ' + patchText });
         return res.status(200).json({ ok: true });
       }
 
