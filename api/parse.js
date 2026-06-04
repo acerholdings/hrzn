@@ -30,6 +30,7 @@ Rules:
 - avgPrice = netSales/sold per item (0 if sold=0)
 - pctOfNet = item netSales / total netSales * 100
 - CRITICAL: item names must be valid JSON strings — escape or remove any quotes/backslashes
+- Include MAX 50 items in allItems (top 50 by netSales) to keep response concise
 - Return ONLY the JSON object, absolutely no other text`,
 
     employees: `Extract employee sales data from this POS CSV. Return ONLY valid JSON:
@@ -66,7 +67,7 @@ Return ONLY JSON.`
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+        max_tokens: type === 'items' ? 4096 : 2048,
         messages: [{
           role: 'user',
           content: `${prompt}\n\nCSV DATA:\n${csvTruncated}`
@@ -104,7 +105,23 @@ Return ONLY JSON.`
       try {
         parsed = JSON.parse(sanitized);
       } catch(e2) {
-        return res.status(500).json({ error: 'Failed to parse CSV: ' + parseErr.message + '. Try re-exporting the CSV from Clover.' });
+        // Last resort: try to close truncated JSON by finding last complete item
+        try {
+          // Find last complete object in array (ends with })
+          const lastComplete = sanitized.lastIndexOf('},');
+          if (lastComplete > 100) {
+            const truncFixed = sanitized.substring(0, lastComplete + 1) + ']}';
+            // Try wrapping in expected structure
+            const wrapped = sanitized.startsWith('{"allItems"') 
+              ? sanitized.substring(0, lastComplete + 1) + '],"categories":[],"grossSales":0,"netSales":0,"totalItemsSold":0,"uniqueItems":0,"grossProfit":0,"grossProfitMargin":0}'
+              : truncFixed;
+            parsed = JSON.parse(wrapped);
+          } else {
+            return res.status(500).json({ error: 'Failed to parse CSV: ' + parseErr.message + '. Try re-exporting the CSV from Clover.' });
+          }
+        } catch(e3) {
+          return res.status(500).json({ error: 'Failed to parse CSV: ' + parseErr.message + '. Try re-exporting the CSV from Clover.' });
+        }
       }
     }
     parsed._source = 'csv';
