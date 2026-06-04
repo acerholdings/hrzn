@@ -142,6 +142,8 @@ export default async function handler(req, res) {
       const starterUsers = users.filter(u => u.plan === 'starter');
       const mrr = (proUsers.length * 299) + (starterUsers.length * 99);
 
+      // Log user businessIds for debugging
+      console.log('Users businessIds:', users.map(u => ({ email: u.email, bizId: u.businessId })));
       return res.status(200).json({
         ok: true,
         summary: {
@@ -161,8 +163,9 @@ export default async function handler(req, res) {
 
       if (action === 'set_plan') {
         // Manually set a user's plan
-        if (!businessId || businessId === 'undefined') {
-          return res.status(400).json({ error: 'No business ID for this user' });
+        console.log('set_plan received businessId:', businessId, 'plan:', plan);
+      if (!businessId || businessId === 'undefined' || businessId === 'null') {
+          return res.status(400).json({ error: 'No business ID for this user. Received: ' + JSON.stringify(businessId) });
         }
         const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}`, {
           method: 'PATCH',
