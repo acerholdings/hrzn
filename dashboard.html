@@ -57,7 +57,9 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}.fade-4{animation:fadeUp 0.4s ease 0.32s both}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
+::-webkit-scrollbar{width:4px;}
+.dash-ai-chip{font-size:11px;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.dash-ai-chip:hover{color:var(--gold);border-color:rgba(201,168,76,0.3);background:rgba(201,168,76,0.06);}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
 .sparkline{overflow:visible;}</style>
 </head>
 <body>
@@ -138,6 +140,37 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       </div>
     </div>
 
+    <!-- AI OPERATOR WIDGET -->
+    <div class="card fade-2" id="dash-ai-widget" style="margin-bottom:16px;border-color:rgba(201,168,76,0.2);position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at top left,rgba(201,168,76,0.04) 0%,transparent 60%);pointer-events:none;"></div>
+      <div class="card-header" style="border-color:rgba(255,255,255,0.06);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:7px;height:7px;border-radius:50%;background:#4caf7d;box-shadow:0 0 0 0 rgba(76,175,125,0.4);animation:pulse 2s infinite;"></div>
+          <span style="font-size:11px;font-weight:500;letter-spacing:0.04em;">HRZN AI Operator</span>
+          <span style="font-size:10px;color:var(--text-dim);">· Online</span>
+        </div>
+        <a href="operator.html" style="font-size:10px;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">Open full chat →</a>
+      </div>
+      <div id="dash-ai-summary" style="padding:14px 16px;font-size:12px;color:var(--text-mid);line-height:1.7;border-bottom:1px solid var(--border);">
+        Analyzing your business...
+      </div>
+      <div style="padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);">
+        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">What should I focus on this week?</span>
+        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">How do I fix Tuesday labor?</span>
+        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">Grow DoorDash to 10%</span>
+        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">Forecast next month</span>
+      </div>
+      <div style="padding:10px 14px;display:flex;gap:8px;align-items:center;background:var(--surface2);">
+        <input id="dash-ai-input" type="text" placeholder="Ask anything about your business..."
+          style="flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='rgba(201,168,76,0.4)'"
+          onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')hrznAskWidget()" />
+        <button onclick="hrznAskWidget()" style="background:var(--gold);color:#000;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">↑</button>
+      </div>
+      <!-- Response area (hidden until used) -->
+      <div id="dash-ai-response" style="display:none;padding:14px 16px;font-size:12px;color:var(--text-mid);line-height:1.7;border-top:1px solid var(--border);max-height:200px;overflow-y:auto;"></div>
+    </div>
     <!-- MAIN GRID -->
     <div class="main-grid fade-2">
 
@@ -285,6 +318,32 @@ function renderDataBadges(sources){
     const border=loaded?'rgba(76,175,125,0.2)':'rgba(128,128,128,0.15)';
     return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+color+';background:'+bg+';border:1px solid '+border+';padding:3px 8px;border-radius:10px;margin-right:4px;">'+(loaded?'•':'○')+' '+s.label+(loaded?'':' -- not uploaded')+'</span>';
   }).join('');
+}
+
+async function hrznAskWidget(prompt) {
+  const input = document.getElementById('dash-ai-input');
+  const summary = document.getElementById('dash-ai-summary');
+  const response = document.getElementById('dash-ai-response');
+  const text = prompt || input?.value?.trim();
+  if (!text) return;
+  if (input) input.value = '';
+  response.style.display = 'block';
+  response.textContent = 'Thinking...';
+  try {
+    const d = HRZN.getData();
+    const r = await fetch('/api/chat', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6', max_tokens: 300,
+        system: HRZN.getSystemPrompt(d) + '\nRespond in 2-3 sentences. Be direct and specific with dollar amounts.',
+        messages: [{ role: 'user', content: text }]
+      })
+    });
+    const data = await r.json();
+    response.textContent = data.content?.[0]?.text || 'Unable to respond.';
+  } catch(e) {
+    response.textContent = 'Connection error. Try again.';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -450,6 +509,28 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
   renderDataBadges([{label:'Sales Overview',key:'hrzn-data-csv',oldKey:'hrzn-sales-data'}]);
+
+  // AI widget summary
+  (async () => {
+    const summaryEl = document.getElementById('dash-ai-summary');
+    if (!summaryEl) return;
+    if (!hrznHasData()) { summaryEl.textContent = 'Upload your CSV to get personalized AI insights.'; return; }
+    try {
+      const d2 = HRZN.getData();
+      const r = await fetch('/api/chat', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:120,
+          system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d2) : HRZN.getSystemPrompt(d2)),
+          messages:[{role:'user',content:'Give me a 2-sentence business snapshot. Mention weekly revenue, one key win, and one top priority. Be specific with numbers. No greeting.'}]
+        })
+      });
+      const data = await r.json();
+      if(summaryEl) summaryEl.textContent = data.content?.[0]?.text || 'Ready to analyze your business.';
+    } catch(e) {
+      if(summaryEl) summaryEl.textContent = 'Ready. Ask me anything about your business.';
+    }
+  })();
 
   try {
   const d = HRZN.getData();

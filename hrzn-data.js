@@ -792,3 +792,296 @@ window.addEventListener('hrzn-source-changed', () => {
   const badge = document.getElementById('hrzn-source-badge');
   if (badge) badge.innerHTML = HRZN.getSourceBadge();
 });
+
+
+// ── FLOATING AI BUTTON ───────────────────────────────────────────────────────
+// Injected on every page except dashboard (which has the dashboard widget)
+// and operator (which IS the AI page)
+
+function hrznInjectFloatingAI() {
+  // Don't inject on pages that already have AI front and center
+  const page = window.location.pathname.split('/').pop();
+  const skipPages = ['operator.html', 'dashboard.html', 'login.html', 'signup.html', 'pricing.html'];
+  if (skipPages.includes(page)) return;
+  // Don't inject twice
+  if (document.getElementById('hrzn-float-ai')) return;
+
+  const styles = `
+    #hrzn-float-ai {
+      position: fixed; bottom: 28px; right: 28px; z-index: 9000;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 0;
+    }
+    #hrzn-float-btn {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--gold, #C9A84C);
+      box-shadow: 0 4px 24px rgba(201,168,76,0.4), 0 2px 8px rgba(0,0,0,0.5);
+      border: none; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: transform 0.2s, box-shadow 0.2s;
+      animation: hrzn-float-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes hrzn-float-in {
+      from { transform: scale(0) rotate(-90deg); opacity: 0; }
+      to   { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    #hrzn-float-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 32px rgba(201,168,76,0.5), 0 2px 8px rgba(0,0,0,0.5);
+    }
+    #hrzn-float-btn svg { width: 22px; height: 22px; }
+    #hrzn-float-panel {
+      position: fixed; bottom: 92px; right: 28px;
+      width: 360px; max-height: 480px;
+      background: var(--surface, #0f0f0f);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 12px;
+      box-shadow: 0 -4px 48px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.4);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform: scale(0.9) translateY(12px); opacity: 0; pointer-events: none;
+      transform-origin: bottom right;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;
+      z-index: 8999;
+    }
+    #hrzn-float-panel.open {
+      transform: scale(1) translateY(0); opacity: 1; pointer-events: all;
+    }
+    #hrzn-panel-header {
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #hrzn-panel-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 500; color: var(--text, #e8e8e8);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .hrzn-pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #4caf7d;
+      box-shadow: 0 0 0 0 rgba(76,175,125,0.4);
+      animation: hrzn-pulse 2s infinite;
+    }
+    @keyframes hrzn-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(76,175,125,0.4); }
+      70%  { box-shadow: 0 0 0 5px rgba(76,175,125,0); }
+      100% { box-shadow: 0 0 0 0 rgba(76,175,125,0); }
+    }
+    #hrzn-panel-close {
+      background: rgba(128,128,128,0.1); border: none; border-radius: 4px;
+      color: var(--text-dim, #666); cursor: pointer; width: 24px; height: 24px;
+      font-size: 13px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    #hrzn-panel-close:hover { background: rgba(128,128,128,0.2); }
+    #hrzn-panel-msgs {
+      flex: 1; overflow-y: auto; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 8px;
+      scrollbar-width: thin;
+    }
+    .hrzn-msg-ai {
+      background: rgba(255,255,255,0.04); border-radius: 8px;
+      padding: 9px 12px; font-size: 12px; line-height: 1.6;
+      color: var(--text-mid, #999); max-width: 92%; font-family: 'DM Sans', sans-serif;
+    }
+    .hrzn-msg-user {
+      background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px; padding: 8px 12px; font-size: 12px;
+      color: var(--text, #e8e8e8); align-self: flex-end; max-width: 88%;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .hrzn-msg-thinking {
+      display: flex; gap: 4px; padding: 12px;
+    }
+    .hrzn-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--gold, #C9A84C); opacity: 0.5;
+      animation: hrzn-dots 1.2s infinite;
+    }
+    .hrzn-dot:nth-child(2) { animation-delay: 0.2s; }
+    .hrzn-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes hrzn-dots {
+      0%,80%,100% { transform: scale(0.8); opacity: 0.4; }
+      40% { transform: scale(1.2); opacity: 1; }
+    }
+    #hrzn-panel-chips {
+      padding: 8px 14px 0; display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0;
+    }
+    .hrzn-chip {
+      font-size: 10px; color: var(--text-dim, #666);
+      background: rgba(128,128,128,0.06); border: 1px solid rgba(255,255,255,0.06);
+      padding: 4px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap;
+      font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    }
+    .hrzn-chip:hover {
+      color: var(--gold, #C9A84C); border-color: rgba(201,168,76,0.3);
+      background: rgba(201,168,76,0.06);
+    }
+    #hrzn-panel-input-row {
+      padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+    }
+    #hrzn-panel-input {
+      flex: 1; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;
+      padding: 7px 12px; font-size: 12px; color: var(--text, #e8e8e8);
+      font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+    }
+    #hrzn-panel-input:focus { border-color: rgba(201,168,76,0.4); }
+    #hrzn-panel-send {
+      background: var(--gold, #C9A84C); color: #000; border: none;
+      width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+      font-size: 14px; font-weight: 600; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; transition: opacity 0.15s;
+    }
+    #hrzn-panel-send:hover { opacity: 0.85; }
+    #hrzn-float-tooltip {
+      position: fixed; bottom: 92px; right: 28px;
+      background: var(--surface, #0f0f0f);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 5px 10px;
+      font-size: 11px; color: var(--text-dim, #666);
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap; pointer-events: none;
+      opacity: 0; transition: opacity 0.2s; z-index: 8998;
+    }
+  `;
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = styles;
+  document.head.appendChild(styleEl);
+
+  const d = HRZN.getData();
+  const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const bizName = settings.businessName || settings.bizName || 'your business';
+  const m = HRZN.getMetrics(d);
+  const weekly = Math.round(m.weekly);
+
+  const html = `
+    <div id="hrzn-float-panel">
+      <div id="hrzn-panel-header">
+        <div id="hrzn-panel-title">
+          <div class="hrzn-pulse"></div>
+          HRZN AI Operator
+        </div>
+        <button id="hrzn-panel-close">✕</button>
+      </div>
+      <div id="hrzn-panel-msgs">
+        <div class="hrzn-msg-ai">
+          Analyzing ${bizName}. Revenue is <strong style="color:var(--text,#e8e8e8)">$${weekly.toLocaleString()}/week</strong>. What would you like to know?
+        </div>
+      </div>
+      <div id="hrzn-panel-chips">
+        <span class="hrzn-chip">What should I focus on?</span>
+        <span class="hrzn-chip">Fix Tuesday labor</span>
+        <span class="hrzn-chip">Grow DoorDash</span>
+      </div>
+      <div id="hrzn-panel-input-row">
+        <input id="hrzn-panel-input" placeholder="Ask anything about your business..." />
+        <button id="hrzn-panel-send">↑</button>
+      </div>
+    </div>
+    <div id="hrzn-float-tooltip">Ask AI Operator</div>
+    <button id="hrzn-float-btn" title="Ask HRZN AI">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </button>
+  `;
+
+  const container = document.createElement('div');
+  container.id = 'hrzn-float-ai';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  // Wire up interactions
+  let panelOpen = false;
+  const panel = document.getElementById('hrzn-float-panel');
+  const btn   = document.getElementById('hrzn-float-btn');
+  const close = document.getElementById('hrzn-panel-close');
+  const input = document.getElementById('hrzn-panel-input');
+  const send  = document.getElementById('hrzn-panel-send');
+  const msgs  = document.getElementById('hrzn-panel-msgs');
+  const tooltip = document.getElementById('hrzn-float-tooltip');
+
+  function togglePanel() {
+    panelOpen = !panelOpen;
+    panel.classList.toggle('open', panelOpen);
+    if (panelOpen) setTimeout(() => input.focus(), 250);
+  }
+
+  btn.addEventListener('click', togglePanel);
+  close.addEventListener('click', togglePanel);
+
+  btn.addEventListener('mouseenter', () => { if (!panelOpen) tooltip.style.opacity = '1'; });
+  btn.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+
+  document.querySelectorAll('.hrzn-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      input.value = chip.textContent;
+      sendMsg();
+    });
+  });
+
+  send.addEventListener('click', sendMsg);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (panelOpen && !container.contains(e.target)) togglePanel();
+  });
+
+  async function sendMsg() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    // Add user message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'hrzn-msg-user';
+    userDiv.textContent = text;
+    msgs.appendChild(userDiv);
+    // Add thinking indicator
+    const thinkDiv = document.createElement('div');
+    thinkDiv.className = 'hrzn-msg-thinking';
+    thinkDiv.innerHTML = '<div class="hrzn-dot"></div><div class="hrzn-dot"></div><div class="hrzn-dot"></div>';
+    msgs.appendChild(thinkDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+    // Call API
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 400,
+          system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d) : HRZN.getSystemPrompt(d)) + '\nRespond concisely in 2-4 sentences. Be direct and specific with dollar amounts.',
+          messages: [{ role: 'user', content: text }]
+        })
+      });
+      const data = await r.json();
+      const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t process that.';
+      thinkDiv.remove();
+      const aiDiv = document.createElement('div');
+      aiDiv.className = 'hrzn-msg-ai';
+      aiDiv.textContent = reply;
+      msgs.appendChild(aiDiv);
+    } catch(e) {
+      thinkDiv.remove();
+      const errDiv = document.createElement('div');
+      errDiv.className = 'hrzn-msg-ai';
+      errDiv.textContent = 'Connection error. Try again.';
+      msgs.appendChild(errDiv);
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+// Auto-inject on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hrznInjectFloatingAI);
+} else {
+  hrznInjectFloatingAI();
+}
+
+// ─────────────────────────────────────────────
+// HRZN Global Data Layer
+// Single source of truth for all pages
