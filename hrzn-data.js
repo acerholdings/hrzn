@@ -89,7 +89,16 @@ function hrznLogout() {
   localStorage.removeItem('hrzn_refresh');
   localStorage.removeItem('hrzn_user');
   // Clear all user data so next user starts fresh
-  const keysToKeep = ['hrzn-theme', 'hrzn-settings']; // keep theme + settings (not sensitive)
+  const keysToKeep = [
+    'hrzn-theme', 'hrzn-settings',
+    'hrzn-data-csv', 'hrzn-sales-data',     // Sales Overview
+    'hrzn-data-items',                       // Item Sales
+    'hrzn-data-guests',                      // Guest Count
+    'hrzn-data-employees',                   // Employee Sales
+    'hrzn-data-orders',                      // Order Types
+    'hrzn-data-discounts',                   // Discounts
+    'hrzn-pl-data',                          // P&L expenses
+  ]; // CSVs persist across logout — user responsibility to clear if needed
   Object.keys(localStorage).forEach(key => {
     if (!keysToKeep.includes(key)) localStorage.removeItem(key);
   });
