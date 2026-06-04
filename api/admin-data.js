@@ -71,10 +71,16 @@ export default async function handler(req, res) {
       const menuMap = {};
       menuData.forEach(m => { menuMap[m.business_id] = true; });
 
+      // Build owner_id map as fallback (some users may not have profiles entry)
+      const ownerMap = {};
+      businesses.forEach(b => { if (b.owner_id) ownerMap[b.owner_id] = b; });
+
       // Merge everything into user records
       const users = authUsers.map(u => {
         const bizId = profileMap[u.id];
-        const biz = businesses.find(b => b.id === bizId) || {};
+        // Fallback: find business directly by owner_id
+        const biz = (bizId ? businesses.find(b => b.id === bizId) : null) || ownerMap[u.id] || {};
+        const resolvedBizId = biz.id || bizId;
         const sales = salesMap[bizId] || null;
         const hasMenu = menuMap[bizId] || false;
 
@@ -88,7 +94,7 @@ export default async function handler(req, res) {
           email: u.email,
           createdAt: u.created_at,
           lastSignIn: u.last_sign_in_at,
-          businessId: bizId,
+          businessId: resolvedBizId,
           businessName: biz.name || '—',
           location: biz.location || '—',
           plan: biz.plan || 'trial',
@@ -105,7 +111,9 @@ export default async function handler(req, res) {
       // Revenue summary
       const proUsers = users.filter(u => u.plan === 'pro');
       const trialUsers = users.filter(u => u.plan === 'trial');
-      const mrr = proUsers.length * 99; // $99/mo — update if pricing changes
+      // Pricing: Starter=$99/mo, Pro=$299/mo
+      const starterUsers = users.filter(u => u.plan === 'starter');
+      const mrr = (proUsers.length * 299) + (starterUsers.length * 99);
 
       return res.status(200).json({
         ok: true,
