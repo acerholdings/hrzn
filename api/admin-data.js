@@ -125,6 +125,7 @@ export default async function handler(req, res) {
         summary: {
           totalUsers: users.length,
           proUsers: proUsers.length,
+          starterUsers: starterUsers.length,
           trialUsers: trialUsers.length,
           mrr,
           arr: mrr * 12,
