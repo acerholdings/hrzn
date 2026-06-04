@@ -544,7 +544,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderDataBadges([{label:"Item Sales",key:"hrzn-data-items",oldKey:""}]);
   applyTheme(getTheme());
-  HRZN.injectBadge('hrzn-source-badge');
+  // Products page: show Item Sales CSV badge, not Sales Overview
+  try {
+    const badge = document.getElementById('hrzn-source-badge');
+    if (badge) {
+      const itemsRaw = localStorage.getItem('hrzn-data-items');
+      if (itemsRaw) {
+        const itemsData = JSON.parse(itemsRaw);
+        const fname = itemsData._filename ? itemsData._filename.replace(/_/g,' ').replace('.csv','') : 'Item Sales';
+        badge.innerHTML = '<span onclick="HRZN.openSourceSwitcher()" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--green);background:rgba(76,175,125,0.1);border:1px solid rgba(76,175,125,0.2);border-radius:4px;padding:3px 8px;cursor:pointer;">● Item Sales<span style="color:var(--text-dim);font-size:9px;">' + fname + ' ▼</span></span>';
+      } else {
+        // No items uploaded — show upload prompt
+        badge.innerHTML = '<span onclick="hrznNavigate(\'data.html\')" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--text-dim);background:rgba(128,128,128,0.08);border:1px solid rgba(128,128,128,0.15);border-radius:4px;padding:3px 8px;cursor:pointer;">○ No Item Sales CSV ↑ Upload</span>';
+      }
+    }
+  } catch(e) { HRZN.injectBadge('hrzn-source-badge'); }
   loadData();
 });
 </script>
