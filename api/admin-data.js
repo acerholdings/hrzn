@@ -1,5 +1,3 @@
-import Stripe from 'stripe';
-
 const ADMIN_EMAILS = ['au@gmail.com']; // Add more admin emails here
 
 export default async function handler(req, res) {
@@ -128,6 +126,9 @@ export default async function handler(req, res) {
 
       if (action === 'set_plan') {
         // Manually set a user's plan
+        if (!businessId || businessId === 'undefined') {
+          return res.status(400).json({ error: 'No business ID for this user' });
+        }
         const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
@@ -138,7 +139,9 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({ plan, subscription_status: plan === 'pro' ? 'active' : 'trialing' })
         });
-        return res.status(200).json({ ok: r.ok });
+        const patchText = await r.text();
+        if (!r.ok) return res.status(500).json({ error: 'Supabase error: ' + patchText });
+        return res.status(200).json({ ok: true });
       }
 
       if (action === 'extend_trial') {
