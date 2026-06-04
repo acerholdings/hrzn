@@ -26,7 +26,7 @@ function hrznSetupSidebar() {
     if (userRoleEl) userRoleEl.innerHTML = 'Exploring HRZN &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--border);padding:1px 6px;border-radius:10px;">Demo</span>';
     const avatarEl = document.querySelector('.user-avatar');
     if (avatarEl) avatarEl.textContent = 'D';
-    const locEl = document.querySelector('.business-loc-text') || document.getElementById('s-biz-loc');
+    const locEl = document.querySelector('.business-loc-text') || document.querySelector('.business-loc') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = 'Los Angeles, CA';
     return;
   }
@@ -54,7 +54,7 @@ function hrznSetupSidebar() {
     }
     const avatarEl = document.querySelector('.user-avatar') || document.getElementById('s-avatar');
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
-    const locEl = document.querySelector('.business-loc-text') || document.getElementById('s-biz-loc');
+    const locEl = document.querySelector('.business-loc-text') || document.querySelector('.business-loc') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = settings.bizLocation || '—';
   } catch(e) {}
 }
