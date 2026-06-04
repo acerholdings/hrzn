@@ -169,7 +169,6 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           </svg>
           <div class="score-center"><div id="perf-health-num" style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">—</div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
         </div>
-        <div id="score-data-note" style="display:none;font-size:10px;color:var(--orange);margin-top:8px;text-align:center;padding:4px 8px;background:rgba(224,140,53,0.08);border:1px solid rgba(224,140,53,0.2);border-radius:4px;"></div>
         <div style="font-size:18px;color:var(--gold);margin-bottom:8px;" id="perf-health-label">—</div>
         <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;" id="perf-health-desc">Calculating...</div>
         <div style="font-size:12px;color:var(--green);" id="perf-health-change">Based on your data</div>
@@ -557,16 +556,7 @@ const months = HRZN.getMonths(d);
   const healthColor = healthNum >= 80 ? 'var(--green)' : healthNum >= 65 ? 'var(--gold)' : 'var(--orange)';
 
   set('perf-health-num', healthNum);
-  // If items CSV not loaded, show note that score uses estimated data
-  const scoreNote = document.getElementById('score-data-note');
-  if (scoreNote) {
-    if (!itemsLoaded) {
-      scoreNote.textContent = '⚠ Upload Item Sales CSV for a more accurate score';
-      scoreNote.style.display = 'block';
-    } else {
-      scoreNote.style.display = 'none';
-    }
-  }
+
   set('perf-health-label', healthLabel);
   set('perf-health-desc', (d._source==='demo' ? 'Based on demo sample data' : 'Based on your real ' + months.toFixed(1) + '-month data'));
   set('perf-health-change', (d._source==='demo' ? 'Switch to CSV for real scores' : 'Calculated from real metrics'));
