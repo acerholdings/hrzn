@@ -334,8 +334,10 @@ function renderTable(users) {
             </td>
             <td>
               <div class="actions-cell">
-                <button class="action-btn" 
-                  onclick="openPlanModal('${u.businessId}','${u.email}','${u.plan}')">
+                <button class="action-btn manage-plan-btn" 
+                  data-biz-id="${u.businessId}"
+                  data-email="${u.email}"
+                  data-plan="${u.plan}">
                   Manage Plan
                 </button>
               </div>
@@ -403,6 +405,16 @@ async function confirmPlanChange() {
     showToast('Error: ' + e.message);
   }
 }
+
+// Event delegation for manage plan buttons (avoids inline parameter escaping)
+document.getElementById('table-body').addEventListener('click', function(e) {
+  const btn = e.target.closest('.manage-plan-btn');
+  if (!btn) return;
+  const bizId = btn.dataset.bizId;
+  const email = btn.dataset.email;
+  const plan = btn.dataset.plan;
+  openPlanModal(bizId, email, plan);
+});
 
 // Close modal on overlay click
 document.getElementById('plan-modal').addEventListener('click', function(e) {
