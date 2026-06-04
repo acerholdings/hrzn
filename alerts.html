@@ -339,11 +339,7 @@ async function generateMoreAlertsInsights() {
       const topBorder = i>=cols?'border-top:1px solid var(--border);':'';
       const div = document.createElement('div');
       div.style.cssText = 'padding:18px;'+border+topBorder;
-      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'
-  
-
-  
-</div>';
+      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
       grid.appendChild(div);
     });
     container.appendChild(grid);
@@ -805,7 +801,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
   applyTheme(getTheme());
   HRZN.injectBadge('hrzn-source-badge');
-  renderAlerts();
+  try {
+    renderAlerts();
+  } catch(e) {
+    console.error('renderAlerts failed:', e);
+    document.querySelector('.content')?.insertAdjacentHTML('afterbegin',
+      '<div style="padding:16px;color:#e05555;font-family:monospace;font-size:11px;border:1px solid #e05555;border-radius:6px;margin:16px;">Alert render error: '+e.message+'</div>');
+  }
   generateAlertsInsights();
 });
 </script>
