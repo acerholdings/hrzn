@@ -477,7 +477,7 @@ function generateAlerts(){
   if(avgCheck < t.avgCheck){
     warning.push({
       type:'warning', category:'Menu',
-      title:`Avg check ${fmt(avgCheck)} is below ${fmt(t.avgCheck)} target`,
+      title:`Avg check $${parseFloat(avgCheck).toFixed(2)} is below $${parseFloat(t.avgCheck).toFixed(2)} target`,
       desc:`Your average check of $${avgCheck} per item is $${(t.avgCheck-avgCheck).toFixed(2)} below target. Focus on upselling Wagyu and Toro handrolls, and push Edamame as an add-on to every order.`,
       value:`$${avgCheck} per item`,
       action:"navigate('menu.html')", actionLabel:'View Menu →'
