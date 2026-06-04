@@ -130,10 +130,12 @@ async function signIn() {
             const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
             const updated = {
               ...existing,
-              businessName: syncData.data.business.name,
-              location: syncData.data.business.location,
-              plan: syncData.data.business.plan || 'trial',
-              subscription_status: syncData.data.business.subscription_status || 'trial'
+              businessName: syncData.data.business.name || existing.businessName,
+              bizName: syncData.data.business.name || existing.bizName,
+              location: syncData.data.business.location || existing.location,
+              bizLocation: syncData.data.business.location || existing.bizLocation,
+              plan: syncData.data.business.plan || existing.plan || 'trial',
+              subscription_status: syncData.data.business.subscription_status || existing.subscription_status || 'trial'
             };
             if (syncData.data.settings) {
               const s = syncData.data.settings;
