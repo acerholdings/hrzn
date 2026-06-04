@@ -334,12 +334,12 @@ function renderTable(users) {
             </td>
             <td>
               <div class="actions-cell">
-                <button class="action-btn manage-plan-btn" 
-                  data-biz-id="${u.businessId}"
-                  data-email="${u.email}"
-                  data-plan="${u.plan}">
-                  Manage Plan
-                </button>
+                ${u.businessId 
+                  ? `<button class="action-btn manage-plan-btn" 
+                      data-biz-id="${u.businessId}"
+                      data-email="${u.email}"
+                      data-plan="${u.plan}">Manage Plan</button>`
+                  : `<span style="font-size:10px;color:var(--text-dim);">No business</span>`}
               </div>
             </td>
           </tr>`;
@@ -373,6 +373,10 @@ function filterUsers() {
 
 // ── PLAN MODAL ───────────────────────────────────
 function openPlanModal(businessId, email, currentPlan) {
+  if (!businessId || businessId === 'null' || businessId === 'undefined') {
+    showToast('No business record found for this user');
+    return;
+  }
   pendingBusinessId = businessId;
   document.getElementById('plan-modal-sub').textContent = `Update plan for ${email}`;
   document.getElementById('plan-select').value = currentPlan;
@@ -413,6 +417,8 @@ document.getElementById('table-body').addEventListener('click', function(e) {
   const bizId = btn.dataset.bizId;
   const email = btn.dataset.email;
   const plan = btn.dataset.plan;
+  console.log('Button clicked - bizId:', bizId, 'email:', email, 'plan:', plan);
+  console.log('All data attrs:', btn.dataset);
   openPlanModal(bizId, email, plan);
 });
 
