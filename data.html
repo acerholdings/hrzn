@@ -103,8 +103,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item" onclick="navigate('performance.html')"><span class="nav-icon">◈</span> Performance</div>
     <div class="nav-item" onclick="navigate('revenue.html')"><span class="nav-icon">$</span> Revenue</div>
     <div class="nav-item" onclick="navigate('labor.html')"><span class="nav-icon">◷</span> Labor</div>
-    <div class="nav-item" onclick="navigate('menu.html')"><span class="nav-icon">🍱</span> Menu</div>
-    <div class="nav-item" onclick="navigate('inventory.html')"><span class="nav-icon">◻</span> Inventory</div>
+    <div class="nav-item" onclick="navigate('products.html')"><span class="nav-icon">◫</span> Products</div>
     <div class="nav-item" onclick="navigate('customers.html')"><span class="nav-icon">♟</span> Customers</div>
     <div class="nav-item" onclick="navigate('marketing.html')"><span class="nav-icon">◎</span> Marketing</div>
     <div class="nav-section-label" style="margin-top:8px;">Finance</div>
@@ -138,8 +137,8 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     </div>
   </div>
 <div id="demo-banner" style="display:none;background:rgba(201,168,76,0.1);border-bottom:1px solid rgba(201,168,76,0.2);padding:8px 28px;font-size:11px;color:var(--gold);align-items:center;justify-content:space-between;">
-    <span>👀 You're viewing a demo with sample data from Sama Handroll LA</span>
-    <a href="signup.html" style="color:var(--gold);font-weight:500;text-decoration:none;">Start Free Trial →</a>
+    <span>👀 You're viewing demo data — <strong>not your real business</strong></span>
+    <a href="signup.html" style="color:var(--gold);font-weight:500;text-decoration:none;border:1px solid rgba(201,168,76,0.4);padding:3px 10px;border-radius:4px;">Start Free Trial →</a>
   </div>
 
   <div class="content">
@@ -255,7 +254,7 @@ function applyTheme(theme){const body=document.body,track=document.getElementByI
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(p){ hrznNavigate(p); }
 
-const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, tips, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Clover → Reports → Sales Overview → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '🍱', 'desc': 'Per-item revenue, quantity sold, category breakdown', 'powers': 'Menu page, AI menu insights', 'path': 'Clover → Reports → Item Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Guest Count', 'icon': '👥', 'desc': 'Covers per day, table turns, party sizes', 'powers': 'Dashboard covers, Performance health score', 'path': 'Clover → Reports → Guest Count → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee, tips per employee, performance', 'powers': 'Labor page, team performance', 'path': 'Clover → Reports → Employee Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order Types', 'icon': '🧾', 'desc': 'Dine-in vs takeout vs delivery split', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Clover → Reports → Order Types → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Clover → Reports → Discounts → Export CSV', 'parser': '/api/parse'}];
+const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, tips, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Clover → Reports → Sales Overview → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '◫', 'desc': 'Per-item revenue, quantity sold, category breakdown', 'powers': 'Menu page, AI menu insights', 'path': 'Clover → Reports → Item Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Guest Count', 'icon': '👥', 'desc': 'Covers per day, table turns, party sizes', 'powers': 'Dashboard covers, Performance health score', 'path': 'Clover → Reports → Guest Count → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee, tips per employee, performance', 'powers': 'Labor page, team performance', 'path': 'Clover → Reports → Employee Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order Types', 'icon': '🧾', 'desc': 'Dine-in vs takeout vs delivery split', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Clover → Reports → Order Types → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Clover → Reports → Discounts → Export CSV', 'parser': '/api/parse'}];
 
 let currentUploadKey = null;
 

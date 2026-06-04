@@ -81,8 +81,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item" onclick="navigate('performance.html')"><span class="nav-icon">◈</span> Performance</div>
     <div class="nav-item" onclick="navigate('revenue.html')"><span class="nav-icon">$</span> Revenue</div>
     <div class="nav-item" onclick="navigate('labor.html')"><span class="nav-icon">◷</span> Labor</div>
-    <div class="nav-item" onclick="navigate('menu.html')"><span class="nav-icon">🍱</span> Menu</div>
-    <div class="nav-item" onclick="navigate('inventory.html')"><span class="nav-icon">◻</span> Inventory</div>
+    <div class="nav-item" onclick="navigate('products.html')"><span class="nav-icon">◫</span> Products</div>
     <div class="nav-item" onclick="navigate('customers.html')"><span class="nav-icon">♟</span> Customers</div>
     <div class="nav-item" onclick="navigate('marketing.html')"><span class="nav-icon">◎</span> Marketing</div>
     <div class="nav-section-label" style="margin-top:8px;">Finance</div>
@@ -480,7 +479,7 @@ function generateAlerts(){
       title:`Avg check $${parseFloat(avgCheck).toFixed(2)} is below $${parseFloat(t.avgCheck).toFixed(2)} target`,
       desc:`Your average check of $${avgCheck} per item is $${(t.avgCheck-avgCheck).toFixed(2)} below target. Focus on upselling Wagyu and Toro handrolls, and push Edamame as an add-on to every order.`,
       value:`$${avgCheck} per item`,
-      action:"navigate('menu.html')", actionLabel:'View Menu →'
+      action:"navigate('products.html')", actionLabel:'View Menu →'
     });
   }
 

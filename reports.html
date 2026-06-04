@@ -94,8 +94,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
     <div class="nav-item" onclick="navigate('performance.html')"><span class="nav-icon">◈</span> Performance</div>
     <div class="nav-item" onclick="navigate('revenue.html')"><span class="nav-icon">$</span> Revenue</div>
     <div class="nav-item" onclick="navigate('labor.html')"><span class="nav-icon">◷</span> Labor</div>
-    <div class="nav-item" onclick="navigate('menu.html')"><span class="nav-icon">🍱</span> Menu</div>
-    <div class="nav-item" onclick="navigate('inventory.html')"><span class="nav-icon">◻</span> Inventory</div>
+    <div class="nav-item" onclick="navigate('products.html')"><span class="nav-icon">◫</span> Products</div>
     <div class="nav-item" onclick="navigate('customers.html')"><span class="nav-icon">♟</span> Customers</div>
     <div class="nav-item" onclick="navigate('marketing.html')"><span class="nav-icon">◎</span> Marketing</div>
     <div class="nav-section-label" style="margin-top:8px;">Finance</div>
@@ -195,7 +194,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
       </div>
 
       <div class="report-card" onclick="generateSpecificReport('menu')">
-        <div class="report-icon">🍱</div>
+        <div class="report-icon">◫</div>
         <div class="report-title">Menu Profitability Report</div>
         <div class="report-desc">Full margin analysis for every menu item, menu engineering matrix, top performers, and specific pricing recommendations to maximize profit.</div>
         <div class="report-meta">
@@ -542,7 +541,7 @@ function addToReportHistory(reportTitle, type) {
   if(!list) return;
   const empty = list.querySelector('[data-empty]');
   if(empty) empty.remove();
-  const icons = {weekly:'📊',monthly:'📅',labor:'👥',menu:'🍱',executive:'🏆',custom:'✏️'};
+  const icons = {weekly:'📊',monthly:'📅',labor:'👥',menu:'◫',executive:'🏆',custom:'✏️'};
   const colors = {weekly:'var(--green-dim)',monthly:'rgba(201,168,76,0.1)',labor:'var(--orange-dim)',menu:'rgba(76,143,175,0.1)',executive:'rgba(201,168,76,0.1)',custom:'var(--surface3)'};
   const now = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const d = HRZN.getData();
