@@ -100,14 +100,9 @@ function hrznLogout() {
     'hrzn-pl-data',                          // P&L expenses
   ]; // CSVs persist across logout — user responsibility to clear if needed
   // Collect keys first to avoid mutation during iteration
-  const allKeys = Object.keys(localStorage);
-  const keysToRemove = allKeys.filter(key => !keysToKeep.includes(key));
-  console.log('[HRZN Logout] All keys:', allKeys);
-  console.log('[HRZN Logout] Keeping:', keysToKeep);
-  console.log('[HRZN Logout] Removing:', keysToRemove);
+  const keysToRemove = Object.keys(localStorage).filter(key => !keysToKeep.includes(key));
   keysToRemove.forEach(key => localStorage.removeItem(key));
-  console.log('[HRZN Logout] Keys after:', Object.keys(localStorage));
-  setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+  window.location.href = 'login.html';
 }
 
 function hrznGetUser() {
@@ -174,13 +169,8 @@ async function hrznLoadFromCloud() {
     // Load menu data
     if (data.menuData) {
       // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
-      const hasLocalItems = !!localStorage.getItem('hrzn-data-items');
-      console.log('[HRZN Login] hrzn-data-items local exists:', hasLocalItems, '| cloud menuData exists:', !!data.menuData);
-      if (!hasLocalItems) {
+      if (!localStorage.getItem('hrzn-data-items')) {
         localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
-        console.log('[HRZN Login] Restored hrzn-data-items from cloud');
-      } else {
-        console.log('[HRZN Login] Kept local hrzn-data-items');
       }
     }
 
