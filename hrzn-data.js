@@ -167,15 +167,20 @@ async function hrznLoadFromCloud() {
       // Only restore if nothing local
       if (!localStorage.getItem('hrzn-data-csv')) {
         localStorage.setItem('hrzn-data-csv', JSON.stringify(data.salesData));
-
-      }      localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
+        localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
+      }
     }
 
     // Load menu data
     if (data.menuData) {
       // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
-      if (!localStorage.getItem('hrzn-data-items')) {
+      const hasLocalItems = !!localStorage.getItem('hrzn-data-items');
+      console.log('[HRZN Login] hrzn-data-items local exists:', hasLocalItems, '| cloud menuData exists:', !!data.menuData);
+      if (!hasLocalItems) {
         localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
+        console.log('[HRZN Login] Restored hrzn-data-items from cloud');
+      } else {
+        console.log('[HRZN Login] Kept local hrzn-data-items');
       }
     }
 
