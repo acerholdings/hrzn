@@ -167,7 +167,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <circle fill="none" stroke="var(--surface3)" stroke-width="10" cx="70" cy="70" r="56"/>
             <circle fill="none" id="health-ring" stroke="var(--gold)" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 251.2" cx="70" cy="70" r="56"/>
           </svg>
-          <div class="score-center"><div id="perf-health-num" style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">—</div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
+          <div class="score-center"><div id="perf-health-num" style="font-size:42px;font-weight:300;color:var(--text);line-height:1;">—</div><div id="score-data-note" style="display:none;font-size:9px;color:var(--orange);margin-top:6px;text-align:center;max-width:160px;line-height:1.4;"></div><div style="font-size:14px;color:var(--text-dim);">/100</div></div>
         </div>
         <div style="font-size:18px;color:var(--gold);margin-bottom:8px;" id="perf-health-label">—</div>
         <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;" id="perf-health-desc">Calculating...</div>
@@ -456,7 +456,14 @@ const months = HRZN.getMonths(d);
   const monthly = Math.round((d.netSales||0) / months);
   const weekly = Math.round((d.netSales||0) / weeks);
   const daily = Math.round(weekly / 7);
-  const weeklyItems = Math.round((d.itemsSold||0) / weeks);
+  // weeklyItems: prefer Items CSV total (more accurate) over Sales Overview
+  const csvItemsTotal = (() => {
+    try {
+      const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
+      return items.totalItemsSold || items.totalSold || items.totalItems || 0;
+    } catch(e) { return 0; }
+  })();
+  const weeklyItems = Math.round((csvItemsTotal || d.itemsSold || 0) / weeks);
   const fmt = n => '$' + Math.round(n).toLocaleString();
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
 
@@ -474,9 +481,13 @@ const months = HRZN.getMonths(d);
   const laborPct = 32; // ⚠ Est. — real data needs Gusto API
 
   let grossMargin = '—';
+  let itemsLoaded = false;
   try {
     const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
-    if(items.grossProfitMargin) grossMargin = items.grossProfitMargin.toFixed(1)+'%';
+    if(items.grossProfitMargin) {
+      grossMargin = items.grossProfitMargin.toFixed(1)+'%';
+      itemsLoaded = true;
+    }
   } catch(e) {}
 
   set('vs-rev-this', fmt(weekly));
@@ -545,6 +556,16 @@ const months = HRZN.getMonths(d);
   const healthColor = healthNum >= 80 ? 'var(--green)' : healthNum >= 65 ? 'var(--gold)' : 'var(--orange)';
 
   set('perf-health-num', healthNum);
+  // If items CSV not loaded, show note that score uses estimated data
+  const scoreNote = document.getElementById('score-data-note');
+  if (scoreNote) {
+    if (!itemsLoaded) {
+      scoreNote.textContent = '⚠ Upload Item Sales CSV for a more accurate score';
+      scoreNote.style.display = 'block';
+    } else {
+      scoreNote.style.display = 'none';
+    }
+  }
   set('perf-health-label', healthLabel);
   set('perf-health-desc', (d._source==='demo' ? 'Based on demo sample data' : 'Based on your real ' + months.toFixed(1) + '-month data'));
   set('perf-health-change', (d._source==='demo' ? 'Switch to CSV for real scores' : 'Calculated from real metrics'));
