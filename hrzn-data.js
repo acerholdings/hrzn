@@ -107,7 +107,7 @@ function hrznLogout() {
   console.log('[HRZN Logout] Removing:', keysToRemove);
   keysToRemove.forEach(key => localStorage.removeItem(key));
   console.log('[HRZN Logout] Keys after:', Object.keys(localStorage));
-  window.location.href = 'login.html';
+  setTimeout(() => { window.location.href = 'login.html'; }, 2000);
 }
 
 function hrznGetUser() {
