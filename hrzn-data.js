@@ -100,8 +100,13 @@ function hrznLogout() {
     'hrzn-pl-data',                          // P&L expenses
   ]; // CSVs persist across logout — user responsibility to clear if needed
   // Collect keys first to avoid mutation during iteration
-  const keysToRemove = Object.keys(localStorage).filter(key => !keysToKeep.includes(key));
+  const allKeys = Object.keys(localStorage);
+  const keysToRemove = allKeys.filter(key => !keysToKeep.includes(key));
+  console.log('[HRZN Logout] All keys:', allKeys);
+  console.log('[HRZN Logout] Keeping:', keysToKeep);
+  console.log('[HRZN Logout] Removing:', keysToRemove);
   keysToRemove.forEach(key => localStorage.removeItem(key));
+  console.log('[HRZN Logout] Keys after:', Object.keys(localStorage));
   window.location.href = 'login.html';
 }
 
