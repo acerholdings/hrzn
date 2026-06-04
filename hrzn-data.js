@@ -1116,3 +1116,63 @@ if (document.readyState === 'loading') {
 // ─────────────────────────────────────────────
 // HRZN Global Data Layer
 // Single source of truth for all pages
+// ── MOBILE RESPONSIVE ───────────────────────────────────────────────────────
+function hrznInjectMobile() {
+  // Inject CSS
+  const mobileStyle = document.createElement('style');
+  mobileStyle.id = 'hrzn-mobile-css';
+  mobileStyle.textContent = '\n/* ── MOBILE RESPONSIVE ────────────────────────────────────────────────────── */\n@media (max-width: 768px) {\n  .sidebar {\n    transform: translateX(-100%);\n    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);\n    z-index: 200;\n    box-shadow: 4px 0 24px rgba(0,0,0,0.5);\n  }\n  .sidebar.mobile-open { transform: translateX(0); }\n  .main { margin-left: 0 !important; }\n  .topbar { padding: 0 14px; }\n  .topbar h1 { font-size: 15px; }\n  .topbar p { display: none; }\n  .topbar-right { gap: 6px; }\n  .topbar-btn-ghost { display: none; }\n  .kpi-grid, .kpi-row { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }\n  .kpi-card, .kpi { padding: 12px !important; }\n  .kpi-value, .kpi-val { font-size: 20px !important; }\n  .main-grid { grid-template-columns: 1fr !important; gap: 12px !important; }\n  .content { padding: 14px !important; }\n  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }\n  #hrzn-float-ai { bottom: max(28px, env(safe-area-inset-bottom, 28px)) !important; }\n  #hrzn-float-panel { width: calc(100vw - 24px) !important; right: 12px !important; }\n  .dash-ai-chip { font-size: 10px; padding: 4px 10px; }\n  .nav-item { padding: 10px 20px !important; font-size: 13px !important; }\n  .topbar { padding-top: max(0px, env(safe-area-inset-top, 0px)); }\n}\n#hrzn-hamburger { display: none; }\n@media (max-width: 768px) {\n  #hrzn-hamburger {\n    display: flex; align-items: center; justify-content: center;\n    width: 34px; height: 34px; background: none;\n    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;\n    cursor: pointer; flex-direction: column; padding: 8px 7px; flex-shrink: 0;\n  }\n  #hrzn-hamburger span {\n    display: block; width: 100%; height: 1.5px;\n    background: var(--text-dim,#666); border-radius: 2px; transition: all 0.2s;\n  }\n  #hrzn-hamburger span+span { margin-top: 4px; }\n  #hrzn-hamburger.open span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }\n  #hrzn-hamburger.open span:nth-child(2) { opacity: 0; }\n  #hrzn-hamburger.open span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }\n}\n#hrzn-sidebar-overlay {\n  display: none; position: fixed; inset: 0;\n  background: rgba(0,0,0,0.5); z-index: 199;\n}\n';
+  document.head.appendChild(mobileStyle);
+
+  // Ensure viewport-fit=cover for iPhone notch
+  const meta = document.querySelector('meta[name="viewport"]');
+  if (meta && !meta.content.includes('viewport-fit')) {
+    meta.content += ', viewport-fit=cover';
+  }
+
+  // Only wire up sidebar toggle on mobile
+  if (window.innerWidth > 768) return;
+
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'hrzn-sidebar-overlay';
+  document.body.appendChild(overlay);
+
+  // Hamburger button
+  const hamburger = document.createElement('button');
+  hamburger.id = 'hrzn-hamburger';
+  hamburger.setAttribute('aria-label', 'Menu');
+  hamburger.innerHTML = '<span></span><span></span><span></span>';
+  const topbarEl = document.querySelector('.topbar');
+  if (topbarEl) topbarEl.insertBefore(hamburger, topbarEl.firstChild);
+
+  function openSidebar() {
+    sidebar.classList.add('mobile-open');
+    overlay.style.display = 'block';
+    hamburger.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('mobile-open');
+    overlay.style.display = 'none';
+    hamburger.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+  sidebar.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', closeSidebar);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hrznInjectMobile);
+} else {
+  hrznInjectMobile();
+}
