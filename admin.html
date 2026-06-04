@@ -197,6 +197,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     <div class="modal-sub" id="plan-modal-sub">Update plan for this user.</div>
     <select class="modal-select" id="plan-select">
       <option value="trial">Trial</option>
+      <option value="starter">Starter ($49/mo)</option>
       <option value="pro">Pro ($99/mo)</option>
     </select>
     <div class="modal-actions">
@@ -332,7 +333,7 @@ function renderTable(users) {
               <div class="actions-cell">
                 <button class="action-btn ${u.plan !== 'pro' ? 'promote' : ''}" 
                   onclick="openPlanModal('${u.businessId}','${u.email}','${u.plan}')">
-                  ${u.plan === 'pro' ? 'Edit Plan' : '↑ Upgrade'}
+                  Manage Plan
                 </button>
               </div>
             </td>
@@ -393,7 +394,7 @@ async function confirmPlanChange() {
       showToast('✓ Plan updated to ' + plan);
       await loadData();
     } else {
-      showToast('Error updating plan');
+      showToast('Error: ' + (data.error || 'Could not update plan'));
     }
   } catch(e) {
     showToast('Error: ' + e.message);
