@@ -21,9 +21,16 @@ Rules:
 - periodDays = EXACT number of days in the report period (calculate from start/end dates). This is critical - do NOT assume 30 days. Count the actual days between start and end dates.
 - Return ONLY the JSON, no markdown, no explanation.`,
 
-    items: `Extract item/menu sales data from this POS CSV. Return ONLY valid JSON:
-{"allItems":[{"name":"string","qty":number,"grossSales":number,"netSales":number,"category":"string"}],"categories":[{"name":"string","sales":number,"items":number}],"grossSales":number,"netSales":number,"totalItemsSold":number,"uniqueItems":number,"grossProfit":number,"grossProfitMargin":number}
-Sort allItems by netSales desc. grossProfit=netSales*0.65 if unknown. Return ONLY JSON.`,
+    items: `Extract item/product sales data from this POS CSV. Return ONLY valid JSON with no markdown.
+IMPORTANT: Escape all special characters in string values. Replace apostrophes and quotes in item names with spaces if needed to ensure valid JSON.
+{"allItems":[{"name":"string","qty":number,"grossSales":number,"netSales":number,"sold":number,"category":"string","avgPrice":number,"pctOfNet":number}],"categories":[{"name":"string","netSales":number,"sold":number,"itemCount":number,"pctOfNet":number}],"grossSales":number,"netSales":number,"totalItemsSold":number,"uniqueItems":number,"grossProfit":number,"grossProfitMargin":number}
+Rules:
+- Sort allItems by netSales descending
+- grossProfit = netSales * 0.65 if not in CSV
+- avgPrice = netSales/sold per item (0 if sold=0)
+- pctOfNet = item netSales / total netSales * 100
+- CRITICAL: item names must be valid JSON strings — escape or remove any quotes/backslashes
+- Return ONLY the JSON object, absolutely no other text`,
 
     employees: `Extract employee sales data from this POS CSV. Return ONLY valid JSON:
 {"employees":[{"name":"string","netSales":number,"tips":number}],"totalStaff":number,"totalNetSales":number,"totalTips":number}
@@ -45,7 +52,9 @@ Return ONLY JSON.`
   const prompt = prompts[type];
   if (!prompt) return res.status(400).json({ error: 'Unknown type: ' + type });
 
-  const csvTruncated = csv.length > 8000 ? csv.substring(0, 8000) + '\n...' : csv;
+  // For items CSV, allow more data since item lists can be long
+  const csvLimit = type === 'items' ? 12000 : 8000;
+  const csvTruncated = csv.length > csvLimit ? csv.substring(0, csvLimit) + '\n...' : csv;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -57,7 +66,7 @@ Return ONLY JSON.`
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [{
           role: 'user',
           content: `${prompt}\n\nCSV DATA:\n${csvTruncated}`
@@ -74,13 +83,30 @@ Return ONLY JSON.`
     const responseText = aiData.content[0].text.trim();
 
     // Strip markdown if present
-    const cleaned = responseText
+    let cleaned = responseText
       .replace(/^```json\s*/i, '')
       .replace(/^```\s*/i, '')
       .replace(/\s*```$/i, '')
       .trim();
 
-    const parsed = JSON.parse(cleaned);
+    // Extract JSON object/array if wrapped in extra text
+    const jsonMatch = cleaned.match(/[\[{][\s\S]*[\]\}]/);
+    if (jsonMatch) cleaned = jsonMatch[0];
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch(parseErr) {
+      // Attempt to sanitize common issues: control chars, unescaped special chars
+      const sanitized = cleaned
+        .replace(/[\x00-\x1F\x7F]/g, ' ')  // remove control chars
+        .replace(/([^\\])\\([^"\\/bfnrtu])/g, '$1 $2'); // fix bad escapes
+      try {
+        parsed = JSON.parse(sanitized);
+      } catch(e2) {
+        return res.status(500).json({ error: 'Failed to parse CSV: ' + parseErr.message + '. Try re-exporting the CSV from Clover.' });
+      }
+    }
     parsed._source = 'csv';
     parsed._uploadedAt = Date.now();
     parsed.rowCount = csv.split('\n').length;
