@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRZN Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:#C9A84C;--gold-dim:rgba(201,168,76,0.12);--black:#080808;
+  --surface:#0f0f0f;--surface2:#141414;--surface3:#1a1a1a;--surface4:#202020;
+  --border:rgba(255,255,255,0.06);--border-gold:rgba(201,168,76,0.2);
+  --text:#e8e8e8;--text-dim:#555;--text-mid:#888;
+  --green:#4caf7d;--green-dim:rgba(76,175,125,0.1);
+  --red:#e05555;--red-dim:rgba(224,85,85,0.1);
+  --orange:#e08c35;--blue:#4c8faf;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;}
+
+/* TOPBAR */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;}
+.topbar-logo{font-size:16px;font-weight:300;letter-spacing:0.15em;color:var(--gold);}
+.topbar-badge{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--text-dim);border:1px solid var(--border);padding:2px 8px;border-radius:3px;margin-left:10px;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.topbar-user{font-size:11px;color:var(--text-dim);}
+.topbar-btn{font-size:11px;color:var(--text-dim);background:none;border:1px solid var(--border);
+  padding:5px 12px;border-radius:5px;cursor:pointer;transition:all 0.15s;}
+.topbar-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.15);}
+
+/* LAYOUT */
+.content{padding:24px 28px;display:flex;flex-direction:column;gap:20px;max-width:1400px;margin:0 auto;}
+
+/* SUMMARY CARDS */
+.summary-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;}
+.summary-card.highlight{border-color:var(--border-gold);background:rgba(201,168,76,0.04);}
+.s-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
+.s-value{font-size:28px;font-weight:300;letter-spacing:-0.02em;color:var(--text);line-height:1;}
+.s-sub{font-size:10px;color:var(--text-dim);margin-top:4px;}
+.s-value.gold{color:var(--gold);}
+.s-value.green{color:var(--green);}
+
+/* TABLE */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.table-title{font-size:12px;font-weight:500;letter-spacing:0.02em;}
+.table-controls{display:flex;gap:8px;align-items:center;}
+.search-input{background:var(--surface2);border:1px solid var(--border);border-radius:5px;
+  padding:5px 10px;font-size:11px;color:var(--text);font-family:'DM Sans',sans-serif;
+  outline:none;width:180px;transition:border-color 0.2s;}
+.search-input:focus{border-color:var(--border-gold);}
+.filter-btn{font-size:10px;color:var(--text-dim);background:var(--surface2);
+  border:1px solid var(--border);padding:4px 10px;border-radius:4px;cursor:pointer;transition:all 0.15s;}
+.filter-btn.active{color:var(--gold);border-color:var(--border-gold);background:var(--gold-dim);}
+.filter-btn:hover{color:var(--text);}
+
+table{width:100%;border-collapse:collapse;}
+th{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);
+  font-weight:500;padding:10px 18px;text-align:left;border-bottom:1px solid var(--border);
+  background:var(--surface2);}
+td{padding:12px 18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-mid);
+  vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+.td-main{color:var(--text)!important;font-size:12px;}
+.td-mono{font-family:'DM Mono',monospace;font-size:11px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;}
+.badge-pro{color:var(--gold);background:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);}
+.badge-trial{color:var(--text-dim);background:var(--surface3);border:1px solid var(--border);}
+.badge-expired{color:var(--red);background:var(--red-dim);border:1px solid rgba(224,85,85,0.2);}
+.badge-yes{color:var(--green);background:var(--green-dim);}
+.badge-no{color:var(--text-dim);background:var(--surface3);}
+
+/* ACTIONS */
+.action-btn{font-size:10px;color:var(--text-dim);background:none;border:1px solid var(--border);
+  padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+.action-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.15);}
+.action-btn.danger:hover{color:var(--red);border-color:rgba(224,85,85,0.3);}
+.action-btn.promote{color:var(--gold)!important;border-color:var(--border-gold)!important;}
+.actions-cell{display:flex;gap:6px;align-items:center;}
+
+/* LOADING / EMPTY */
+.loading{padding:48px;text-align:center;color:var(--text-dim);font-size:12px;}
+.loading-bar{width:40px;height:2px;background:var(--gold);margin:12px auto 0;
+  animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeUp 0.3s ease both;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);
+  z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border-gold);border-radius:10px;
+  padding:28px;min-width:360px;}
+.modal-title{font-size:14px;font-weight:500;margin-bottom:6px;}
+.modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:20px;line-height:1.6;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+.modal-btn{font-size:11px;padding:7px 16px;border-radius:5px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;border:none;transition:all 0.15s;}
+.modal-btn.primary{background:var(--gold);color:#000;font-weight:500;}
+.modal-btn.secondary{background:var(--surface3);color:var(--text-dim);border:1px solid var(--border);}
+.modal-btn:hover{opacity:0.85;}
+.modal-select{width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:5px;padding:8px 10px;font-size:12px;color:var(--text);
+  font-family:'DM Sans',sans-serif;outline:none;margin-bottom:16px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border-gold);
+  border-radius:6px;padding:10px 16px;font-size:11px;color:var(--text);
+  z-index:200;transform:translateY(20px);opacity:0;transition:all 0.3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* REFRESH BTN */
+.refresh-btn{font-size:10px;color:var(--text-dim);background:none;border:1px solid var(--border);
+  padding:4px 10px;border-radius:4px;cursor:pointer;transition:all 0.15s;}
+.refresh-btn:hover{color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:0;">
+    <div class="topbar-logo">HRZN</div>
+    <div class="topbar-badge">Admin</div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user" id="admin-email">—</div>
+    <button class="topbar-btn" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+    <button class="topbar-btn" onclick="hrznLogout()">Sign Out</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- SUMMARY ROW -->
+  <div class="summary-row fade-in" id="summary-row">
+    <div class="summary-card">
+      <div class="s-label">Total Users</div>
+      <div class="s-value" id="stat-total">—</div>
+      <div class="s-sub">All time signups</div>
+    </div>
+    <div class="summary-card highlight">
+      <div class="s-label">Pro Users</div>
+      <div class="s-value gold" id="stat-pro">—</div>
+      <div class="s-sub">Active subscriptions</div>
+    </div>
+    <div class="summary-card highlight">
+      <div class="s-label">MRR</div>
+      <div class="s-value gold" id="stat-mrr">—</div>
+      <div class="s-sub">Monthly recurring</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">ARR</div>
+      <div class="s-value green" id="stat-arr">—</div>
+      <div class="s-sub">Annualized</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">Trial Users</div>
+      <div class="s-value" id="stat-trial">—</div>
+      <div class="s-sub">In free trial</div>
+    </div>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div class="table-card fade-in">
+    <div class="table-header">
+      <div class="table-title">Users</div>
+      <div class="table-controls">
+        <input class="search-input" type="text" placeholder="Search email or business..." 
+          id="search-input" oninput="filterUsers()" />
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('pro',this)">Pro</button>
+        <button class="filter-btn" onclick="setFilter('trial',this)">Trial</button>
+        <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="table-body">
+      <div class="loading">Loading users...<div class="loading-bar"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PLAN MODAL -->
+<div class="modal-overlay" id="plan-modal">
+  <div class="modal">
+    <div class="modal-title">Change Plan</div>
+    <div class="modal-sub" id="plan-modal-sub">Update plan for this user.</div>
+    <select class="modal-select" id="plan-select">
+      <option value="trial">Trial</option>
+      <option value="pro">Pro ($99/mo)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmPlanChange()">Save Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="hrzn-data.js"></script>
+<script>
+const ADMIN_EMAILS = ['au@gmail.com'];
+let allUsers = [];
+let currentFilter = 'all';
+let pendingBusinessId = null;
+
+// ── AUTH CHECK ──────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!hrznIsLoggedIn()) {
+    window.location.href = 'login.html';
+    return;
+  }
+  const user = hrznGetUser();
+  if (!ADMIN_EMAILS.includes(user.email)) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+  document.getElementById('admin-email').textContent = user.email;
+  await loadData();
+});
+
+// ── LOAD DATA ───────────────────────────────────
+async function loadData() {
+  document.getElementById('table-body').innerHTML = '<div class="loading">Loading users...<div class="loading-bar"></div></div>';
+  try {
+    const token = hrznGetToken();
+    const r = await fetch('/api/admin-data', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Update summary
+    const s = data.summary;
+    document.getElementById('stat-total').textContent = s.totalUsers;
+    document.getElementById('stat-pro').textContent = s.proUsers;
+    document.getElementById('stat-mrr').textContent = '$' + s.mrr.toLocaleString();
+    document.getElementById('stat-arr').textContent = '$' + s.arr.toLocaleString();
+    document.getElementById('stat-trial').textContent = s.trialUsers;
+
+    allUsers = data.users;
+    renderTable(allUsers);
+  } catch(e) {
+    document.getElementById('table-body').innerHTML = `<div class="loading" style="color:#e05555;">Error: ${e.message}</div>`;
+  }
+}
+
+// ── RENDER TABLE ─────────────────────────────────
+function renderTable(users) {
+  if (!users.length) {
+    document.getElementById('table-body').innerHTML = '<div class="loading">No users found.</div>';
+    return;
+  }
+
+  const fmt = (n) => n ? '$' + Math.round(n).toLocaleString() : '—';
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+  const fmtLast = (d) => {
+    if (!d) return '—';
+    const diff = Math.floor((Date.now() - new Date(d)) / (1000*60*60*24));
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    return diff + 'd ago';
+  };
+
+  const html = `
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Business</th>
+          <th>Plan</th>
+          <th>Signed Up</th>
+          <th>Last Active</th>
+          <th>Trial</th>
+          <th>Sales CSV</th>
+          <th>Items CSV</th>
+          <th>Net Sales</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${users.map(u => {
+          const isExpired = u.plan === 'trial' && u.daysLeftInTrial <= 0;
+          const planBadge = u.plan === 'pro'
+            ? '<span class="badge badge-pro">● Pro</span>'
+            : isExpired
+              ? '<span class="badge badge-expired">Expired</span>'
+              : '<span class="badge badge-trial">Trial</span>';
+          const trialCell = u.plan === 'pro' ? '—' 
+            : isExpired ? '<span style="color:var(--red)">Expired</span>'
+            : `${u.daysLeftInTrial}d left`;
+
+          return `<tr>
+            <td>
+              <div class="td-main td-mono">${u.email}</div>
+            </td>
+            <td>
+              <div class="td-main">${u.businessName}</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${u.location}</div>
+            </td>
+            <td>${planBadge}</td>
+            <td>${fmtDate(u.createdAt)}</td>
+            <td>${fmtLast(u.lastSignIn)}</td>
+            <td style="font-size:11px;">${trialCell}</td>
+            <td>
+              ${u.salesUploaded
+                ? `<span class="badge badge-yes">✓ Yes</span>`
+                : `<span class="badge badge-no">No</span>`}
+              ${u.salesPeriod ? `<div style="font-size:9px;color:var(--text-dim);margin-top:3px;">${u.salesPeriod}</div>` : ''}
+            </td>
+            <td>
+              ${u.menuUploaded
+                ? `<span class="badge badge-yes">✓ Yes</span>`
+                : `<span class="badge badge-no">No</span>`}
+            </td>
+            <td style="font-family:'DM Mono',monospace;font-size:11px;">
+              ${u.netSales ? '$' + Math.round(u.netSales).toLocaleString() : '—'}
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="action-btn ${u.plan !== 'pro' ? 'promote' : ''}" 
+                  onclick="openPlanModal('${u.businessId}','${u.email}','${u.plan}')">
+                  ${u.plan === 'pro' ? 'Edit Plan' : '↑ Upgrade'}
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  document.getElementById('table-body').innerHTML = html;
+}
+
+// ── FILTER / SEARCH ──────────────────────────────
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterUsers();
+}
+
+function filterUsers() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  let filtered = allUsers;
+  if (currentFilter === 'pro') filtered = filtered.filter(u => u.plan === 'pro');
+  if (currentFilter === 'trial') filtered = filtered.filter(u => u.plan === 'trial');
+  if (q) filtered = filtered.filter(u =>
+    u.email.toLowerCase().includes(q) ||
+    u.businessName.toLowerCase().includes(q) ||
+    u.location.toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
+
+// ── PLAN MODAL ───────────────────────────────────
+function openPlanModal(businessId, email, currentPlan) {
+  pendingBusinessId = businessId;
+  document.getElementById('plan-modal-sub').textContent = `Update plan for ${email}`;
+  document.getElementById('plan-select').value = currentPlan;
+  document.getElementById('plan-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('plan-modal').classList.remove('open');
+  pendingBusinessId = null;
+}
+
+async function confirmPlanChange() {
+  const plan = document.getElementById('plan-select').value;
+  if (!pendingBusinessId) return;
+  closeModal();
+  try {
+    const r = await fetch('/api/admin-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + hrznGetToken() },
+      body: JSON.stringify({ action: 'set_plan', businessId: pendingBusinessId, plan })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      showToast('✓ Plan updated to ' + plan);
+      await loadData();
+    } else {
+      showToast('Error updating plan');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('plan-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── TOAST ─────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
