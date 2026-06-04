@@ -7,7 +7,7 @@
 <style>:root{--gold:#C9A84C;--gold-dim:#7a6330;--black:#080808;--surface:#0f0f0f;--surface2:#141414;--surface3:#1a1a1a;--surface4:#202020;--border:rgba(255,255,255,0.06);--border-gold:rgba(201,168,76,0.2);--text:#e8e8e8;--text-dim:#666;--text-mid:#999;--red:#e05555;--red-dim:rgba(224,85,85,0.12);--green:#4caf7d;--green-dim:rgba(76,175,125,0.12);--orange:#e08c35;--orange-dim:rgba(224,140,53,0.12);--blue:#4c8faf;--sidebar-w:240px;}
 body.light{--black:#f5f4f1;--surface:#ffffff;--surface2:#f8f7f5;--surface3:#f0ede8;--surface4:#e8e4de;--border:rgba(0,0,0,0.07);--border-gold:rgba(201,168,76,0.3);--text:#111111;--text-mid:#555;--text-dim:#999;--red:#c0392b;--red-dim:rgba(192,57,43,0.08);--green:#2a7d4f;--green-dim:rgba(42,125,79,0.08);--orange:#c0700a;--orange-dim:rgba(192,112,10,0.08);}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;display:flex;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
+body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;display:flex;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
 .sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow:hidden;}
 .sidebar-logo{padding:14px 20px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;text-align:center;}
 .sidebar-logo img{width:150px;height:auto;display:block;}
@@ -38,7 +38,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px;}
 .card-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .card-title{font-size:11px;font-weight:500;color:var(--text);letter-spacing:0.02em;}
-.card-body{padding:16px;}
+.card-body{-webkit-text-size-adjust:100%;padding:16px;}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;}
 .kpi-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
@@ -171,7 +171,7 @@ body{background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;
   </div>
 
   <!-- DISCLAIMER FOOTER -->
-  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);">
+  <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
     <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
       <strong style="color:var(--text-dim);">Data Disclaimer:</strong> Figures marked ⚠ Est. are projections based on industry averages and your uploaded data — not audited financial statements. Real data requires live integrations (Clover API, Gusto, etc.). AI-generated insights are for informational purposes only and do not constitute professional financial or business advice. See our <a href="terms.html" style="color:var(--text-dim);text-decoration:underline;">Terms of Service</a> for full details.
     </p>
