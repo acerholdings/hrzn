@@ -165,6 +165,11 @@ tr:hover td{background:rgba(255,255,255,0.015);}
       <div class="s-sub">Annualized</div>
     </div>
     <div class="summary-card">
+      <div class="s-label">Starter Users</div>
+      <div class="s-value" id="stat-starter">—</div>
+      <div class="s-sub">$99/mo plan</div>
+    </div>
+    <div class="summary-card">
       <div class="s-label">Trial Users</div>
       <div class="s-value" id="stat-trial">—</div>
       <div class="s-sub">In free trial</div>
@@ -180,6 +185,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
           id="search-input" oninput="filterUsers()" />
         <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
         <button class="filter-btn" onclick="setFilter('pro',this)">Pro</button>
+        <button class="filter-btn" onclick="setFilter('starter',this)">Starter</button>
         <button class="filter-btn" onclick="setFilter('trial',this)">Trial</button>
         <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
       </div>
@@ -250,6 +256,7 @@ async function loadData() {
     document.getElementById('stat-pro').textContent = s.proUsers;
     document.getElementById('stat-mrr').textContent = '$' + s.mrr.toLocaleString();
     document.getElementById('stat-arr').textContent = '$' + s.arr.toLocaleString();
+    document.getElementById('stat-starter').textContent = s.starterUsers || 0;
     document.getElementById('stat-trial').textContent = s.trialUsers;
 
     allUsers = data.users;
@@ -362,6 +369,7 @@ function filterUsers() {
   const q = document.getElementById('search-input').value.toLowerCase();
   let filtered = allUsers;
   if (currentFilter === 'pro') filtered = filtered.filter(u => u.plan === 'pro');
+  if (currentFilter === 'starter') filtered = filtered.filter(u => u.plan === 'starter');
   if (currentFilter === 'trial') filtered = filtered.filter(u => u.plan === 'trial');
   if (q) filtered = filtered.filter(u =>
     u.email.toLowerCase().includes(q) ||
