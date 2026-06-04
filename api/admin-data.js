@@ -24,28 +24,6 @@ export default async function handler(req, res) {
     if (!ADMIN_EMAILS.includes(user.email)) return res.status(403).json({ error: 'Not authorized' });
 
     // ── GET: Fetch all users and business data ──
-    if (req.method === 'GET' && req.query?.debug === '2') {
-      // Show all auth users and businesses to diagnose ID matching
-      const bRes = await fetch(`${SUPABASE_URL}/rest/v1/businesses?select=id,owner_id,name,plan`,
-        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
-      const aRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?per_page=100`,
-        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
-      const pRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?select=id,business_id,email`,
-        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } });
-      const bizz = await bRes.json();
-      const auth = await aRes.json();
-      const prof = await pRes.json();
-      // Show just the current user's ID and what businesses exist
-      const currentUser = auth.users?.find(u => u.email === user.email);
-      return res.status(200).json({
-        currentUser: { id: currentUser?.id, email: currentUser?.email },
-        businesses: bizz.map(b => ({ id: b.id, owner_id: b.owner_id, name: b.name, plan: b.plan })),
-        profiles: prof,
-        ownerIdMatch: bizz.find(b => b.owner_id === currentUser?.id),
-        profileMatch: prof.find(p => p.id === currentUser?.id || p.email === currentUser?.email),
-      });
-    }
-
     if (req.method === 'GET') {
       // Get all businesses
       const bizRes = await fetch(
@@ -142,8 +120,6 @@ export default async function handler(req, res) {
       const starterUsers = users.filter(u => u.plan === 'starter');
       const mrr = (proUsers.length * 299) + (starterUsers.length * 99);
 
-      // Log user businessIds for debugging
-      console.log('Users businessIds:', users.map(u => ({ email: u.email, bizId: u.businessId })));
       return res.status(200).json({
         ok: true,
         summary: {
@@ -163,8 +139,7 @@ export default async function handler(req, res) {
 
       if (action === 'set_plan') {
         // Manually set a user's plan
-        console.log('set_plan received businessId:', businessId, 'plan:', plan);
-      if (!businessId || businessId === 'undefined' || businessId === 'null') {
+        if (!businessId || businessId === 'undefined' || businessId === 'null') {
           return res.status(400).json({ error: 'No business ID for this user. Received: ' + JSON.stringify(businessId) });
         }
         const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}`, {
