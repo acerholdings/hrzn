@@ -410,10 +410,11 @@ function makeAlertCard(alert){
 
 function generateAlerts(){
   const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
   const t = getTargets();
-    const periodDays = d.periodDays || 148;
+  const periodDays = d.periodDays || 148;
   const weeks = periodDays / 7;
-const months = HRZN.getMonths(d);
+  const months = HRZN.getMonths(d);
   const weekly = Math.round((d.netSales||0)/weeks);
   const monthly = Math.round((d.netSales||0)/months);
   const tenders = d.tenders||{};
