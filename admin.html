@@ -390,14 +390,14 @@ function closeModal() {
 
 async function confirmPlanChange() {
   const plan = document.getElementById('plan-select').value;
-  console.log('confirmPlanChange - pendingBusinessId:', pendingBusinessId, 'plan:', plan);
-  if (!pendingBusinessId) return;
+  const businessId = pendingBusinessId; // capture BEFORE closeModal nulls it
+  if (!businessId) return;
   closeModal();
   try {
     const r = await fetch('/api/admin-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + hrznGetToken() },
-      body: JSON.stringify({ action: 'set_plan', businessId: pendingBusinessId, plan })
+      body: JSON.stringify({ action: 'set_plan', businessId: businessId, plan })
     });
     const data = await r.json();
     if (data.ok) {
@@ -418,8 +418,6 @@ document.getElementById('table-body').addEventListener('click', function(e) {
   const bizId = btn.dataset.bizId;
   const email = btn.dataset.email;
   const plan = btn.dataset.plan;
-  console.log('Button clicked - bizId:', bizId, 'email:', email, 'plan:', plan);
-  console.log('All data attrs:', btn.dataset);
   openPlanModal(bizId, email, plan);
 });
 
