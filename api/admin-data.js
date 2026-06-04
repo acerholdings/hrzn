@@ -85,7 +85,7 @@ export default async function handler(req, res) {
         const biz = (bizId ? businesses.find(b => b.id === bizId) : null)
                  || ownerMap[u.id]                               // businesses.owner_id match
                  || {};
-        const resolvedBizId = biz.id || bizId;
+        const resolvedBizId = biz.id || bizId || null;
         const sales = salesMap[bizId] || null;
         const hasMenu = menuMap[bizId] || false;
 
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
           email: u.email,
           createdAt: u.created_at,
           lastSignIn: u.last_sign_in_at,
-          businessId: resolvedBizId,
+          businessId: resolvedBizId || null,
           businessName: biz.name || '—',
           location: biz.location || '—',
           plan: biz.plan || 'trial',
