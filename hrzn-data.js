@@ -689,10 +689,25 @@ TARGETS (from operator settings):
   },
 
   // ── BUILD AI CONTEXT STRING ──────────────────
-  getAIContext() {
+  getAIContext(data) {
     // Use master system prompt for consistency
-    const d = this.getData();
-    return this.getSystemPrompt(d) + this.getBenchmarkContext();
+    const d = data || this.getData();
+    let ctx = this.getSystemPrompt(d) + this.getBenchmarkContext();
+    // Inject dynamic item names from uploaded Item Sales CSV
+    try {
+      const itemsRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('hrzn-data-items') : null;
+      if (itemsRaw) {
+        const itemsData = JSON.parse(itemsRaw);
+        const top10 = (itemsData.allItems || itemsData.items || [])
+          .slice(0, 10)
+          .map((i, idx) => (idx+1) + '. ' + i.name + ' (' + (i.category||'uncategorized') + '): ' + (i.sold||0).toLocaleString() + ' sold, $' + Math.round(i.netSales||0).toLocaleString() + ' revenue')
+          .join('\n');
+        if (top10) {
+          ctx += '\n\nTOP PRODUCTS/ITEMS (from uploaded Item Sales CSV):\n' + top10;
+        }
+      }
+    } catch(e) {}
+    return ctx;
   },
 
   // ── SOURCE BADGE HTML ────────────────────────
@@ -700,15 +715,16 @@ TARGETS (from operator settings):
     const source = this.getSource();
     const d = this.getData();
     const configs = {
-      api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  label: 'Live — Clover' },
-      csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   label: d._filename ? 'CSV — '+d._filename.replace('SAMA_HANDROLL_LA-','').replace('.csv','') : 'CSV Upload' },
-      demo: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', label: 'Demo Data' },
+      api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  type: 'Live API', detail: 'Clover · Real-time' },
+      csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   type: 'Sales Overview', detail: d._filename ? d._filename.replace('SAMA_HANDROLL_LA-','').replace(/_/g,' ').replace('.csv','') : 'CSV Upload' },
+      demo: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'Demo Data', detail: 'Sample data' },
     };
     const c = configs[source] || configs.demo;
-    return `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:${c.color};background:${c.bg};border:1px solid ${c.border};padding:5px 10px;border-radius:20px;cursor:pointer;" onclick="HRZN.openSourceSwitcher()" title="Click to switch data source">
-      <div style="width:5px;height:5px;border-radius:50%;background:${c.dot};${source==='api'?'animation:pulse 2s infinite;':''}"></div>
-      ${c.label}
-      <span style="opacity:0.5;font-size:9px;">▼</span>
+    return `<div style="display:inline-flex;align-items:center;gap:6px;font-size:10px;color:${c.color};background:${c.bg};border:1px solid ${c.border};padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;" onclick="HRZN.openSourceSwitcher()" title="Click to switch data source">
+      <span style="color:${c.dot};font-size:8px;">●</span>
+      <span style="font-weight:500;">${c.type}</span>
+      <span style="color:var(--text-dim);font-size:9px;">${c.detail}</span>
+      <span style="color:var(--text-dim);font-size:9px;">▼</span>
     </div>`;
   },
 
