@@ -390,6 +390,7 @@ function closeModal() {
 
 async function confirmPlanChange() {
   const plan = document.getElementById('plan-select').value;
+  console.log('confirmPlanChange - pendingBusinessId:', pendingBusinessId, 'plan:', plan);
   if (!pendingBusinessId) return;
   closeModal();
   try {
