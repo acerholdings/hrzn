@@ -290,7 +290,7 @@ function renderCSVGrid(){
       <div class="csv-bottom">
         <div>
           ${isUploaded
-            ? `<div class="csv-filename">✓ ${filename||'Uploaded'}</div>`
+            ? `<div class="csv-filename">✓ ${filename && filename !== 'csv' ? filename : (stored?.period || stored?.periodStart ? (stored.period || stored.periodStart) : 'Uploaded — re-upload to show filename')}</div>`
             : `<div class="csv-path">${t.path}</div>`
           }
         </div>
