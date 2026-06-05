@@ -786,6 +786,9 @@ async function handlePlanAction() {
       const data = await r.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.noCustomer) {
+        // Never went through Stripe — send to pricing page to create subscription
+        window.location.href = 'pricing.html';
       } else {
         throw new Error(data.error || 'Could not open portal');
       }
