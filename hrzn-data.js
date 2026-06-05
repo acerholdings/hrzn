@@ -161,8 +161,10 @@ async function hrznLoadFromCloud() {
     if (data.salesData) {
       // Only restore if nothing local
       if (!localStorage.getItem('hrzn-data-csv')) {
-        localStorage.setItem('hrzn-data-csv', JSON.stringify(data.salesData));
-        localStorage.setItem('hrzn-sales-data', JSON.stringify(data.salesData));
+        // Strip _filename on restore so display is consistent with Item Sales
+        const salesRestored = { ...data.salesData, _filename: null, _restoredFromCloud: true };
+        localStorage.setItem('hrzn-data-csv', JSON.stringify(salesRestored));
+        localStorage.setItem('hrzn-sales-data', JSON.stringify(salesRestored));
       }
     }
 

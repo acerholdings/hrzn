@@ -117,8 +117,9 @@ async function signIn() {
         if (syncData.data) {
           // Only restore from cloud if nothing exists locally
           if (syncData.data.salesData && !localStorage.getItem('hrzn-data-csv')) {
-            localStorage.setItem('hrzn-data-csv', JSON.stringify(syncData.data.salesData));
-            localStorage.setItem('hrzn-sales-data', JSON.stringify(syncData.data.salesData));
+            const salesRestored = { ...syncData.data.salesData, _filename: null, _restoredFromCloud: true };
+            localStorage.setItem('hrzn-data-csv', JSON.stringify(salesRestored));
+            localStorage.setItem('hrzn-sales-data', JSON.stringify(salesRestored));
           }
           if (syncData.data.menuData && !localStorage.getItem('hrzn-data-items')) {
             const cachedSet = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
