@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f8f7f5;color:#111;font-family:'DM Sans',sans-serif;min-height:100vh;}
+body{-webkit-text-size-adjust:100%;background:#f8f7f5;color:#111;font-family:'DM Sans',sans-serif;min-height:100vh;}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 60px;border-bottom:1px solid rgba(0,0,0,0.08);}
 .logo{font-size:18px;font-weight:500;letter-spacing:-0.02em;color:#111;}
 .back-btn{font-size:12px;color:#666;text-decoration:none;cursor:pointer;}
@@ -15,7 +15,7 @@ body{background:#f8f7f5;color:#111;font-family:'DM Sans',sans-serif;min-height:1
 .tag{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#C9A84C;margin-bottom:16px;}
 h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
 .sub{font-size:16px;color:#666;max-width:480px;margin:0 auto;}
-.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:60px auto;padding:0 60px 80px;}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:24px auto 0;padding:0 60px 16px;}
 .plan{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:32px;position:relative;transition:border-color 0.2s;}
 .plan:hover{border-color:rgba(201,168,76,0.3);}
 .plan.featured{border-color:rgba(201,168,76,0.4);background:#f8f7f5;}
@@ -33,7 +33,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
 .btn-plan-gold:hover{opacity:0.88;}
 .btn-plan-outline{background:transparent;color:#111;border:1px solid rgba(0,0,0,0.08);}
 .btn-plan-outline:hover{border-color:rgba(201,168,76,0.4);color:#C9A84C;}
-.trial-note{text-align:center;font-size:11px;color:#444;padding-bottom:40px;}
+.trial-note{text-align:center;font-size:11px;color:#444;padding:8px 0 20px;margin-top:-8px;}
 .cancelled-banner{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.2);border-radius:8px;padding:12px 20px;text-align:center;font-size:12px;color:#e05555;max-width:500px;margin:0 auto 40px;display:none;}
 </style>
 </head>
@@ -57,6 +57,17 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
   <div class="tag">Pricing</div>
   <h1>Simple, transparent pricing</h1>
   <div class="sub">Start free for 14 days. No credit card required. Cancel anytime.</div>
+
+  <!-- ROI Statement -->
+  <div style="margin-top:16px;display:flex;justify-content:center;">
+    <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:18px 32px;max-width:640px;text-align:center;">
+      <div style="font-size:13px;color:#8a6f2e;font-weight:500;margin-bottom:6px;">Built for operators who take their numbers seriously</div>
+      <div style="font-size:12px;color:#555;line-height:1.7;">
+        The average HRZN Pro customer replaces <strong style="color:#111;">$1,200/month</strong> in tools and saves <strong style="color:#111;">10+ hours/week</strong> on reporting. At $299/month, the math is obvious.
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="cancelled-banner" id="cancelled-banner">
@@ -68,7 +79,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
   <div class="plan">
     <div class="plan-name">Starter</div>
     <div class="plan-price">$99<span>/mo</span></div>
-    <div class="plan-period">per location · billed monthly</div>
+    <div class="plan-period">billed monthly</div>
     <ul class="plan-features">
       <li>Revenue & sales analytics</li>
       <li>Labor cost monitoring</li>
@@ -76,7 +87,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
       <li>Smart alerts</li>
       <li>AI operator chat</li>
       <li>CSV data upload</li>
-      <li>1 location</li>
+      <li>1 business</li>
     </ul>
     <button class="btn-plan btn-plan-outline" onclick="checkout('starter')">Get Started →</button>
   </div>
@@ -85,7 +96,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
     <div class="featured-badge">Most Popular</div>
     <div class="plan-name">Pro</div>
     <div class="plan-price">$299<span>/mo</span></div>
-    <div class="plan-period">per location · billed monthly</div>
+    <div class="plan-period">billed monthly</div>
     <ul class="plan-features">
       <li>Everything in Starter</li>
       <li>Live POS integration</li>
@@ -93,7 +104,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
       <li>P&L tracking</li>
       <li>Cash flow forecasting</li>
       <li>Custom reports</li>
-      <li>Up to 5 locations</li>
+      <li>Up to 5 businesses</li>
       <li>Priority support</li>
     </ul>
     <button class="btn-plan btn-plan-gold" onclick="checkout('pro')">Get Started →</button>
@@ -102,10 +113,10 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
   <div class="plan">
     <div class="plan-name">Enterprise</div>
     <div class="plan-price" style="font-size:36px;padding-top:6px;">Custom</div>
-    <div class="plan-period">unlimited locations</div>
+    <div class="plan-period">unlimited businesses</div>
     <ul class="plan-features">
       <li>Everything in Pro</li>
-      <li>Unlimited locations</li>
+      <li>Unlimited businesses</li>
       <li>Custom integrations</li>
       <li>Dedicated account manager</li>
       <li>SLA guarantee</li>
@@ -118,6 +129,53 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
 </div>
 
 <div class="trial-note">All plans include a 14-day free trial · No credit card required to start</div>
+
+<!-- WHAT HRZN REPLACES -->
+<div style="max-width:700px;margin:8px auto 40px;padding:0 24px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:11px;letter-spacing:0.15em;color:#999;text-transform:uppercase;margin-bottom:8px;">The math</div>
+    <div style="font-size:22px;font-weight:300;color:#111;">What HRZN replaces</div>
+  </div>
+  <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:#f0ede8;padding:10px 20px;font-size:10px;letter-spacing:0.1em;color:#888;text-transform:uppercase;">
+      <span>Tool</span><span style="text-align:center;">Their price</span><span style="text-align:right;">With HRZN</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
+      <span style="font-size:12px;color:#111;">Analytics &amp; Reporting</span>
+      <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$75/mo</span>
+      <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
+      <span style="font-size:12px;color:#111;">Inventory Management</span>
+      <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$300/mo</span>
+      <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
+      <span style="font-size:12px;color:#111;">Accounting Software</span>
+      <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$500/mo</span>
+      <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
+      <span style="font-size:12px;color:#111;">Labor Scheduling</span>
+      <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$150/mo</span>
+      <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
+      <span style="font-size:12px;color:#111;">AI Business Advisor</span>
+      <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$200/mo</span>
+      <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:16px 20px;border-top:1px solid rgba(0,0,0,0.08);background:#f0ede8;align-items:center;">
+      <span style="font-size:12px;font-weight:500;color:#111;">Total</span>
+      <span style="font-size:14px;color:#cc4444;text-align:center;text-decoration:line-through;">$1,225/mo</span>
+      <span style="font-size:14px;color:#8a6f2e;text-align:right;font-weight:600;">$299/mo</span>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:12px;font-size:11px;color:#777;">
+    Save over $900/month. Plus 10+ hours of manual reporting every week.
+  </div>
+</div>
 
 <script>
 // Check if logged in
