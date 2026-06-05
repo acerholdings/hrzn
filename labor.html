@@ -49,7 +49,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 .data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-mid);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}
-::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}</style>
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
+.topbar-left{display:flex;flex-direction:column;justify-content:center;}
+.topbar-left h1{font-size:20px;font-weight:300;color:var(--text);letter-spacing:-0.01em;margin:0;}
+.topbar-left p{font-size:11px;color:var(--text-dim);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+</style>
 </head>
 <body>
 <div class="sidebar">
@@ -87,11 +92,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 </div>
 <div class="main">
   <div class="topbar">
-    <div>
-      <div style="font-size:20px;font-weight:300;letter-spacing:-0.01em;">Labor</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:1px;" id="page-date-label">Loading...</div>
+    <div class="topbar-left">
+      <h1>Labor</h1>
+      <p id="page-date-label">Loading...</p>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div class="topbar-right">
       <div id="page-data-sources" style="display:flex;align-items:center;gap:4px;"></div>
       <div id="hrzn-source-badge"></div>
       <button onclick="navigate('dashboard.html')" style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:11px;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:DM Sans,sans-serif;">← Dashboard</button>

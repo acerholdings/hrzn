@@ -60,7 +60,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 ::-webkit-scrollbar{width:4px;}
 .dash-ai-chip{font-size:11px;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all 0.15s;}
 .dash-ai-chip:hover{color:var(--gold);border-color:rgba(201,168,76,0.3);background:rgba(201,168,76,0.06);}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
-.sparkline{overflow:visible;}</style>
+.sparkline{overflow:visible;}
+.topbar-left{display:flex;flex-direction:column;justify-content:center;}
+.topbar-left h1{font-size:20px;font-weight:300;color:var(--text);letter-spacing:-0.01em;margin:0;}
+.topbar-left p{font-size:11px;color:var(--text-dim);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+</style>
 </head>
 <body>
 <div class="sidebar">
@@ -97,12 +102,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
   </div>
 </div>
 <div class="main">
-  <div class="topbar" style="padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;">
-    <div>
-      <div style="font-size:20px;font-weight:300;color:var(--text);letter-spacing:-0.01em;">Overview</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:1px;" id="dashboard-period">Loading...</div>
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Overview</h1>
+      <p id="dashboard-period">Loading...</p>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div class="topbar-right">
       <div id="page-data-sources" style="display:flex;align-items:center;gap:4px;"></div>
       <div id="hrzn-source-badge"></div>
       <div class="date-selector" id="dashboard-period-btn" onclick="HRZN.openSourceSwitcher()" title="Click to change data source" style="cursor:pointer;" id="dashboard-period-btn">📅 <span id="dash-period-label">Jan 1 – May 28, 2026</span> ⌄</div>
