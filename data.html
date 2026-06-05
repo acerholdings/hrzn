@@ -289,13 +289,7 @@ function renderCSVGrid(){
       <div class="csv-bottom">
         <div>
           ${isUploaded
-            ? `<div class="csv-filename">✓ ${
-              filename && filename !== 'csv' && filename !== 'undefined' && filename !== 'null'
-                ? filename.replace('SAMA_HANDROLL_LA-','').replace(/_/g,' ').replace('.csv','')
-                : stored?.period || stored?.periodStart 
-                  ? (stored.period || stored.periodStart)
-                  : 'Uploaded'
-            }</div>`
+            ? `<div class="csv-filename">✓ ${t.label}</div>`
             : `<div class="csv-path">${t.path}</div>`
           }
         </div>
