@@ -57,6 +57,7 @@ export default async function handler(req, res) {
             allItems: menu.items || [],
             items: menu.items || [],
             categories: menu.categories || [],
+            _filename: menu.filename || null,
             _restoredFromCloud: true,
           };
         }
@@ -153,7 +154,8 @@ export default async function handler(req, res) {
             total_items_sold: data.totalItemsSold || 0,
             unique_items: data.uniqueItems || 0,
             items: data.allItems || data.items || [],
-            categories: data.categories || []
+            categories: data.categories || [],
+            filename: data._filename || null
           })
         });
       }
