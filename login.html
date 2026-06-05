@@ -121,7 +121,12 @@ async function signIn() {
             localStorage.setItem('hrzn-sales-data', JSON.stringify(syncData.data.salesData));
           }
           if (syncData.data.menuData && !localStorage.getItem('hrzn-data-items')) {
-            localStorage.setItem('hrzn-data-items', JSON.stringify(syncData.data.menuData));
+            const restored = {
+              ...syncData.data.menuData,
+              _filename: syncData.data.menuData._filename || 'Item Sales (cloud sync)',
+              _restoredFromCloud: true
+            };
+            localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
           }
           if (syncData.data.laborData && !localStorage.getItem('hrzn-data-employees')) {
             localStorage.setItem('hrzn-data-employees', JSON.stringify(syncData.data.laborData));
