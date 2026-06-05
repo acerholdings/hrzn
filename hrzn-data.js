@@ -170,13 +170,25 @@ async function hrznLoadFromCloud() {
     if (data.menuData) {
       // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
       if (!localStorage.getItem('hrzn-data-items')) {
-        localStorage.setItem('hrzn-data-items', JSON.stringify(data.menuData));
+        const restored = {
+          ...data.menuData,
+          _filename: data.menuData._filename || 'Item Sales (cloud sync)',
+          _restoredFromCloud: true
+        };
+        localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
       }
     }
 
     // Load labor data
     if (data.laborData) {
-      localStorage.setItem('hrzn-data-employees', JSON.stringify(data.laborData));
+      const laborRestored = {
+        ...data.laborData,
+        _filename: data.laborData._filename || 'Employee Sales (cloud sync)',
+        _restoredFromCloud: true
+      };
+      if (!localStorage.getItem('hrzn-data-employees')) {
+        localStorage.setItem('hrzn-data-employees', JSON.stringify(laborRestored));
+      }
     }
 
     // Load P&L data
@@ -190,9 +202,13 @@ async function hrznLoadFromCloud() {
         supplies: data.plData.supplies,
         marketing: data.plData.marketing,
         other: data.plData.other,
-        debt: data.plData.debt
+        debt: data.plData.debt,
+        _filename: 'P&L Expenses (cloud sync)',
+        _restoredFromCloud: true
       };
-      localStorage.setItem('hrzn-pl-data', JSON.stringify(plFormatted));
+      if (!localStorage.getItem('hrzn-pl-data')) {
+        localStorage.setItem('hrzn-pl-data', JSON.stringify(plFormatted));
+      }
     }
 
     // Load settings — merge cloud into local, preserving locally-saved values
