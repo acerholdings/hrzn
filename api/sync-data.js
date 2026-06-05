@@ -211,12 +211,14 @@ export default async function handler(req, res) {
       }
 
       if (type === 'settings') {
+        console.log('[HRZN sync] settings data received:', JSON.stringify(data));
         await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SERVICE_KEY}`,
-            'apikey': SERVICE_KEY
+            'apikey': SERVICE_KEY,
+            'Prefer': 'return=minimal'
           },
           body: JSON.stringify({
             target_labor_pct: data.labor || 28,
