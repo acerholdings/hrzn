@@ -173,7 +173,7 @@ async function hrznLoadFromCloud() {
         const restored = {
           ...data.menuData,
           _filename: data.menuData._filename || 'Item Sales (cloud sync)',
-          _restoredFromCloud: true
+          _restoredFromCloud: !data.menuData._filename
         };
         localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
       }
