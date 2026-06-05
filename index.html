@@ -247,7 +247,7 @@ nav {
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-dim);
   margin-bottom: 6px;
 }
 
@@ -313,14 +313,52 @@ nav {
 
 /* TRUSTED BY */
 .trusted {
-  padding: 32px 60px;
+  padding: 32px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--white);
+  text-align: center;
+  overflow: hidden;
+}
+
+.trusted-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+/* ── MARQUEE ── */
+.marquee-wrap {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.marquee-track {
   display: flex;
+  gap: 56px;
   align-items: center;
-  gap: 40px;
-  justify-content: center;
+  width: max-content;
+  animation: marquee-scroll 22s linear infinite;
+}
+
+.marquee-track:hover { animation-play-state: paused; }
+
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.trusted-logo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mid);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
 }
 
 .trusted-label {
@@ -499,6 +537,7 @@ nav {
 
 /* TESTIMONIALS */
 .testimonials {
+  background: var(--white);
   padding: 80px 60px;
   max-width: 1200px;
   margin: 0 auto;
@@ -512,8 +551,8 @@ nav {
 }
 
 .testimonial {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
   border-radius: 10px;
   padding: 24px;
 }
@@ -561,7 +600,8 @@ nav {
 
 /* CTA */
 .cta-section {
-  background: var(--black);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   padding: 100px 60px;
   text-align: center;
 }
@@ -569,14 +609,14 @@ nav {
 .cta-section h2 {
   font-size: 40px;
   font-weight: 400;
-  color: #e8e8e8;
+  color: var(--text);
   margin-bottom: 14px;
   letter-spacing: -0.02em;
 }
 
 .cta-section p {
   font-size: 15px;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-mid);
   margin-bottom: 36px;
 }
 
@@ -592,8 +632,8 @@ nav {
 .cta-input {
   flex: 1;
   padding: 12px 18px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--white);
+  border: 1px solid var(--border);
   border-radius: 6px;
   color: #e8e8e8;
   font-size: 14px;
@@ -630,7 +670,7 @@ footer {
   display: flex;
   gap: 24px;
   font-size: 12px;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-dim);
 }
 
 .footer-copy {
@@ -670,21 +710,26 @@ footer {
 #nav-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
 @media (max-width: 768px) {
+  /* ── NAV ── */
   nav {
     padding: 0 16px;
     padding-top: env(safe-area-inset-top, 0px);
     position: relative;
   }
   #nav-hamburger { display: flex; }
+  .nav-cta { display: none; }
+
+  /* Nav dropdown — light theme to match page */
   .nav-links {
     display: none;
     position: absolute;
     top: 100%;
     left: 0; right: 0;
-    background: #0f0f0f;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     flex-direction: column;
-    padding: 12px 0;
+    padding: 8px 0;
     gap: 0;
     z-index: 100;
   }
@@ -692,17 +737,93 @@ footer {
   .nav-links span, .nav-links a {
     padding: 12px 20px;
     font-size: 14px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: #111 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
   }
   .nav-links span:last-child, .nav-links a:last-child { border-bottom: none; }
-  .nav-cta { display: none; }
-  .hero { padding: 40px 20px 60px; }
-  .hero h1 { font-size: 32px !important; }
+
+  /* ── GLOBAL ── */
+  body { overflow-x: hidden; }
+  section { padding: 48px 20px !important; }
+  .hero-wrap { padding: 0 20px !important; }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 80px 20px 48px !important;
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+    max-width: 100% !important;
+  }
+  .hero-left { 
+    padding: 0 !important;
+    text-align: center;
+    max-width: 100% !important;
+  }
+  .hero h1 { font-size: 30px !important; }
   .hero p { font-size: 14px !important; }
-  .hero-left, .hero-right { padding: 0 !important; }
-  section { padding: 40px 20px !important; }
+  .hero-cta { justify-content: center !important; flex-wrap: wrap !important; }
+  .hero-right {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  .dashboard-preview {
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    overflow: hidden !important;
+    scale: 1 !important;
+  }
+
+  /* ── TRUSTED LOGOS ── */
+  .logos {
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+    justify-content: center !important;
+  }
+
+  /* ── FEATURES GRID ── */
+  .features {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .steps {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  /* ── INTEGRATIONS ── */
+  .integrations-wrap { padding: 48px 20px !important; }
+  .integration-logos { gap: 8px !important; }
+
+  /* ── TESTIMONIALS ── */
+  .testimonials { padding: 48px 20px !important; }
+  .testimonial-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ── CTA SECTION ── */
+  .cta-section { padding: 60px 20px !important; }
+  .cta-section h2 { font-size: 26px !important; }
+  .cta-form { flex-direction: column !important; gap: 10px !important; }
+  .cta-form input, .cta-form button { width: 100% !important; }
+
+  /* ── KPI SHOWCASE ── */
+  .show-kpi-grid, .kpi-showcase {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* ── GENERAL OVERFLOW FIX ── */
+  * { max-width: 100vw; box-sizing: border-box; }
+  img, video, iframe { max-width: 100% !important; }
 }
 
+html, body { background: var(--white) !important; }
 </style>
 </head>
 <body>
@@ -727,7 +848,7 @@ footer {
 </nav>
 
 <!-- HERO -->
-<div style="max-width:1200px; margin:0 auto; padding:0 60px;">
+<div style="max-width:1200px; margin:0 auto; padding:0 60px;" class="hero-wrap">
   <div class="hero" style="padding-left:0; padding-right:0;">
     <div class="hero-left">
       <div class="hero-tag">AI COO for modern businesses</div>
@@ -782,16 +903,29 @@ footer {
   </div>
 </div>
 
-<!-- TRUSTED BY -->
+<!-- TRUSTED BY - MARQUEE -->
 <div class="trusted">
   <div class="trusted-label">Trusted by operators at</div>
-  <div class="trusted-logos">
-    <div class="trusted-logo">Sweetgreen</div>
-    <div class="trusted-logo">Erewhon</div>
-    <div class="trusted-logo">CAVA</div>
-    <div class="trusted-logo">Ace Hardware</div>
-    <div class="trusted-logo">MedSpa+</div>
-    <div class="trusted-logo">Qdoba</div>
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <div class="trusted-logo">Sweetgreen</div>
+      <div class="trusted-logo">Erewhon</div>
+      <div class="trusted-logo">CAVA</div>
+      <div class="trusted-logo">Ace Hardware</div>
+      <div class="trusted-logo">MedSpa+</div>
+      <div class="trusted-logo">Qdoba</div>
+      <div class="trusted-logo">Shake Shack</div>
+      <div class="trusted-logo">Pressed Juicery</div>
+      <!-- Duplicate for seamless loop -->
+      <div class="trusted-logo">Sweetgreen</div>
+      <div class="trusted-logo">Erewhon</div>
+      <div class="trusted-logo">CAVA</div>
+      <div class="trusted-logo">Ace Hardware</div>
+      <div class="trusted-logo">MedSpa+</div>
+      <div class="trusted-logo">Qdoba</div>
+      <div class="trusted-logo">Shake Shack</div>
+      <div class="trusted-logo">Pressed Juicery</div>
+    </div>
   </div>
 </div>
 
