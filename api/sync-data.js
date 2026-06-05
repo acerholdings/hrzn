@@ -46,7 +46,20 @@ export default async function handler(req, res) {
           { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
         );
         const [menu] = await menuRes.json();
-        if (menu) results.menuData = { ...menu, items: menu.items, categories: menu.categories };
+        if (menu) {
+          results.menuData = {
+            grossProfitMargin: menu.gross_profit_margin,
+            totalItemsSold: menu.total_items_sold,
+            uniqueItems: menu.unique_items,
+            grossSales: menu.gross_sales,
+            netSales: menu.net_sales,
+            grossProfit: menu.gross_profit,
+            allItems: menu.items || [],
+            items: menu.items || [],
+            categories: menu.categories || [],
+            _restoredFromCloud: true,
+          };
+        }
 
         // Load labor data
         const laborRes = await fetch(
