@@ -1249,3 +1249,132 @@ if (document.readyState === 'loading') {
 } else {
   hrznInjectMobile();
 }
+
+
+// ── TRIAL EXPIRY + PAYWALL ────────────────────────────────────────────────────
+async function hrznCheckTrialAndPaywall() {
+  // Skip on auth pages, pricing, demo
+  const page = window.location.pathname.split('/').pop();
+  const skipPages = ['login.html', 'signup.html', 'pricing.html', 'forgot.html', ''];
+  if (skipPages.includes(page)) return;
+  if (hrznIsDemo()) return;
+  if (!hrznIsLoggedIn()) return;
+
+  const user = hrznGetUser();
+  const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const plan = settings.plan || settings.subscription_status || 'trial';
+
+  // If paid plan — nothing to check
+  if (plan === 'pro' || plan === 'starter') return;
+
+  // Check if trial expired
+  const createdAt = user?.created_at ? new Date(user.created_at) : null;
+  if (!createdAt) return;
+
+  const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+
+  if (now <= trialEnd) return; // Trial still active
+
+  // Trial expired — show paywall
+  hrznShowPaywall(user.email);
+}
+
+function hrznShowPaywall(email) {
+  // Don't show twice
+  if (document.getElementById('hrzn-paywall')) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'hrzn-paywall';
+  modal.style.cssText = [
+    'position:fixed', 'inset:0', 'z-index:99999',
+    'background:rgba(8,8,8,0.96)',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    "font-family:DM Sans,sans-serif",
+    'padding:20px'
+  ].join(';');
+
+  modal.innerHTML = `
+    <div style="max-width:460px;width:100%;text-align:center;">
+      <div style="font-size:13px;letter-spacing:0.15em;color:var(--gold,#C9A84C);margin-bottom:24px;">HRZN</div>
+      <div style="font-size:24px;font-weight:300;color:#e8e8e8;margin-bottom:10px;letter-spacing:-0.02em;">
+        Your free trial has ended
+      </div>
+      <div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:32px;">
+        Upgrade to keep access to your dashboard, AI insights, and all your data.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+        <!-- Starter -->
+        <div style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px 20px;text-align:left;cursor:pointer;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='rgba(201,168,76,0.4)'"
+             onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'"
+             onclick="hrznUpgrade('starter')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:14px;font-weight:500;color:#e8e8e8;">Starter</span>
+            <span style="font-size:18px;font-weight:300;color:#e8e8e8;">$99<span style="font-size:11px;color:#666;">/mo</span></span>
+          </div>
+          <div style="font-size:11px;color:#666;">Dashboard · CSV uploads · AI insights · Reports</div>
+        </div>
+
+        <!-- Pro -->
+        <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:18px 20px;text-align:left;cursor:pointer;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='rgba(201,168,76,0.6)'"
+             onmouseout="this.style.borderColor='rgba(201,168,76,0.3)'"
+             onclick="hrznUpgrade('pro')">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:14px;font-weight:500;color:#C9A84C;">Pro</span>
+              <span style="font-size:9px;background:rgba(201,168,76,0.15);color:#C9A84C;padding:2px 7px;border-radius:3px;letter-spacing:0.08em;">RECOMMENDED</span>
+            </div>
+            <span style="font-size:18px;font-weight:300;color:#C9A84C;">$299<span style="font-size:11px;color:#888;">/mo</span></span>
+          </div>
+          <div style="font-size:11px;color:#888;">Everything in Starter · Multi-location · Priority support · Advanced AI</div>
+        </div>
+      </div>
+
+      <button onclick="hrznUpgrade('pro')" style="width:100%;padding:14px;background:#C9A84C;color:#000;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;margin-bottom:12px;transition:opacity 0.2s;"
+              onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+        Upgrade Now →
+      </button>
+
+      <div style="font-size:11px;color:#444;">
+        Questions? <a href="mailto:hello@usehrzn.ai" style="color:#666;text-decoration:underline;">hello@usehrzn.ai</a>
+        &nbsp;·&nbsp;
+        <span onclick="hrznLogout()" style="color:#666;cursor:pointer;text-decoration:underline;">Sign out</span>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+async function hrznUpgrade(plan) {
+  const token = hrznGetToken();
+  if (!token) { window.location.href = 'login.html'; return; }
+
+  const btn = document.querySelector('#hrzn-paywall button');
+  if (btn) { btn.textContent = 'Redirecting to checkout...'; btn.disabled = true; }
+
+  try {
+    const r = await fetch('/api/stripe-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, token })
+    });
+    const data = await r.json();
+    if (data.url) window.location.href = data.url;
+    else throw new Error(data.error || 'Checkout failed');
+  } catch(e) {
+    if (btn) { btn.textContent = 'Upgrade Now →'; btn.disabled = false; }
+    alert('Error: ' + e.message);
+  }
+}
+
+// Run on every page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', hrznCheckTrialAndPaywall);
+} else {
+  hrznCheckTrialAndPaywall();
+}
