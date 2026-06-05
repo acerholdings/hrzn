@@ -170,9 +170,12 @@ async function hrznLoadFromCloud() {
     if (data.menuData) {
       // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
       if (!localStorage.getItem('hrzn-data-items')) {
-        // Try to get the original filename from cached settings
-        const cachedSettings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-        const originalFilename = data.menuData._filename || cachedSettings._cachedItemsFilename || null;
+        // Get original filename from: merged settings (just updated from cloud) or cached local
+        const settingsNow = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const originalFilename = data.menuData._filename 
+          || merged._cachedItemsFilename 
+          || settingsNow._cachedItemsFilename 
+          || null;
         const restored = {
           ...data.menuData,
           _filename: originalFilename || null,
@@ -224,6 +227,10 @@ async function hrznLoadFromCloud() {
       if (data.business.location) merged.bizLocation = merged.bizLocation || data.business.location;
     }
     if (data.settings) {
+      // Restore items CSV filename if available
+      if (data.settings.items_csv_filename) {
+        merged._cachedItemsFilename = data.settings.items_csv_filename;
+      }
       merged.targets = merged.targets || {};
       merged.targets.labor = merged.targets.labor || data.settings.target_labor_pct;
       merged.targets.food = merged.targets.food || data.settings.target_food_cost_pct;

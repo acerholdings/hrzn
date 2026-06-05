@@ -371,13 +371,20 @@ async function handleFileSelect(event){
       if (key === 'hrzn-data-csv') hrznSyncToCloud('sales', data);
       else if (key === 'hrzn-data-items') {
         hrznSyncToCloud('menu', data);
-        // Cache key metrics into hrzn-settings so they survive Safari ITP clearing
+        // Cache key metrics + filename into hrzn-settings AND sync to Supabase
         try {
           const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
           if (data.grossProfitMargin) settings._cachedGrossMargin = data.grossProfitMargin;
           if (data.totalItemsSold) settings._cachedTotalItemsSold = data.totalItemsSold;
           if (data._filename) settings._cachedItemsFilename = data._filename;
           localStorage.setItem('hrzn-settings', JSON.stringify(settings));
+          // Sync filename to Supabase via settings so it restores on any device
+          if (data._filename) {
+            hrznSyncToCloud('settings', {
+              ...settings.targets,
+              items_csv_filename: data._filename
+            }).catch(()=>{});
+          }
         } catch(e) {}
       }
       else if (key === 'hrzn-data-employees') hrznSyncToCloud('labor', data);
