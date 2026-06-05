@@ -290,10 +290,10 @@ function renderCSVGrid(){
         <div>
           ${isUploaded
             ? `<div class="csv-filename">✓ ${
-              filename && filename !== 'csv' && filename !== 'undefined'
+              filename && filename !== 'csv' && filename !== 'undefined' && filename !== 'null'
                 ? filename  
                 : stored?._restoredFromCloud
-                  ? '<span style="color:var(--text-dim)">Cloud sync</span>'
+                  ? 'Cloud Sync'
                   : stored?.period || stored?.periodStart 
                     ? (stored.period || stored.periodStart)
                     : 'Uploaded'

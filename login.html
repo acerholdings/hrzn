@@ -125,7 +125,7 @@ async function signIn() {
             const origFname = syncData.data.menuData._filename || cachedSet._cachedItemsFilename || null;
             const restored = {
               ...syncData.data.menuData,
-              _filename: origFname || 'Item Sales (cloud sync)',
+              _filename: origFname || null,
               _restoredFromCloud: !origFname
             };
             localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
