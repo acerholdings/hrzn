@@ -24,7 +24,10 @@ export default async function handler(req, res) {
 
     // Find Stripe customer by email
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (!customers.data.length) return res.status(404).json({ error: 'No Stripe customer found' });
+    if (!customers.data.length) {
+      // No Stripe customer yet — redirect to checkout instead
+      return res.status(200).json({ url: null, noCustomer: true });
+    }
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customers.data[0].id,
