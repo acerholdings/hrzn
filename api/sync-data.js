@@ -54,10 +54,12 @@ export default async function handler(req, res) {
             grossSales: menu.gross_sales,
             netSales: menu.net_sales,
             grossProfit: menu.gross_profit,
-            allItems: menu.items || [],
-            items: menu.items || [],
+            allItems: (menu.items || []).filter(i => !i._meta),
+            items: (menu.items || []).filter(i => !i._meta),
             categories: menu.categories || [],
-            _filename: menu.filename || null,
+            _filename: (Array.isArray(menu.items) && menu.items[0]?._meta) 
+              ? menu.items[0]._filename 
+              : null,
             _restoredFromCloud: true,
           };
         }
@@ -156,9 +158,11 @@ export default async function handler(req, res) {
             gross_profit_margin: data.grossProfitMargin || 0,
             total_items_sold: data.totalItemsSold || 0,
             unique_items: data.uniqueItems || 0,
-            items: data.allItems || data.items || [],
-            categories: data.categories || [],
-            filename: data._filename || null
+            items: [
+              { _meta: true, _filename: data._filename || null },
+              ...(data.allItems || data.items || [])
+            ],
+            categories: data.categories || []
           })
         });
       }
@@ -211,7 +215,6 @@ export default async function handler(req, res) {
       }
 
       if (type === 'settings') {
-        console.log('[HRZN sync] settings data received:', JSON.stringify(data));
         await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
