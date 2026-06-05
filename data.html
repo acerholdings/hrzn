@@ -290,7 +290,9 @@ function renderCSVGrid(){
         <div>
           ${isUploaded
             ? `<div class="csv-filename">✓ ${
-              stored?.period || stored?.periodStart 
+              filename && filename !== 'csv' && filename !== 'undefined' && filename !== 'null'
+                ? filename.replace('SAMA_HANDROLL_LA-','').replace(/_/g,' ').replace('.csv','')
+                : stored?.period || stored?.periodStart 
                   ? (stored.period || stored.periodStart)
                   : 'Uploaded'
             }</div>`
