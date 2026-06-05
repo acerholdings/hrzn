@@ -84,7 +84,10 @@ export default async function handler(req, res) {
           { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
         );
         const [settings] = await settingsRes.json();
-        if (settings) results.settings = settings;
+        if (settings) results.settings = {
+          ...settings,
+          items_csv_filename: settings.items_csv_filename || null,
+        };
 
         // Load business info
         const bizRes = await fetch(
@@ -222,6 +225,7 @@ export default async function handler(req, res) {
             target_avg_check: data.check || 15,
             target_doordash_pct: data.doordash || 10,
             target_discount_pct: data.discount || 5,
+            items_csv_filename: data.items_csv_filename || null,
           })
         });
       }
