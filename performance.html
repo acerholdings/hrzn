@@ -91,6 +91,22 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}.fade-4{animation:fadeUp 0.4s ease 0.24s both}.fade-5{animation:fadeUp 0.4s ease 0.32s both}
 .score-hero{display:grid;grid-template-columns:260px 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:768px){
+  .score-hero{grid-template-columns:1fr!important;gap:12px!important;}
+  .score-card{display:flex;flex-direction:column;align-items:center;}
+  .score-ring-wrap{margin-bottom:8px;}
+  /* Topbar date label — hide on mobile */
+  #perf-date-label{display:none!important;}
+  /* Page title subtitle — hide on mobile */  
+  .topbar-left p{display:none!important;}
+  /* Topbar right — reduce gap */
+  .topbar-right{gap:4px!important;flex-wrap:nowrap!important;overflow:hidden!important;}
+  /* Topbar source badge — truncate */
+  #hrzn-source-badge{max-width:100px;overflow:hidden;}
+  /* Main scrollable */
+  .main{overflow-y:auto!important;overflow-x:hidden!important;}
+  .content{overflow:visible!important;}
+}
 .score-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:28px;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .score-ring-wrap{position:relative;width:140px;height:140px;margin-bottom:16px;}
 .score-ring{width:140px;height:140px;transform:rotate(-90deg);}
