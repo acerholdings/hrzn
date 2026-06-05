@@ -480,8 +480,14 @@ const months = HRZN.getMonths(d);
   const csvItemsTotal = (() => {
     try {
       const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
-      return items.totalItemsSold || items.totalSold || items.totalItems || 0;
-    } catch(e) { return 0; }
+      if (items.totalItemsSold) return items.totalItemsSold;
+    } catch(e) {}
+    // Fallback to cached value in settings
+    try {
+      const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+      if (cached._cachedTotalItemsSold) return cached._cachedTotalItemsSold;
+    } catch(e) {}
+    return 0;
   })();
   const weeklyItems = Math.round((csvItemsTotal || d.itemsSold || 0) / weeks);
   const fmt = n => '$' + Math.round(n).toLocaleString();
@@ -509,6 +515,16 @@ const months = HRZN.getMonths(d);
       itemsLoaded = true;
     }
   } catch(e) {}
+  // Fallback: use cached metrics from hrzn-settings if Items CSV was cleared by Safari
+  if (!itemsLoaded) {
+    try {
+      const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+      if (cached._cachedGrossMargin) {
+        grossMargin = cached._cachedGrossMargin.toFixed(1)+'%';
+        itemsLoaded = true;
+      }
+    } catch(e) {}
+  }
 
   set('vs-rev-this', fmt(weekly));
   set('vs-rev-last', fmt(lastWeekly));
