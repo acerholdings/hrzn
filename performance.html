@@ -97,29 +97,19 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
   .score-card{display:flex;flex-direction:column;align-items:center;}
   .score-ring-wrap{margin-bottom:8px;}
 
-  /* vs-last-week comparison card — stack vertically */
-  .vs-grid, [style*="display:grid"][style*="grid-template-columns"]{
-    grid-template-columns:1fr!important;
-    gap:8px!important;
-  }
+  /* comp-grid (heatmap + vs-last-week) — single column so each gets full row */
+  .comp-grid{grid-template-columns:1fr!important;gap:12px!important;}
 
-  /* Score metrics list — full width */
-  .score-metric{
-    flex-direction:column!important;
-    align-items:flex-start!important;
-    gap:6px!important;
-  }
-  .metric-label{width:100%!important;}
-  .metric-bar-bg{width:100%!important;}
+  /* vs-last-week inner comparison grid — single column */
+  .vs-grid{grid-template-columns:1fr!important;gap:8px!important;}
 
-  /* Heatmap — min width so cells are readable, scroll horizontally */
-  .heatmap-grid{
-    min-width:500px!important;
-    width:max-content!important;
-  }
+  /* Score metrics — full width */
+  .score-metric{flex-direction:row!important;align-items:center!important;}
+  .metric-label{width:140px!important;flex-shrink:0!important;font-size:11px!important;}
+  .metric-bar-bg{flex:1!important;}
 
-  /* Cards — one per row (already handled by main-grid:1fr) */
-  .main-grid > *{min-width:0!important;width:100%!important;}
+  /* Heatmap — wide enough to read, scrolls inside card-body */
+  .heatmap-grid{min-width:480px!important;}
 }
 .score-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:28px;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .score-ring-wrap{position:relative;width:140px;height:140px;margin-bottom:16px;}
