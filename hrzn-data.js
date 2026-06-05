@@ -1131,7 +1131,9 @@ function hrznInjectMobile() {
   }
 
   // Only wire up sidebar toggle on mobile
-  if (window.innerWidth > 768) return;
+  // Use 1024 threshold to catch iPads and large iPhones
+  const isMobile = window.innerWidth <= 1024 || ('ontouchstart' in window && window.innerWidth <= 1200);
+  if (!isMobile) return;
 
   const sidebar = document.querySelector('.sidebar');
   if (!sidebar) return;
