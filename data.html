@@ -376,6 +376,7 @@ async function handleFileSelect(event){
           const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
           if (data.grossProfitMargin) settings._cachedGrossMargin = data.grossProfitMargin;
           if (data.totalItemsSold) settings._cachedTotalItemsSold = data.totalItemsSold;
+          if (data._filename) settings._cachedItemsFilename = data._filename;
           localStorage.setItem('hrzn-settings', JSON.stringify(settings));
         } catch(e) {}
       }

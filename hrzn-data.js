@@ -170,10 +170,13 @@ async function hrznLoadFromCloud() {
     if (data.menuData) {
       // Only restore from cloud if nothing locally (don't overwrite uploaded CSV)
       if (!localStorage.getItem('hrzn-data-items')) {
+        // Try to get the original filename from cached settings
+        const cachedSettings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const originalFilename = data.menuData._filename || cachedSettings._cachedItemsFilename || null;
         const restored = {
           ...data.menuData,
-          _filename: data.menuData._filename || 'Item Sales (cloud sync)',
-          _restoredFromCloud: !data.menuData._filename
+          _filename: originalFilename || 'Item Sales (cloud sync)',
+          _restoredFromCloud: !originalFilename
         };
         localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
       }

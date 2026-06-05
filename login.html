@@ -121,10 +121,12 @@ async function signIn() {
             localStorage.setItem('hrzn-sales-data', JSON.stringify(syncData.data.salesData));
           }
           if (syncData.data.menuData && !localStorage.getItem('hrzn-data-items')) {
+            const cachedSet = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+            const origFname = syncData.data.menuData._filename || cachedSet._cachedItemsFilename || null;
             const restored = {
               ...syncData.data.menuData,
-              _filename: syncData.data.menuData._filename || 'Item Sales (cloud sync)',
-              _restoredFromCloud: true
+              _filename: origFname || 'Item Sales (cloud sync)',
+              _restoredFromCloud: !origFname
             };
             localStorage.setItem('hrzn-data-items', JSON.stringify(restored));
           }
