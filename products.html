@@ -553,9 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const itemsData = JSON.parse(itemsRaw);
         const rawName = itemsData._filename
             ? itemsData._filename.replace('SAMA_HANDROLL_LA-','').replace('.csv','').replace(/_/g,' ')
-            : itemsData._restoredFromCloud
-              ? 'Cloud Sync'
-              : '';
+            : 'CSV Upload';
         const fname = 'CSV — ' + rawName;
         badge.innerHTML = `<div style="display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--gold);background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;" onclick="HRZN.openSourceSwitcher()" title="Click to switch data source"><span style="color:var(--gold);font-size:8px;">●</span><span style="font-weight:500;">Item Sales</span><span style="color:var(--text-dim);font-size:9px;">${fname.replace('CSV — ','')}</span><span style="color:var(--text-dim);font-size:9px;">▼</span></div>`;
       } else {

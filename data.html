@@ -292,11 +292,9 @@ function renderCSVGrid(){
             ? `<div class="csv-filename">✓ ${
               filename && filename !== 'csv' && filename !== 'undefined' && filename !== 'null'
                 ? filename  
-                : stored?._restoredFromCloud
-                  ? 'Cloud Sync'
-                  : stored?.period || stored?.periodStart 
-                    ? (stored.period || stored.periodStart)
-                    : 'Uploaded'
+                : stored?.period || stored?.periodStart 
+                  ? (stored.period || stored.periodStart)
+                  : 'Uploaded'
             }</div>`
             : `<div class="csv-path">${t.path}</div>`
           }
