@@ -52,7 +52,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:2px;}
 .section-title{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;}
-.csv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;}
+.csv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;}@media(max-width:768px){.csv-grid{grid-template-columns:1fr!important;gap:10px!important;}}
 .csv-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color 0.2s;}
 .csv-card:hover{border-color:var(--border-gold);}
 .csv-card.uploaded{border-color:rgba(76,175,125,0.3);}
