@@ -759,7 +759,7 @@ TARGETS (from operator settings):
     const d = this.getData();
     const configs = {
       api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  type: 'Live API', detail: 'Clover · Real-time' },
-      csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   type: 'Sales Overview', detail: (d._filename && !d._restoredFromCloud) ? d._filename.replace('SAMA_HANDROLL_LA-','').replace(/_/g,' ').replace('.csv','') : 'CSV Upload' },
+      csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   type: 'Sales Overview', detail: 'CSV Upload' },
       demo: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'Demo Data', detail: 'Sample data' },
     };
     const c = configs[source] || configs.demo;
