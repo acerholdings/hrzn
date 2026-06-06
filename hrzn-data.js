@@ -219,6 +219,27 @@ async function hrznLoadFromCloud() {
       }
     }
 
+    // Load guests CSV data
+    if (data.guestsData && !localStorage.getItem('hrzn-data-guests')) {
+      localStorage.setItem('hrzn-data-guests', JSON.stringify({
+        ...data.guestsData, _filename: data.guestsData._filename || null,
+        _restoredFromCloud: !data.guestsData._filename
+      }));
+    }
+    // Load orders CSV data
+    if (data.ordersData && !localStorage.getItem('hrzn-data-orders')) {
+      localStorage.setItem('hrzn-data-orders', JSON.stringify({
+        ...data.ordersData, _filename: data.ordersData._filename || null,
+        _restoredFromCloud: !data.ordersData._filename
+      }));
+    }
+    // Load discounts CSV data
+    if (data.discountsData && !localStorage.getItem('hrzn-data-discounts')) {
+      localStorage.setItem('hrzn-data-discounts', JSON.stringify({
+        ...data.discountsData, _filename: data.discountsData._filename || null,
+        _restoredFromCloud: !data.discountsData._filename
+      }));
+    }
     // Load settings — merge cloud into local, preserving locally-saved values
     const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
     const merged = { ...existing };

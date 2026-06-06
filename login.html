@@ -134,6 +134,15 @@ async function signIn() {
           if (syncData.data.laborData && !localStorage.getItem('hrzn-data-employees')) {
             localStorage.setItem('hrzn-data-employees', JSON.stringify(syncData.data.laborData));
           }
+          if (syncData.data.guestsData && !localStorage.getItem('hrzn-data-guests')) {
+            localStorage.setItem('hrzn-data-guests', JSON.stringify({...syncData.data.guestsData, _restoredFromCloud: true}));
+          }
+          if (syncData.data.ordersData && !localStorage.getItem('hrzn-data-orders')) {
+            localStorage.setItem('hrzn-data-orders', JSON.stringify({...syncData.data.ordersData, _restoredFromCloud: true}));
+          }
+          if (syncData.data.discountsData && !localStorage.getItem('hrzn-data-discounts')) {
+            localStorage.setItem('hrzn-data-discounts', JSON.stringify({...syncData.data.discountsData, _restoredFromCloud: true}));
+          }
           if (syncData.data.business) {
             const existing = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
             const updated = {

@@ -380,6 +380,9 @@ async function handleFileSelect(event){
         } catch(e) {}
       }
       else if (key === 'hrzn-data-employees') hrznSyncToCloud('labor', data);
+      else if (key === 'hrzn-data-guests') hrznSyncToCloud('guests', data);
+      else if (key === 'hrzn-data-orders') hrznSyncToCloud('orders', data);
+      else if (key === 'hrzn-data-discounts') hrznSyncToCloud('discounts', data);
     } catch(e) {}
 
     // Show success
