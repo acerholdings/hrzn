@@ -72,6 +72,30 @@ export default async function handler(req, res) {
         const [labor] = await laborRes.json();
         if (labor) results.laborData = labor;
 
+        // Load orders data
+        const ordersRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/orders_data?business_id=eq.${businessId}&order=created_at.desc&limit=1`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [orders] = await ordersRes.json();
+        if (orders) results.ordersData = orders.raw_data;
+
+        // Load discounts data
+        const discountsRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/discounts_data?business_id=eq.${businessId}&order=created_at.desc&limit=1`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [discounts] = await discountsRes.json();
+        if (discounts) results.discountsData = discounts.raw_data;
+
+        // Load guests data
+        const guestsRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/guests_data?business_id=eq.${businessId}&order=created_at.desc&limit=1`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [guests] = await guestsRes.json();
+        if (guests) results.guestsData = guests.raw_data;
+
         // Load P&L data
         const plRes = await fetch(
           `${SUPABASE_URL}/rest/v1/pl_data?business_id=eq.${businessId}&limit=1`,
@@ -182,6 +206,54 @@ export default async function handler(req, res) {
             total_net_sales: data.totalNetSales || 0,
             total_tips: data.totalTips || 0,
             employees: data.employees || []
+          })
+        });
+      }
+
+      if (type === 'orders') {
+        await fetch(`${SUPABASE_URL}/rest/v1/orders_data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY
+          },
+          body: JSON.stringify({
+            business_id: businessId,
+            source: 'csv',
+            raw_data: data
+          })
+        });
+      }
+
+      if (type === 'discounts') {
+        await fetch(`${SUPABASE_URL}/rest/v1/discounts_data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY
+          },
+          body: JSON.stringify({
+            business_id: businessId,
+            source: 'csv',
+            raw_data: data
+          })
+        });
+      }
+
+      if (type === 'guests') {
+        await fetch(`${SUPABASE_URL}/rest/v1/guests_data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY
+          },
+          body: JSON.stringify({
+            business_id: businessId,
+            source: 'csv',
+            raw_data: data
           })
         });
       }
