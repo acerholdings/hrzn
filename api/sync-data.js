@@ -304,28 +304,22 @@ export default async function handler(req, res) {
         if (data.labor_rate_pct != null && data.labor_rate_pct !== '' && !isNaN(+data.labor_rate_pct)) {
           settingsBody.labor_rate_pct = +data.labor_rate_pct;
         }
-        const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
+        const settingsPatchRes = await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SERVICE_KEY}`,
             'apikey': SERVICE_KEY,
-            'Prefer': 'return=representation'
+            'Prefer': 'return=minimal'
           },
           body: JSON.stringify(settingsBody)
         });
-        const patchStatus = patchRes.status;
-        const patchText = await patchRes.text();
-        // DIAGNOSTIC: surface exactly what Supabase returned for the settings write.
-        return res.status(200).json({
-          ok: true,
-          _diag: {
-            businessId,
-            sentBody: settingsBody,
-            patchStatus,
-            patchResponse: patchText
-          }
-        });
+        // Don't let a failed write hide behind a 200 — surface the real error so a
+        // missing column or bad field can't silently no-op (as items_csv_filename did).
+        if (!settingsPatchRes.ok) {
+          const errText = await settingsPatchRes.text();
+          return res.status(502).json({ error: 'Settings write failed', status: settingsPatchRes.status, detail: errText });
+        }
       }
 
       return res.status(200).json({ ok: true });
