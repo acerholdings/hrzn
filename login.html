@@ -161,6 +161,15 @@ async function signIn() {
                 revenue: s.target_weekly_revenue, check: s.target_avg_check,
                 doordash: s.target_doordash_pct, discount: s.target_discount_pct || 5
               };
+              // Restore the manual labor RATE (estimate) if one was synced. Shaped
+              // like HRZN.setLaborRate() output so getLaborRateMeta() reads it as a
+              // manual value. Kept in sync with the restore in hrzn-data.js.
+              if (s.labor_rate_pct != null && !updated.laborRate) {
+                updated.laborRate = { value: +s.labor_rate_pct, mode: 'fallback', _restoredFromCloud: true };
+              }
+              if (s.items_csv_filename) {
+                updated._cachedItemsFilename = s.items_csv_filename;
+              }
             }
             localStorage.setItem('hrzn-settings', JSON.stringify(updated));
           }
