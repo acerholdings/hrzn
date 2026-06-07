@@ -113,6 +113,7 @@ export default async function handler(req, res) {
         if (settings) results.settings = {
           ...settings,
           items_csv_filename: settings.items_csv_filename || null,
+          labor_rate_pct: settings.labor_rate_pct != null ? settings.labor_rate_pct : null,
         };
 
         // Load business info
@@ -287,6 +288,22 @@ export default async function handler(req, res) {
       }
 
       if (type === 'settings') {
+        // Build the patch body. Targets always carry a value (a goal), but the
+        // labor RATE is a fallback estimate — only persist it when the front-end
+        // actually sends one, so an unset rate stays NULL and the app falls back
+        // to its labeled default rather than being pinned to a hardcoded number.
+        const settingsBody = {
+          target_labor_pct: data.labor || 28,
+          target_food_cost_pct: data.food || 30,
+          target_weekly_revenue: data.revenue || 12000,
+          target_avg_check: data.check || 15,
+          target_doordash_pct: data.doordash || 10,
+          target_discount_pct: data.discount || 5,
+          items_csv_filename: data.items_csv_filename || null,
+        };
+        if (data.labor_rate_pct != null && data.labor_rate_pct !== '' && !isNaN(+data.labor_rate_pct)) {
+          settingsBody.labor_rate_pct = +data.labor_rate_pct;
+        }
         await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
@@ -295,15 +312,7 @@ export default async function handler(req, res) {
             'apikey': SERVICE_KEY,
             'Prefer': 'return=minimal'
           },
-          body: JSON.stringify({
-            target_labor_pct: data.labor || 28,
-            target_food_cost_pct: data.food || 30,
-            target_weekly_revenue: data.revenue || 12000,
-            target_avg_check: data.check || 15,
-            target_doordash_pct: data.doordash || 10,
-            target_discount_pct: data.discount || 5,
-            items_csv_filename: data.items_csv_filename || null,
-          })
+          body: JSON.stringify(settingsBody)
         });
       }
 
