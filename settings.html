@@ -267,6 +267,13 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="card-header"><div class="card-title">Performance Targets</div><div style="font-size:10px;color:var(--text-dim);">Used for alerts and health score</div></div>
             <div class="card-body">
               <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">HRZN uses these targets to calculate your health score and trigger alerts when you exceed them.</div>
+              <div class="target-row" style="border-bottom:1px solid var(--border-gold);padding-bottom:14px;margin-bottom:6px;">
+                <div class="target-label">
+                  Estimated Labor Rate
+                  <div style="font-size:10px;color:var(--text-dim);margin-top:3px;font-weight:400;">Your current actual labor % — used for estimates until you connect live payroll (Gusto), which will replace it.</div>
+                </div>
+                <input class="target-input" id="labor-rate" type="number" value="32" oninput="markDirty()"/><div class="target-unit">%</div>
+              </div>
               <div class="target-row"><div class="target-label">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" value="28" oninput="markDirty()"/><div class="target-unit">%</div></div>
               <div class="target-row"><div class="target-label">Food Cost Target</div><input class="target-input" id="target-food" type="number" value="30" oninput="markDirty()"/><div class="target-unit">%</div></div>
               <div class="target-row"><div class="target-label">Net Margin Target</div><input class="target-input" id="target-margin" type="number" value="15" oninput="markDirty()"/><div class="target-unit">%</div></div>
@@ -491,11 +498,19 @@ function saveAll(){
     }
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  // Save the manual labor rate through the central source (stores a mode marker
+  // so override/supplement modes can be added later without restructuring).
+  // This is the estimated RATE only — it's a fallback used until live payroll connects.
+  const laborRateEl = document.getElementById('labor-rate');
+  if (laborRateEl && laborRateEl.value && +laborRateEl.value > 0 && typeof HRZN !== 'undefined' && HRZN.setLaborRate) {
+    HRZN.setLaborRate(+laborRateEl.value);
+  }
   // Sync targets to cloud
   // Sync full settings to cloud so they persist across logins
   // Sync targets + business info to cloud
   hrznSyncToCloud('settings', {
     ...(settings.targets || {}),
+    labor_rate: laborRateEl ? laborRateEl.value : undefined,
     biz_name: settings.bizName,
     biz_location: settings.bizLocation,
     owner_name: settings.ownerName,
@@ -537,6 +552,14 @@ function loadSettings(){
         const el = document.getElementById('target-'+k);
         if(el) el.value = s.targets[k];
       });
+    }
+    // Populate the estimated labor rate field from the central source.
+    // Only override the default if a manual value was actually stored — when the
+    // source is still 'fallback' we leave the placeholder default in place.
+    const laborRateEl = document.getElementById('labor-rate');
+    if (laborRateEl && typeof HRZN !== 'undefined' && HRZN.getLaborRateMeta) {
+      const meta = HRZN.getLaborRateMeta();
+      if (meta.source === 'manual') laborRateEl.value = meta.value;
     }
   }catch(e){}
 
