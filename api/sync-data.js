@@ -304,15 +304,27 @@ export default async function handler(req, res) {
         if (data.labor_rate_pct != null && data.labor_rate_pct !== '' && !isNaN(+data.labor_rate_pct)) {
           settingsBody.labor_rate_pct = +data.labor_rate_pct;
         }
-        await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
+        const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/business_settings?business_id=eq.${businessId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SERVICE_KEY}`,
             'apikey': SERVICE_KEY,
-            'Prefer': 'return=minimal'
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify(settingsBody)
+        });
+        const patchStatus = patchRes.status;
+        const patchText = await patchRes.text();
+        // DIAGNOSTIC: surface exactly what Supabase returned for the settings write.
+        return res.status(200).json({
+          ok: true,
+          _diag: {
+            businessId,
+            sentBody: settingsBody,
+            patchStatus,
+            patchResponse: patchText
+          }
         });
       }
 
