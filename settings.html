@@ -510,7 +510,7 @@ function saveAll(){
   // Sync targets + business info to cloud
   hrznSyncToCloud('settings', {
     ...(settings.targets || {}),
-    labor_rate: laborRateEl ? laborRateEl.value : undefined,
+    labor_rate_pct: laborRateEl ? laborRateEl.value : undefined,
     biz_name: settings.bizName,
     biz_location: settings.bizLocation,
     owner_name: settings.ownerName,

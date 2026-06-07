@@ -261,6 +261,12 @@ async function hrznLoadFromCloud() {
       merged.targets.check = merged.targets.check || data.settings.target_avg_check;
       merged.targets.doordash = merged.targets.doordash || data.settings.target_doordash_pct;
       merged.targets.discount = merged.targets.discount || data.settings.target_discount_pct || 5;
+      // Restore the manual labor RATE (estimate), if one was synced. Only set it
+      // when there's no local value yet, so we never clobber an unsaved local edit.
+      // Shaped like setLaborRate() output so getLaborRateMeta() reads it as 'manual'.
+      if (data.settings.labor_rate_pct != null && !merged.laborRate) {
+        merged.laborRate = { value: +data.settings.labor_rate_pct, mode: 'fallback', _restoredFromCloud: true };
+      }
       // Also restore business info if synced
       if (data.settings.biz_name) merged.bizName = merged.bizName || data.settings.biz_name;
       if (data.settings.biz_name) merged.businessName = merged.businessName || data.settings.biz_name;
