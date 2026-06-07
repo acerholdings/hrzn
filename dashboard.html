@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
       weeklyGap: tgt.revenue - weekly, annualGap: (tgt.revenue-weekly)*52,
       ddGapWeekly, ddGapAnnual: ddGapWeekly*52,
       priceGapPeriod: (tgt.check - (d.itemsSold>0?net/d.itemsSold:0)) * (d.itemsSold||0),
-      laborExcessWeekly: weekly * Math.max(0, 32-tgt.labor) / 100,
+      laborExcessWeekly: weekly * Math.max(0, (HRZN.getLaborRate ? HRZN.getLaborRate() : 32)-tgt.labor) / 100,
       targetRevenue: tgt.revenue, targetCheck: tgt.check,
       targetLabor: tgt.labor, targetDoorDash: tgt.doordash,
     };
@@ -614,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let tgt = {labor:28,doordash:10,discount:5,check:15,revenue:12000};
   try { const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}'); if(s.targets) tgt={labor:+s.targets.labor||28,doordash:+s.targets.doordash||10,discount:+s.targets.discount||5,check:+s.targets.check||15,revenue:+s.targets.revenue||12000}; } catch(e){}
 
-  const laborPct = 32;
+  const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const doorDashPct = d.amountCollected > 0 
     ? parseFloat(((t.doorDash||0) / d.amountCollected * 100).toFixed(1))
     : parseFloat(t.doorDashPct||0);
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Health Score
   const scores = [
     {label:'Pricing', val: discountPct<=3?95:discountPct<=5?85:discountPct<=8?70:50},
-    {label:'Labor', val: laborPct<=28?95:laborPct<=30?80:laborPct<=32?70:55},
+    {label:'Labor', val: (() => { const L=(HRZN.LABOR)||{SCORE:{excellent:28,good:30,ok:32},SCORE_VALS:{excellent:95,good:80,ok:70,poor:55}}; return laborPct<=L.SCORE.excellent?L.SCORE_VALS.excellent:laborPct<=L.SCORE.good?L.SCORE_VALS.good:laborPct<=L.SCORE.ok?L.SCORE_VALS.ok:L.SCORE_VALS.poor; })()},
     {label:'Delivery', val: doorDashPct>=10?90:doorDashPct>=5?75:doorDashPct>=3?65:55},
     {label:'Check Size', val: avgCheck>=15?90:avgCheck>=13?80:avgCheck>=10?70:60},
     {label:'Tips', val: d.netSales>0&&(d.tips||0)/d.netSales>0.12?90:80},

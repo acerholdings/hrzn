@@ -339,6 +339,76 @@ const HRZN = {
     net_margin:{ healthy: [3, 9] }
   },
 
+  // ── LABOR RATE (central source of truth) ─────────────────────────────────
+  // The labor RATE (%) flows through the same priority chain as the data source:
+  //   live API data  →  manual settings value  →  labeled hardcoded fallback.
+  // This replaces the old hardcoded `laborPct = 32` that used to live (and be
+  // duplicated) in labor.html and dashboard.html. Every page now reads from here
+  // so the number stays consistent everywhere.
+  //
+  // NOTE: this is the RATE only. The detailed per-staff / per-shift breakdown is
+  // live → empty-state (a human can't hand-type per-shift data), so there is
+  // deliberately no manual fallback for that — only for the rate.
+  LABOR: {
+    FALLBACK_PCT: 32,            // labeled hardcoded estimate, used when nothing else
+    // Health-score thresholds (were the inline 28/30/32 in dashboard.html).
+    // Score = excellent → good → ok → poor as the rate climbs.
+    SCORE: { excellent: 28, good: 30, ok: 32 },
+    SCORE_VALS: { excellent: 95, good: 80, ok: 70, poor: 55 },
+  },
+
+  // Returns the active labor rate (%) following live → manual → fallback.
+  // Reads live integration data first (when a live source is active and carries a
+  // labor rate), then any manually-entered rate in settings, then the fallback.
+  getLaborRate() {
+    return this.getLaborRateMeta().value;
+  },
+
+  // Returns { value, source, isEstimate } so pages can label the number correctly.
+  //   source: 'api' | 'manual' | 'fallback'
+  //   isEstimate: true unless it came from a live integration
+  getLaborRateMeta() {
+    const fb = { value: this.LABOR.FALLBACK_PCT, source: 'fallback', isEstimate: true };
+    if (typeof localStorage === 'undefined') return fb;
+
+    // 1) Live API data — only when a live source is active and supplies a rate.
+    try {
+      if (this.getSource() === 'api') {
+        const apiRaw = localStorage.getItem(this.KEYS.API);
+        if (apiRaw) {
+          const api = JSON.parse(apiRaw);
+          const apiRate = api.laborPct != null ? +api.laborPct
+                        : (api.labor && api.labor.pct != null ? +api.labor.pct : null);
+          if (apiRate != null && !isNaN(apiRate) && apiRate > 0) {
+            return { value: apiRate, source: 'api', isEstimate: false };
+          }
+        }
+      }
+    } catch(e) {}
+
+    // 2) Manual value entered in settings (stored with a mode marker — see setLaborRate).
+    try {
+      const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const manual = s.laborRate;
+      if (manual && manual.value != null && !isNaN(+manual.value) && +manual.value > 0) {
+        return { value: +manual.value, source: 'manual', isEstimate: true };
+      }
+    } catch(e) {}
+
+    // 3) Labeled hardcoded fallback.
+    return fb;
+  },
+
+  // Store a manually-entered labor rate. We always tag it with a "mode" marker so
+  // override / supplement modes can be added later WITHOUT restructuring storage.
+  // For now mode is always 'fallback' (use manual only when no live data exists).
+  setLaborRate(pct, mode) {
+    if (typeof localStorage === 'undefined') return;
+    const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    s.laborRate = { value: +pct, mode: mode || 'fallback' };
+    localStorage.setItem('hrzn-settings', JSON.stringify(s));
+  },
+
   getBenchmarkContext() {
     return `
 RESTAURANT & BUSINESS INDUSTRY BENCHMARKS:
@@ -644,8 +714,11 @@ TARGETS (from operator settings):
     const combinedPeriod   = periodGap + ddGapPeriod + priceGapPeriod;
     const combinedAnnual   = months > 0 ? combinedPeriod / months * 12 : 0;
 
-    // ── LABOR (estimated until Gusto connects) ──
-    const laborPct         = 32; // ⚠ Est.
+    // ── LABOR (live → manual → fallback; see getLaborRateMeta) ──
+    const laborMeta        = this.getLaborRateMeta();
+    const laborPct         = laborMeta.value;
+    const laborSource      = laborMeta.source;     // 'api' | 'manual' | 'fallback'
+    const laborIsEstimate  = laborMeta.isEstimate; // false only when live
     const laborExcessPct   = Math.max(0, laborPct - targetLabor);
     const laborExcessWeekly = weekly * (laborExcessPct / 100);
 
@@ -690,7 +763,7 @@ TARGETS (from operator settings):
       combinedPeriod, combinedAnnual,
 
       // Labor
-      laborPct, laborExcessPct, laborExcessWeekly,
+      laborPct, laborExcessPct, laborExcessWeekly, laborSource, laborIsEstimate,
 
       // Helpers
       dayWeights, LUNCH, DINNER,

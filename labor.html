@@ -401,7 +401,7 @@ const months = HRZN.getMonths(d);
   let tgt = {labor:28};
   try { const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}'); if(s.targets) tgt.labor=+s.targets.labor||28; } catch(e) {}
 
-  const laborPct = 32;
+  const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const weeklyLaborCost = Math.round(weekly * laborPct/100);
   const targetLaborCost = Math.round(weekly * tgt.labor/100);
   const savings = weeklyLaborCost - targetLaborCost;
@@ -410,6 +410,7 @@ const months = HRZN.getMonths(d);
   set('labor-weekly-cost', fmt(weeklyLaborCost));
   set('labor-savings', fmt(savings));
   set('labor-rev-ratio', '$'+revRatio);
+  set('labor-pct', laborPct + '%');
   set('labor-pct-sub', laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target');
 
   // Day weights
