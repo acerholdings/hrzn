@@ -261,6 +261,9 @@ async function hrznLoadFromCloud() {
       merged.targets.check = merged.targets.check || data.settings.target_avg_check;
       merged.targets.doordash = merged.targets.doordash || data.settings.target_doordash_pct;
       merged.targets.discount = merged.targets.discount || data.settings.target_discount_pct || 5;
+      if (data.settings.labor_rate_pct != null && !merged.laborRate) {
+        merged.laborRate = { value: +data.settings.labor_rate_pct, mode: 'fallback', _restoredFromCloud: true };
+      }
       // Also restore business info if synced
       if (data.settings.biz_name) merged.bizName = merged.bizName || data.settings.biz_name;
       if (data.settings.biz_name) merged.businessName = merged.businessName || data.settings.biz_name;
@@ -337,6 +340,51 @@ const HRZN = {
     doordash:  { opportunity: 5, good: [5, 15],     high: 20    },
     rent:      { healthy: 8,    monitor: [8, 12],   problem: 12 },
     net_margin:{ healthy: [3, 9] }
+  },
+
+  // ── LABOR RATE (central source of truth) ─────────────────────────────────
+  // live API data → manual settings value → labeled hardcoded fallback.
+  LABOR: {
+    FALLBACK_PCT: 32,
+    SCORE: { excellent: 28, good: 30, ok: 32 },
+    SCORE_VALS: { excellent: 95, good: 80, ok: 70, poor: 55 },
+  },
+
+  getLaborRate() {
+    return this.getLaborRateMeta().value;
+  },
+
+  getLaborRateMeta() {
+    const fb = { value: this.LABOR.FALLBACK_PCT, source: 'fallback', isEstimate: true };
+    if (typeof localStorage === 'undefined') return fb;
+    try {
+      if (this.getSource() === 'api') {
+        const apiRaw = localStorage.getItem(this.KEYS.API);
+        if (apiRaw) {
+          const api = JSON.parse(apiRaw);
+          const apiRate = api.laborPct != null ? +api.laborPct
+                        : (api.labor && api.labor.pct != null ? +api.labor.pct : null);
+          if (apiRate != null && !isNaN(apiRate) && apiRate > 0) {
+            return { value: apiRate, source: 'api', isEstimate: false };
+          }
+        }
+      }
+    } catch(e) {}
+    try {
+      const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const manual = s.laborRate;
+      if (manual && manual.value != null && !isNaN(+manual.value) && +manual.value > 0) {
+        return { value: +manual.value, source: 'manual', isEstimate: true };
+      }
+    } catch(e) {}
+    return fb;
+  },
+
+  setLaborRate(pct, mode) {
+    if (typeof localStorage === 'undefined') return;
+    const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+    s.laborRate = { value: +pct, mode: mode || 'fallback' };
+    localStorage.setItem('hrzn-settings', JSON.stringify(s));
   },
 
   getBenchmarkContext() {
@@ -716,7 +764,11 @@ TARGETS (from operator settings):
     const combinedAnnual   = months > 0 ? combinedPeriod / months * 12 : 0;
 
     // ── LABOR (estimated until Gusto connects) ──
-    const laborPct         = 32; // ⚠ Est.
+    // ── LABOR (live → manual → fallback; see getLaborRateMeta) ──
+    const _laborMeta       = this.getLaborRateMeta();
+    const laborPct         = _laborMeta.value;
+    const laborSource      = _laborMeta.source;
+    const laborIsEstimate  = _laborMeta.isEstimate;
     const laborExcessPct   = Math.max(0, laborPct - targetLabor);
     const laborExcessWeekly = weekly * (laborExcessPct / 100);
 
@@ -761,7 +813,7 @@ TARGETS (from operator settings):
       combinedPeriod, combinedAnnual,
 
       // Labor
-      laborPct, laborExcessPct, laborExcessWeekly,
+      laborPct, laborExcessPct, laborExcessWeekly, laborSource, laborIsEstimate,
 
       // Helpers
       dayWeights, LUNCH, DINNER,
