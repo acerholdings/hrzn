@@ -224,7 +224,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
               </div>
               <div class="field-row">
                 <div><div class="field-label">Business Type</div><div class="field-desc">Your industry category</div></div>
-                <select class="field-select" id="biz-type" onchange="markDirty()">
+                <select class="field-select" id="biz-type" onchange="markDirty();applyCategoryFieldVisibility();">
                   <option value="restaurant" selected>Restaurant</option>
                   <option value="retail">Retail</option>
                   <option value="online">E-Commerce</option>
@@ -274,14 +274,14 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
                 </div>
                 <input class="target-input" id="labor-rate" type="number" value="32" oninput="markDirty()"/><div class="target-unit">%</div>
               </div>
-              <div class="target-row"><div class="target-label">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" value="28" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row"><div class="target-label">Food Cost Target</div><input class="target-input" id="target-food" type="number" value="30" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row"><div class="target-label">Net Margin Target</div><input class="target-input" id="target-margin" type="number" value="15" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row"><div class="target-label">Weekly Revenue Target</div><input class="target-input" id="target-revenue" type="number" value="12000" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row"><div class="target-label">Monthly Revenue Target</div><input class="target-input" id="target-monthly" type="number" value="50000" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row"><div class="target-label">Avg Item Price Target</div><input class="target-input" id="target-check" type="number" value="15" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row"><div class="target-label">DoorDash Revenue Target</div><input class="target-input" id="target-doordash" type="number" value="10" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row"><div class="target-label">Max Discount Rate</div><input class="target-input" id="target-discount" type="number" value="5" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-labor"><div class="target-label" id="lbl-target-labor">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" value="28" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-food"><div class="target-label" id="lbl-target-food">Food Cost Target</div><input class="target-input" id="target-food" type="number" value="30" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-margin"><div class="target-label">Net Margin Target</div><input class="target-input" id="target-margin" type="number" value="15" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-revenue"><div class="target-label">Weekly Revenue Target</div><input class="target-input" id="target-revenue" type="number" value="12000" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-monthly"><div class="target-label">Monthly Revenue Target</div><input class="target-input" id="target-monthly" type="number" value="50000" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-check"><div class="target-label" id="lbl-target-check">Avg Item Price Target</div><input class="target-input" id="target-check" type="number" value="15" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-doordash"><div class="target-label">DoorDash Revenue Target</div><input class="target-input" id="target-doordash" type="number" value="10" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-discount"><div class="target-label">Max Discount Rate</div><input class="target-input" id="target-discount" type="number" value="5" oninput="markDirty()"/><div class="target-unit">%</div></div>
             </div>
           </div>
         </div>
@@ -540,6 +540,39 @@ function saveAll(){
   hrznSetupSidebar();
 }
 
+// Show/hide and relabel target fields based on the selected business category.
+// Reads the category profile from HRZN.getBenchmarks(); falls back to showing everything.
+function applyCategoryFieldVisibility(){
+  try{
+    const typeEl = document.getElementById('biz-type');
+    const cat = (typeEl ? typeEl.value : 'restaurant') || 'restaurant';
+    // Resolve the profile for the currently-selected category (not yet saved).
+    let b = {};
+    if (typeof HRZN !== 'undefined' && HRZN.BENCHMARKS) {
+      b = HRZN.BENCHMARKS[String(cat).toLowerCase()] || HRZN.BENCHMARKS.restaurant || {};
+    }
+    const concepts = b.concepts || { delivery:true };
+    const show = (rowId, visible) => {
+      const el = document.getElementById(rowId);
+      if (el) el.style.display = visible ? '' : 'none';
+    };
+    const setLabel = (lblId, text) => {
+      const el = document.getElementById(lblId);
+      if (el && text) el.textContent = text;
+    };
+    // DoorDash target: only for categories where delivery is a concept (restaurants).
+    show('row-target-doordash', !!concepts.delivery);
+    // Food/COGS target: relabel to the category's cost-of-goods term.
+    setLabel('lbl-target-food', (b.cogsLabel || 'Food Cost') + ' Target');
+    // Avg-ticket target: relabel; hide entirely for categories with no ticket default.
+    const ticketApplies = !!(b.avgTicket && b.avgTicket > 0);
+    setLabel('lbl-target-check', (b.avgTicketLabel || 'Avg Item Price') + ' Target');
+    show('row-target-check', ticketApplies);
+    // Labor target: hide for categories where labor isn't a primary lever (e.g. online).
+    show('row-target-labor', (b.laborPct == null) ? true : b.laborPct > 0);
+  }catch(e){}
+}
+
 function loadSettings(){
   try{
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
@@ -569,6 +602,7 @@ function loadSettings(){
       const meta = HRZN.getLaborRateMeta();
       if (meta.source === 'manual') laborRateEl.value = meta.value;
     }
+    applyCategoryFieldVisibility();
   }catch(e){}
 
   // Update plan display and account info
