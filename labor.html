@@ -537,8 +537,7 @@ async function callLaborInsights(opts) {
     })
   });
   const data = await r.json();
-  const text = (data.content?.[0]?.text || '[]').replace(/```json|```/g,'').trim();
-  return JSON.parse(text);
+  return HRZN.parseInsights(data.content?.[0]?.text || '[]');
 }
 
 async function generateLaborInsights() {

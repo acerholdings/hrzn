@@ -266,8 +266,7 @@ async function generateInsights(d) {
     });
     const data = await r.json();
     const text = data.content?.[0]?.text || '[]';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const insights = JSON.parse(clean);
+    const insights = HRZN.parseInsights(text);
     _salesInsights = Array.isArray(insights) ? insights : [];
     _salesInsights._tapped = false;
     renderInsights(_salesInsights, container);
@@ -367,8 +366,7 @@ async function generateMoreInsights() {
     });
     const data = await r.json();
     const text = data.content?.[0]?.text || '[]';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const insights = JSON.parse(clean);
+    const insights = HRZN.parseInsights(text);
     const loading = document.getElementById('more-insights-loading');
     if(loading) loading.remove();
     const fresh = Array.isArray(insights) ? insights : [];

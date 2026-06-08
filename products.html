@@ -304,7 +304,7 @@ async function callProductInsights(opts) {
     })
   });
   const data = await r.json();
-  return JSON.parse((data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim());
+  return HRZN.parseInsights(data.content?.[0]?.text || '[]');
 }
 
 function renderProductInsights(list, container, append) {

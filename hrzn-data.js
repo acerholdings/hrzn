@@ -588,6 +588,40 @@ TARGETS (from operator settings):
   // Pages start with 6 and allow "Generate More" up to this total.
   INSIGHT_MAX: 18,
 
+  // Safely parse an AI insight JSON response. The model sometimes emits raw control
+  // characters (literal newlines/tabs) inside string values, which makes a plain
+  // JSON.parse throw "Bad control character in string literal". This strips markdown
+  // fences, escapes stray control chars inside the payload, and returns [] on failure
+  // rather than throwing — so a single malformed response never breaks the page.
+  // Used by every insight page so the fix lives in one place.
+  parseInsights(text) {
+    if (!text) return [];
+    // Strip code fences and trim.
+    let s = String(text).replace(/```json|```/g, '').trim();
+    // Isolate the JSON array if the model wrapped it in prose.
+    const first = s.indexOf('[');
+    const last = s.lastIndexOf(']');
+    if (first !== -1 && last !== -1 && last > first) s = s.slice(first, last + 1);
+    try {
+      return JSON.parse(s);
+    } catch (e) {
+      // Escape raw control characters (newlines, tabs, etc.) that are illegal inside
+      // JSON string literals, then retry. \u0000–\u001F are the control range.
+      try {
+        const cleaned = s.replace(/[\u0000-\u001F]/g, c => {
+          if (c === '\n') return '\\n';
+          if (c === '\r') return '\\r';
+          if (c === '\t') return '\\t';
+          return ''; // drop other control chars
+        });
+        return JSON.parse(cleaned);
+      } catch (e2) {
+        console.warn('parseInsights: could not parse AI response, returning empty.', e2);
+        return [];
+      }
+    }
+  },
+
   // ── GET ACTIVE SOURCE ────────────────────────
   getSource() {
     return localStorage.getItem(this.KEYS.SOURCE) || 'csv';
