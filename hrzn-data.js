@@ -471,7 +471,15 @@ const HRZN = {
       tipsTargetPct: 15,
       pillars: ['revenue','cogs','labor','rent','marketing'],
       settingsFields: ['laborPct','cogsPct','avgTicket','deliveryTargetPct'],
-      concepts: { delivery: true, tips: true, dayparts: true } // lunch/dinner etc.
+      concepts: { delivery: true, tips: true, dayparts: true }, // lunch/dinner etc.
+      suggestedQuestions: [
+        'What should I focus on this week?',
+        'Which menu items should I promote?',
+        'What is my biggest opportunity right now?',
+        'Forecast my revenue for next month',
+        'How is my labor cost trending?',
+        'Should I invest more in delivery or cut it?'
+      ]
     },
     retail: {
       label: 'Retail',
@@ -485,7 +493,15 @@ const HRZN = {
       discountMaxPct: 10,
       pillars: ['revenue','cogs','labor','rent','marketing'],
       settingsFields: ['laborPct','cogsPct','avgTicket'],
-      concepts: { delivery: false, tips: false, dayparts: false }
+      concepts: { delivery: false, tips: false, dayparts: false },
+      suggestedQuestions: [
+        'What should I focus on this week?',
+        'Which products should I promote?',
+        'What is my biggest opportunity right now?',
+        'Forecast my revenue for next month',
+        'Is my margin healthy for retail?',
+        'How can I increase average transaction value?'
+      ]
     },
     online: {
       label: 'Online / E-commerce',
@@ -503,7 +519,15 @@ const HRZN = {
       cacPct: 20,            // customer acquisition / ad spend
       pillars: ['revenue','cogs','shipping','returns','marketing','fees'],
       settingsFields: ['cogsPct','avgTicket','shippingPct','returnsPct','cacPct'],
-      concepts: { delivery: false, tips: false, dayparts: false }
+      concepts: { delivery: false, tips: false, dayparts: false },
+      suggestedQuestions: [
+        'What should I focus on this week?',
+        'Which products should I promote?',
+        'What is my biggest opportunity right now?',
+        'Forecast my revenue for next month',
+        'How are my shipping and return costs affecting profit?',
+        'Is my customer acquisition cost sustainable?'
+      ]
     }
   },
 

@@ -133,12 +133,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div style="font-size:22px;font-weight:300;color:var(--text);margin-bottom:8px;"><span id="ai-greeting">Good evening.</span></div>
           <div id="ai-initial-msg" style="font-size:14px;color:var(--text-mid);line-height:1.7;max-width:480px;margin:0 auto 24px;">I've analyzed your business data. Revenue is averaging <strong style="color:var(--gold);" id="op-welcome-rev2">—</strong>/week. I have several recommendations ready. What would you like to focus on?</div>
           <div id="suggestions" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:560px;margin:0 auto;">
-            <button onclick="askQuestion('What should I focus on this week?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">What should I focus on this week?</button>
-            <button onclick="askQuestion('How do I fix my Tuesday labor problem?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">How do I fix my Tuesday labor problem?</button>
-            <button onclick="askQuestion('Which menu items should I promote?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Which menu items should I promote?</button>
-            <button onclick="askQuestion('What is my biggest opportunity right now?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">What is my biggest opportunity?</button>
-            <button onclick="askQuestion('Forecast my revenue for next month')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Forecast next month revenue</button>
-            <button onclick="askQuestion('Should I invest more in DoorDash or cut it?')" style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">Should I invest more in DoorDash?</button>
+            <!-- Buttons populated by renderSuggestions() from the category profile -->
           </div>
         </div>
       </div>
@@ -181,10 +176,10 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <button class="suggestion-btn" onclick="askQuestion('What are my top 3 actions this week to increase profit?')">💰 Top 3 profit actions</button>
         <button class="suggestion-btn" onclick="askQuestion('Compare this month to last month')">📊 Month over month comparison</button>
         <button class="suggestion-btn" onclick="askQuestion('What is my break-even revenue per day?')">⚖️ Break-even analysis</button>
-        <button class="suggestion-btn" onclick="askQuestion('Which staff shifts should I cut to hit 28% labor?')">✂️ Labor optimization plan</button>
-        <button class="suggestion-btn" onclick="askQuestion('Write me a script for servers to upsell Toro and Edamame')">🗣️ Server upsell script</button>
+        <button class="suggestion-btn" onclick="askQuestion('Where am I overspending and how do I bring it back to target?')">✂️ Cost optimization plan</button>
+        <button class="suggestion-btn" onclick="askQuestion('What are my best opportunities to increase average sale value?')">🗣️ Grow average sale</button>
         <button class="suggestion-btn" onclick="askQuestion('What would happen to revenue if I raised prices by 10%?')">📈 Price increase impact</button>
-        <button class="suggestion-btn" onclick="askQuestion('Should I expand delivery or focus on dine-in?')">🚗 Delivery vs dine-in strategy</button>
+        <button class="suggestion-btn" onclick="askQuestion('Which of my sales channels should I invest in or cut?')">🚗 Channel strategy</button>
       </div>
 
       <!-- Data Source -->
@@ -215,6 +210,29 @@ function applyTheme(theme){const body=document.body,track=document.getElementByI
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(p){ hrznNavigate(p); }
 function askQuestion(q){const i=document.getElementById('aiInput');if(!i)return;i.value=typeof q==='string'?q:(q.target||q).dataset?.q||'';if(i.value)sendMessage();}
+
+// Build the starter-question buttons from the business category profile,
+// so a retail/online owner sees relevant questions (not "Tuesday labor" / "DoorDash").
+function renderSuggestions(){
+  try {
+    const box = document.getElementById('suggestions');
+    if(!box) return;
+    let questions = ['What should I focus on this week?','What is my biggest opportunity right now?','Forecast my revenue for next month'];
+    if (typeof HRZN !== 'undefined' && HRZN.getBenchmarks) {
+      const b = HRZN.getBenchmarks();
+      if (b && Array.isArray(b.suggestedQuestions) && b.suggestedQuestions.length) {
+        questions = b.suggestedQuestions;
+      }
+    }
+    box.innerHTML = questions.map(q => {
+      const safe = String(q).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<button onclick="askQuestion(\'' + safe + '\')" '
+        + 'style="font-size:12px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text-mid);cursor:pointer;font-family:DM Sans,sans-serif;transition:all 0.15s;" '
+        + 'onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--text)\'" '
+        + 'onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-mid)\'">' + q + '</button>';
+    }).join('');
+  } catch(e) {}
+}
 
 let conversationHistory=[];
 
@@ -303,6 +321,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   
   // Update sidebar with logged-in user info
   hrznSetupSidebar();
+  renderSuggestions();
 
 
   // Trial countdown banner - only show if on trial plan
