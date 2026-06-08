@@ -134,7 +134,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="kpi-card">
         <div class="kpi-label">Net Sales Revenue</div>
         <div class="kpi-value" id="kpi-revenue">—</div>
-        <div class="kpi-sub" id="revenue-source">From Sales Report</div>
+        <div class="kpi-sub" id="revenue-source">From Sales Overview</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Gross Profit</div>
@@ -341,7 +341,7 @@ function calcAndRender(){
   // Update period info
   set('period-months',months.toFixed(1));
   set('period-months-label','Period: '+months.toFixed(1)+' months');
-  if(filename)set('revenue-source','From '+filename);
+  if(filename)set('revenue-source','From Sales Overview');
 
   // KPIs
   set('kpi-revenue',fmt(revenue));
