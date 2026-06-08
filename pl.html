@@ -471,7 +471,7 @@ P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:
 CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your own figures.`;
 
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',messages:[{role:'user',content:prompt}]})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2200,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',messages:[{role:'user',content:prompt}]})});
     const data=await r.json();
     const text=data.content?.[0]?.text||'[]';
     const insights=HRZN.parseInsights(text);
@@ -592,7 +592,7 @@ RULES: Use ONLY numbers above. Never recalculate.`;
 
   const system = plMoreSystem;
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:system+'\n\nRespond ONLY with a JSON array. No markdown.',messages:[{role:'user',content:morePrompt}]})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2200,system:system+'\n\nRespond ONLY with a JSON array. No markdown.',messages:[{role:'user',content:morePrompt}]})});
     const data=await r.json();
     const text=data.content?.[0]?.text||'[]';
     const insights=HRZN.parseInsights(text);

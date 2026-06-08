@@ -90,7 +90,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <div class="nav-section-label" style="margin-top:8px;">AI</div>
     <div class="nav-item active"><span class="nav-icon">◉</span> AI Operator</div>
     <div class="nav-item" onclick="navigate('reports.html')"><span class="nav-icon">⊟</span> Reports</div>
-    <div class="nav-item" onclick="navigate('alerts.html')"><span class="nav-icon">◬</span> Alerts <span class="nav-badge">3</span></div>
+    <div class="nav-item" onclick="navigate('alerts.html')"><span class="nav-icon">◬</span> Alerts <span class="nav-badge" id="alert-badge">0</span></div>
     <div class="nav-section-label" style="margin-top:8px;">Integrations</div>
     <div class="nav-item" onclick="navigate('data.html')"><span class="nav-icon">⬆</span> Data Sources</div>
     <div class="nav-section-label" style="margin-top:8px;">Settings</div>
@@ -261,7 +261,7 @@ async function sendMessage(){
   addMessage('ai','Analyzing your business data...', true);
   
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:HRZN.getAIContext(),messages:conversationHistory})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:HRZN.getAIContext(),messages:conversationHistory})});
     const d=await r.json();
     const reply=d.content?.[0]?.text||'Error getting response';
     conversationHistory.push({role:'assistant',content:reply});

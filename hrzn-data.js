@@ -1318,7 +1318,7 @@ function hrznInjectFloatingAI() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 400,
+          max_tokens: 600,
           system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d) : HRZN.getSystemPrompt(d)) + '\nRespond concisely in 2-4 sentences. Be direct and specific with dollar amounts.',
           messages: [{ role: 'user', content: text }]
         })

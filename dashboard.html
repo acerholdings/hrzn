@@ -338,7 +338,7 @@ async function hrznAskWidget(prompt) {
     const r = await fetch('/api/chat', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6', max_tokens: 300,
+        model: 'claude-sonnet-4-6', max_tokens: 500,
         system: HRZN.getSystemPrompt(d) + '\nRespond in 2-3 sentences. Be direct and specific with dollar amounts.',
         messages: [{ role: 'user', content: text }]
       })
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch('/api/chat', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          model:'claude-sonnet-4-6', max_tokens:120,
+          model:'claude-sonnet-4-6', max_tokens:250,
           system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d2) : HRZN.getSystemPrompt(d2)),
           messages:[{role:'user',content:'Give me a 2-sentence business snapshot. Mention weekly revenue, one key win, and one top priority. Be specific with numbers. No greeting.'}]
         })

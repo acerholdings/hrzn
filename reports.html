@@ -448,7 +448,7 @@ Format as professional executive summary with: Business Overview, Financial Perf
     const r = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6', max_tokens:2000,
+        model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
         messages: [{role:'user', content: reportPrompts[type]}]
       })
@@ -478,7 +478,7 @@ async function generateCustomReport() {
     const r = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-6', max_tokens:2000,
+        model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
         messages: [{role:'user', content: 'Write a detailed business report about the following: ' + prompt + '\n\nUse real data, be specific, and format with clear sections.'}]
       })
