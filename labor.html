@@ -590,6 +590,7 @@ async function generateMoreLaborInsights() {
       exclude: _laborInsights.map(i => i.title)   // real exclusion list — no repeats
     });
     const fresh = Array.isArray(insights) ? insights : [];
+    const asked = Math.min(6, remaining);
     if (fresh.length === 0) {
       // Honest depth: model had nothing new to add
       container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Connect Gusto or upload more history for deeper analysis.</div>');
@@ -597,6 +598,12 @@ async function generateMoreLaborInsights() {
     } else {
       renderLaborInsights(fresh, container, true);
       _laborInsights = _laborInsights.concat(fresh);
+      // A short return means the model honestly ran out of distinct angles — tap out
+      // now rather than making the user click again for an empty result.
+      if (fresh.length < asked) {
+        container.insertAdjacentHTML('beforeend', '<div style="padding:12px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">That\'s the distinct labor analysis your current data supports. Connect Gusto or upload more history for deeper insights.</div>');
+        _laborInsights._tapped = true;
+      }
     }
   } catch(e) {
     container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--red);">Could not generate more: '+e.message+'</div>');

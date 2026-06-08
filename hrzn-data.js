@@ -547,16 +547,16 @@ TARGETS (from operator settings):
     const jsonFormat = `Respond ONLY with a JSON array of UP TO ${count} objects. No markdown, no explanation. Each object: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact dollar amounts and one specific action."}`;
     const mixRule = 'Include a mix: aim for wins (✅) and opportunities (🎯). Do not make every insight negative.';
 
-    // Honest-depth rule: the model may return FEWER than requested (even zero) rather
-    // than padding, repeating, or inventing specifics the data does not support.
-    const honestyRule = 'CRITICAL: Only generate insights the data genuinely supports. If the data is too limited to produce the full number of DISTINCT, well-grounded insights, return FEWER — it is correct to return an empty array [] if there is nothing new and specific to say. Never invent numbers, never pad with generic advice, and never restate an earlier point in different words just to reach a count. Quality and honesty over quantity.';
+    // Honest-depth rule: the model MUST return an empty array rather than recombine
+    // the same facts into new wording once the data's distinct angles are exhausted.
+    const honestyRule = 'CRITICAL — HONESTY OVER QUANTITY: Only generate insights the underlying data genuinely supports. A dataset contains a LIMITED number of truly distinct, well-grounded insights (often far fewer than requested). Once you have covered those distinct angles, you MUST STOP and return fewer items — or an empty array [] if nothing new and specific remains. Recombining the same facts (the same rate, revenue, ratio, or percentage) into differently-worded sentences is a FAILURE, not a new insight. Do NOT pad to reach the requested count. Do NOT invent numbers, per-shift detail, or specifics the data does not contain. Returning 2 strong insights and an empty remainder is CORRECT and preferred over 6 where several restate each other.';
 
     // Anti-repetition: pass the actual prior insights so the model can avoid them.
     // This replaces brittle "avoid topic X" guessing with the real exclusion set.
     let exclusionRule = '';
     const ex = (opts.exclude || []).map(e => typeof e === 'string' ? e : (e && e.title) || '').filter(Boolean);
     if (ex.length) {
-      exclusionRule = `\n\nThe user has ALREADY been shown these insights — do NOT repeat them, reword them, or make the same point with different numbers:\n- ${ex.join('\n- ')}\nGenerate only genuinely NEW insights covering different aspects of the data. If no sufficiently different insights remain, return fewer or an empty array [].`;
+      exclusionRule = `\n\nThe user has ALREADY been shown these insights — do NOT repeat them, reword them, or make the same underlying point with different numbers:\n- ${ex.join('\n- ')}\nGenerate ONLY genuinely NEW insights about DIFFERENT aspects of the data. If the remaining distinct angles are exhausted, you MUST return an empty array [] — do not recombine facts already covered above into new phrasing. An empty array is the correct, honest answer when there is nothing genuinely new to add.`;
     }
     const moreFraming = opts.more
       ? 'These are ADDITIONAL insights beyond an earlier batch. Focus on different angles: operational improvements, growth opportunities, and second-order patterns rather than the headline figures already covered. '
