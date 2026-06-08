@@ -242,6 +242,11 @@ function buildAlertsContext(d) {
   const combinedAnnual = Math.round(combinedPeriod / months * 12);
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
   const bizName = settings.businessName || 'this restaurant';
+  // Labor rate from the central source (live → manual → fallback), stated explicitly
+  // so the model never confuses the ACTUAL rate with the target.
+  const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
+  const laborRate = laborMeta.value;
+  const laborTgt = (settings.targets && settings.targets.labor) || 28;
 
   const lines = [
     'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
@@ -251,6 +256,7 @@ function buildAlertsContext(d) {
     'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $12,000 target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
     'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross — EXCELLENT WIN (below 3%)',
     'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'),
+    'Labor cost: ' + laborRate + '% of revenue (ACTUAL' + (laborMeta.isEstimate ? ', estimated' : '') + ') vs ' + laborTgt + '% target — ' + (laborRate > laborTgt ? (laborRate-laborTgt).toFixed(0)+' points ABOVE target' : 'at or below target') + '. Use ' + laborRate + '% as the actual labor rate; do NOT use the ' + laborTgt + '% target as if it were the actual.',
     'Digital payments (credit+debit+DoorDash): $' + Math.round(digitalTotal).toLocaleString() + ' = ' + digitalPct + '% of collected — cash only ' + cashPct + '%',
     'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to 10% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)',
     'Avg Item Price: $' + avgPrice.toFixed(2) + ' vs $15 target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)',
@@ -458,8 +464,8 @@ function generateAlerts(){
   const critical=[], warning=[], opportunity=[], wins=[];
 
   // ── CRITICAL ALERTS ──────────────────────────────
-  // Labor above target (estimated)
-  const laborPct = 32; // estimated - will be real when Gusto connects
+  // Labor above target — uses central labor rate (live → manual → fallback)
+  const laborPct = HRZN.getLaborRate ? HRZN.getLaborRate() : 32;
   if(laborPct > t.labor + 4){
     critical.push({
       type:'critical', category:'Labor',

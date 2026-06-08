@@ -477,6 +477,10 @@ function buildRevenueContext() {
   const weeklyItems = Math.round((d.itemsSold||0) / weeks);
   const targetRev = (s.targets && s.targets.revenue) || m.targetRevenue || 12000;
   const targetCheck = (s.targets && s.targets.check) || m.targetCheck || 15;
+  // Pull canonical shared figures from getMetrics so this page never disagrees with
+  // sales/pl/alerts. Digital = credit + debit + DoorDash (the single definition).
+  const digitalPct = (m.digitalPct != null) ? (+m.digitalPct).toFixed(1) : null;
+  const cashPctVal = (m.cashPct != null) ? (+m.cashPct).toFixed(1) : null;
   return `Analyze the revenue data for ${bizName}. Use ONLY the aggregate figures below. Do NOT invent day-of-week breakdowns, lunch/dinner splits, or per-day patterns — the data does not contain them (that requires Clover live integration).
 
 EXACT DATA — USE THESE NUMBERS ONLY:
@@ -484,9 +488,10 @@ Total net sales: $${Math.round(d.netSales||0).toLocaleString()} over ${weeks.toF
 Weekly revenue: $${weekly.toLocaleString()} vs $${(+targetRev).toLocaleString()} target — gap = $${(weekly - targetRev).toLocaleString()}/week
 Daily average: $${daily.toLocaleString()}
 Items sold per week: ${weeklyItems.toLocaleString()}
-Average check: $${d.avgCheck||0} vs $${targetCheck} target
+Average check: $${d.avgCheck||0} vs $${targetCheck} target${digitalPct!=null ? `
+Digital payments (credit + debit + DoorDash): ${digitalPct}% of collected${cashPctVal!=null ? ` — cash only ${cashPctVal}%` : ''}` : ''}
 
-Focus on revenue trends, the gap to target, average-check opportunity, and the highest-impact lever to grow revenue. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
+When referencing digital payment share, use EXACTLY ${digitalPct!=null ? digitalPct+'%' : 'the figure above'} — do not recalculate it. Focus on revenue trends, the gap to target, average-check opportunity, and the highest-impact lever to grow revenue. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
 }
 
 function renderRevInsights(list, container, append) {
