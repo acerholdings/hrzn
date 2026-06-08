@@ -188,7 +188,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card">
           <div class="card-header"><div class="card-title">Edit Monthly Expenses</div>
-          <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Auto-fill labor from CSV</div></div>
+          <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Estimate labor from revenue</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter <strong style="color:var(--text);">monthly</strong> amounts. HRZN scales to your CSV period (<span id="period-months">1.0</span> months).</div>
             <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="Monthly" value="8000" oninput="calcAndRender()"/></div>
@@ -546,8 +546,9 @@ async function generateMorePLInsights(){
   const debtSavingPeriod = Math.round(debt-debtAt12pct);
   const debtSavingMo2 = Math.round((debt-debtAt12pct)/months);
   const d2 = HRZN.getData();
-  const avgItemPrice = 13.70;
+  const avgItemPrice = +(d2.avgCheck || 0);   // real avg item price from data, not a hardcoded 13.70
   const avgTarget2 = 15.00;
+  const hasAvgPrice = avgItemPrice > 0;       // guard: only state a price/gap when real data exists
   const itemsSold2 = d2.itemsSold||0;
   const priceGapPeriod2 = Math.round((avgTarget2-avgItemPrice)*itemsSold2);
   const priceGapAnnual2 = Math.round(priceGapPeriod2/months*12);
@@ -584,7 +585,7 @@ Debt: $${Math.round(debt).toLocaleString()} (${debtPct}%) — overage vs 8% = $$
 Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%) = $${moProfitCalc2.toLocaleString()}/mo
 Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo
 Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)
-Avg Item Price: $${avgItemPrice} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)
+${hasAvgPrice ? `Avg Item Price: $${avgItemPrice.toFixed(2)} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)` : `Avg Item Price: not available (no item data uploaded) — do not state an average item price or price gap`}
 DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution
 
 RULES: Use ONLY numbers above. Never recalculate.`;
@@ -669,14 +670,18 @@ function suggestLaborFromCSV(){
     const d = HRZN.getData();
     const months = HRZN.getMonths(d);
     const monthlyRevenue = (d.netSales||0) / months;
-    const laborPct = 0.32; // from CSV
-    const suggestedMonthly = Math.round(monthlyRevenue * laborPct);
+    // Use the central labor rate (API → manual Settings → fallback), NOT a hardcoded 32%.
+    // Note: this is an estimate applied to revenue, not a labor figure measured from the CSV.
+    let laborMeta = { value: 32, source: 'fallback', isEstimate: true };
+    try { if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(); } catch(e) {}
+    const ratePct = Number(laborMeta.value);          // e.g. 40
+    const suggestedMonthly = Math.round(monthlyRevenue * (ratePct/100));
     const el = document.getElementById('input-labor');
     if(el) {
       el.value = suggestedMonthly;
       calcAndRender();
       const btn = document.getElementById('labor-suggest');
-      if(btn) btn.textContent = '$' + suggestedMonthly.toLocaleString() + '/mo applied';
+      if(btn) btn.textContent = '$' + suggestedMonthly.toLocaleString() + '/mo applied (est. ' + ratePct + '%)';
     }
   } catch(e) {}
 }
