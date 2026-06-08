@@ -488,15 +488,16 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('op-tips', tipsPct+'%');
     set('op-margin', grossMarginPct);
 
-    // Labor Cost %: read the real rate from the central chain (Item 2.5) instead of a frozen 32%.
+    // Labor Cost %: read the real rate from the central chain (API → manual → fallback). See getLaborRateMeta.
     try {
-      let laborMeta = null;
-      if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(d);
+      const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : null;
       const laborEl = document.getElementById('op-labor');
       if (laborEl) {
-        if (laborMeta && laborMeta.rate != null) {
-          const isEst = laborMeta.estimate !== false;
-          laborEl.textContent = Number(laborMeta.rate).toFixed(0) + '%' + (isEst ? ' (est.)' : '');
+        if (laborMeta && laborMeta.value != null && !isNaN(+laborMeta.value)) {
+          const v = Number(laborMeta.value).toFixed(0);
+          // Honest labelling: real measured rate is shown plain; manual/fallback are flagged as estimates.
+          const suffix = laborMeta.source === 'api' ? '%' : '% (est.)';
+          laborEl.textContent = v + suffix;
         } else {
           laborEl.textContent = '—';
         }
@@ -525,11 +526,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       : parseFloat(tenders.doorDashPct||0);
     const discountPct = parseFloat(d.discountPct||0);
     const avgCheck = parseFloat(d.avgCheck||0);
-    // Real labor rate (Item 2.5 central chain), not a hardcoded 32%.
+    // Real labor rate (API → manual → fallback), not a hardcoded 32%.
     let laborPct = null;
     try {
-      const lm = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta(d) : null;
-      if (lm && lm.rate != null) laborPct = Number(lm.rate);
+      const lm = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : null;
+      if (lm && lm.value != null && !isNaN(+lm.value)) laborPct = Number(lm.value);
     } catch(e) {}
     const alertsList = document.getElementById('op-alerts-list');
 
