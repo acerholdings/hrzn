@@ -504,7 +504,11 @@ const months = HRZN.getMonths(d);
   const lastItems = Math.round(weeklyItems * 0.95);
   const perfSettings = JSON.parse(localStorage.getItem('hrzn-settings')||'{}')
   const laborTarget = +(perfSettings.targets?.labor || 28);
-  const laborPct = 32; // ⚠ Est. — real data needs Gusto API
+  // Labor rate from the central chain (API → manual → fallback). See getLaborRateMeta in hrzn-data.js.
+  let laborMeta = { value: 32, source: 'fallback', isEstimate: true };
+  try { if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(); } catch(e) {}
+  const laborPct = Number(laborMeta.value);
+  const laborIsEst = laborMeta.source !== 'api';   // api = measured; manual/fallback = estimate
 
   let grossMargin = '—';
   let itemsLoaded = false;
@@ -532,7 +536,7 @@ const months = HRZN.getMonths(d);
   set('vs-covers-last', lastItems.toLocaleString());
   set('vs-check-this', '$'+(d.avgCheck||0));
   set('vs-check-last', '—');
-  set('vs-labor-this', laborPct+'%');
+  set('vs-labor-this', laborPct + '%' + (laborIsEst ? ' (est.)' : ''));
   set('vs-labor-last', '—');
   // Labor: show target status, no WoW arrow since last week data is estimated
   set('vs-labor-change', laborPct > laborTarget ? 'above target' : 'on target');
