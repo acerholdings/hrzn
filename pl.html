@@ -393,6 +393,7 @@ function calcAndRender(){
   });
 }
 
+let _plInsights = [];  // shown insights, for exclusion + ceiling
 async function generatePLInsights(){
   const container=document.getElementById('plInsightsContainer');
   const btn=document.getElementById('plInsightsBtn');
@@ -445,7 +446,7 @@ async function generatePLInsights(){
   const priceGapAnnual = Math.round(priceGapPeriod/months*12);
   const moProfitFinal = Math.round(netProfit/months);
 
-  const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl');
+  const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl', null, _plInsights.length ? { exclude: _plInsights.map(i=>i.title) } : {});
   const prompt = plBasePrompt + `
 
 P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:
@@ -475,11 +476,14 @@ CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your o
     const text=data.content?.[0]?.text||'[]';
     const clean=text.replace(/```json|```/g,'').trim();
     const insights=JSON.parse(clean);
-    renderPLInsights(insights, container);
+    _plInsights = Array.isArray(insights) ? insights : [];
+    _plInsights._tapped = false;
+    renderPLInsights(_plInsights, container);
   }catch(e){
     container.innerHTML='<div style="padding:16px;font-size:12px;color:var(--red);">Error: '+e.message+'</div>';
   }
   if(btn){btn.textContent='+ Refresh Insights';btn.disabled=false;}
+  updatePLMoreBtn();
 }
 
 function renderPLInsights(insights, container) {
@@ -501,6 +505,7 @@ async function generateMorePLInsights(){
   const container=document.getElementById('plInsightsContainer');
   const btn=document.getElementById('plMoreInsightsBtn');
   if(!container)return;
+  if((_plInsights.length) >= (HRZN.INSIGHT_MAX || 18)){ updatePLMoreBtn(); return; }
   if(btn){btn.textContent='Generating...';btn.disabled=true;}
 
   const loadingDiv = document.createElement('div');
@@ -557,7 +562,15 @@ async function generateMorePLInsights(){
   const moProfitCalc2 = Math.round(netProfit/months);
   const foodAdv = Math.round(revenue*0.25-cogs); // vs 25% benchmark
 
-  const morePrompt = `Analyze this P&L and provide 6 MORE insights on growth strategies, operational improvements, and opportunities DIFFERENT from labor/debt/food cost. Use ONLY the pre-calculated numbers below.
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  const remaining = ceiling - _plInsights.length;
+  const asked = Math.min(6, remaining);
+  // Central engine supplies the format + honesty + REAL exclusion list (replaces the
+  // old blind "DIFFERENT from labor/debt/food cost" topic-guess).
+  const { system: plMoreSystem, prompt: plMoreBase } = HRZN.getInsightPrompt('pl', null, {
+    more: true, count: asked, exclude: _plInsights.map(i => i.title)
+  });
+  const morePrompt = plMoreBase + `
 
 EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:
 Period: ${months.toFixed(1)} months
@@ -575,10 +588,9 @@ Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)
 Avg Item Price: $${avgItemPrice} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)
 DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution
 
-RULES: Use ONLY numbers above. Never recalculate. Include 3 wins (✅) and 3 opportunities (🎯).
-Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}`;
+RULES: Use ONLY numbers above. Never recalculate.`;
 
-  const system = HRZN.getSystemPrompt(HRZN.getData());
+  const system = plMoreSystem;
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:system+'\n\nRespond ONLY with a JSON array. No markdown.',messages:[{role:'user',content:morePrompt}]})});
     const data=await r.json();
@@ -587,29 +599,54 @@ Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji"
     const insights=JSON.parse(clean);
     const loading=document.getElementById('pl-more-loading');
     if(loading)loading.remove();
-    const divider=document.createElement('div');
-    divider.style.cssText='padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
-    divider.textContent='Additional Insights';
-    container.appendChild(divider);
-    const cols=3;
-    const grid=document.createElement('div');
-    grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
-    insights.forEach((ins,i)=>{
-      const border=(i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
-      const topBorder=i>=cols?'border-top:1px solid var(--border);':'';
-      const div=document.createElement('div');
-      div.style.cssText='padding:18px;'+border+topBorder;
-      div.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
-      grid.appendChild(div);
-    });
-    container.appendChild(grid);
-    container.scrollTop=container.scrollHeight;
+    const fresh = Array.isArray(insights) ? insights : [];
+    if(fresh.length === 0){
+      container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Upload more history for deeper analysis.</div>');
+      _plInsights._tapped = true;
+    } else {
+      const divider=document.createElement('div');
+      divider.style.cssText='padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+      divider.textContent='Additional Insights';
+      container.appendChild(divider);
+      const cols=3;
+      const grid=document.createElement('div');
+      grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+      fresh.forEach((ins,i)=>{
+        const border=(i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
+        const topBorder=i>=cols?'border-top:1px solid var(--border);':'';
+        const div=document.createElement('div');
+        div.style.cssText='padding:18px;'+border+topBorder;
+        div.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
+        grid.appendChild(div);
+      });
+      container.appendChild(grid);
+      container.scrollTop=container.scrollHeight;
+      _plInsights = _plInsights.concat(fresh);
+      if(fresh.length < asked){
+        container.insertAdjacentHTML('beforeend', '<div style="padding:12px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">That\'s the distinct P&amp;L analysis your current data supports. Upload more history for deeper insights.</div>');
+        _plInsights._tapped = true;
+      }
+    }
   }catch(e){
     const loading=document.getElementById('pl-more-loading');
     if(loading)loading.remove();
     console.error('Error:',e);
   }
   if(btn){btn.textContent='+ Generate More';btn.disabled=false;}
+  updatePLMoreBtn();
+}
+
+function updatePLMoreBtn() {
+  const moreBtn = document.getElementById('plMoreInsightsBtn');
+  if(!moreBtn) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if(_plInsights.length >= ceiling || _plInsights._tapped){
+    moreBtn.disabled = true; moreBtn.textContent = 'Max insights';
+    moreBtn.style.opacity = '0.5'; moreBtn.style.cursor = 'default';
+  } else {
+    moreBtn.disabled = false; moreBtn.textContent = '+ Generate More';
+    moreBtn.style.opacity = '1'; moreBtn.style.cursor = 'pointer';
+  }
 }
 
 

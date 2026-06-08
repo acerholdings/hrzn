@@ -186,6 +186,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div class="card-title">AI Insights &mdash; Menu Performance</div>
           <div style="display:flex;align-items:center;gap:12px;">
             <button id="insights-btn" onclick="generateInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Refresh</button>
+            <button id="insights-more-btn" onclick="generateMoreProductInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ Generate More</button>
             <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);">
               <span style="width:5px;height:5px;border-radius:50%;background:var(--gold);display:inline-block;animation:pulse 2s infinite;"></span>AI Generated
             </div>
@@ -277,38 +278,110 @@ function renderCats(cats) {
   }).join('');
 }
 
+let _productInsights = [];  // shown insights, for exclusion + ceiling
+
+function buildProductContext() {
+  const raw = localStorage.getItem(ITEMS_KEY);
+  if (!raw) return null;
+  const d = JSON.parse(raw);
+  const top10 = (d.allItems||[]).slice(0,10).map(i => i.name + ' (' + i.category + '): ' + i.sold + ' sold, ' + fmt(i.netSales)).join('; ');
+  const cats = (d.categories||[]).slice(0,8).map(c => c.name + ': ' + fmt(c.netSales) + ' (' + c.pctOfNet + '%)').join('; ');
+  return `Analyze this product/item data and reference exact item names. Use ONLY the figures below — do not invent items, sales counts, or numbers not present here.
+
+TOP ITEMS: ${top10}
+CATEGORIES: ${cats}`;
+}
+
+async function callProductInsights(opts) {
+  // Routes through the central engine (menu type) so it shares the same format,
+  // honesty, and anti-repetition rules as every other insight page.
+  const { system, prompt } = HRZN.getInsightPrompt('menu', buildProductContext(), opts);
+  const r = await fetch('/api/chat', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001', max_tokens: 1500,
+      system, messages: [{role:'user', content: prompt}]
+    })
+  });
+  const data = await r.json();
+  return JSON.parse((data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim());
+}
+
+function renderProductInsights(list, container, append) {
+  const cells = list.map(ins =>
+    '<div class="insight-cell"><div class="insight-title">' + (ins.emoji||'•') + ' ' + ins.title + '</div><div class="insight-body">' + ins.insight + '</div></div>'
+  ).join('');
+  if (append) {
+    container.insertAdjacentHTML('beforeend', '<div style="grid-column:1/-1;padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);">Additional Insights</div>' + cells);
+    container.scrollTop = container.scrollHeight;
+  } else {
+    container.innerHTML = '<div class="insight-grid">' + cells + '</div>';
+  }
+}
+
 async function generateInsights() {
   const btn = document.getElementById('insights-btn');
   const container = document.getElementById('insights-container');
   if (!container) return;
+  if (!buildProductContext()) { container.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload Item Sales CSV to generate insights.</div>'; return; }
   if (btn) { btn.textContent = 'Analyzing...'; btn.disabled = true; }
   container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-dim);font-size:12px;">Analyzing product/item data...</div>';
-
   try {
-    const raw = localStorage.getItem(ITEMS_KEY);
-    if (!raw) { container.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload Item Sales CSV to generate insights.</div>'; return; }
-    const d = JSON.parse(raw);
-    const top10 = (d.allItems||[]).slice(0,10).map(i => i.name + ' (' + i.category + '): ' + i.sold + ' sold, ' + fmt(i.netSales)).join('; ');
-    const cats = (d.categories||[]).slice(0,8).map(c => c.name + ': ' + fmt(c.netSales) + ' (' + c.pctOfNet + '%)').join('; ');
-
-    const r = await fetch('/api/chat', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 1500,
-        system: 'You are a restaurant menu analyst. Respond with pure JSON only, no markdown, no explanation.',
-        messages: [{role:'user', content: 'Analyze this product/item data and give 6 specific actionable insights referencing exact item names. TOP ITEMS: ' + top10 + ' CATEGORIES: ' + cats + ' Respond ONLY with JSON: [{"emoji":"...","title":"5-8 words","insight":"2-3 sentences with specific names and numbers."}]'}]
-      })
-    });
-    const data = await r.json();
-    const insights = JSON.parse((data.content?.[0]?.text||'[]').replace(/```json|```/g,'').trim());
-    const html = '<div class="insight-grid">' + insights.map(ins =>
-      '<div class="insight-cell"><div class="insight-title">' + ins.emoji + ' ' + ins.title + '</div><div class="insight-body">' + ins.insight + '</div></div>'
+    const priorTitles = _productInsights.map(i => i.title);
+    const insights = await callProductInsights(priorTitles.length ? { exclude: priorTitles } : {});
+    _productInsights = Array.isArray(insights) ? insights : [];
+    _productInsights._tapped = false;
+    container.innerHTML = '<div class="insight-grid">' + _productInsights.map(ins =>
+      '<div class="insight-cell"><div class="insight-title">' + (ins.emoji||'•') + ' ' + ins.title + '</div><div class="insight-body">' + ins.insight + '</div></div>'
     ).join('') + '</div>';
-    container.innerHTML = html;
   } catch(e) {
     container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Error: ' + e.message + '</div>';
   }
   if (btn) { btn.textContent = '+ Refresh'; btn.disabled = false; }
+  updateProductMoreBtn();
+}
+
+async function generateMoreProductInsights() {
+  const container = document.getElementById('insights-container');
+  const btn = document.getElementById('insights-more-btn');
+  if (!container) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_productInsights.length >= ceiling) { updateProductMoreBtn(); return; }
+  if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
+  try {
+    const remaining = ceiling - _productInsights.length;
+    const asked = Math.min(6, remaining);
+    const insights = await callProductInsights({ more: true, count: asked, exclude: _productInsights.map(i => i.title) });
+    const fresh = Array.isArray(insights) ? insights : [];
+    if (fresh.length === 0) {
+      container.insertAdjacentHTML('beforeend', '<div style="grid-column:1/-1;padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Upload more item history for deeper analysis.</div>');
+      _productInsights._tapped = true;
+    } else {
+      renderProductInsights(fresh, container, true);
+      _productInsights = _productInsights.concat(fresh);
+      if (fresh.length < asked) {
+        container.insertAdjacentHTML('beforeend', '<div style="grid-column:1/-1;padding:12px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">That\'s the distinct menu analysis your current data supports.</div>');
+        _productInsights._tapped = true;
+      }
+    }
+  } catch(e) {
+    container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--red);">Could not generate more: ' + e.message + '</div>');
+  }
+  if (btn) { btn.textContent = '+ Generate More'; btn.disabled = false; }
+  updateProductMoreBtn();
+}
+
+function updateProductMoreBtn() {
+  const moreBtn = document.getElementById('insights-more-btn');
+  if (!moreBtn) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_productInsights.length >= ceiling || _productInsights._tapped) {
+    moreBtn.disabled = true; moreBtn.textContent = 'Max insights';
+    moreBtn.style.opacity = '0.5'; moreBtn.style.cursor = 'default';
+  } else {
+    moreBtn.disabled = false; moreBtn.textContent = '+ Generate More';
+    moreBtn.style.opacity = '1'; moreBtn.style.cursor = 'pointer';
+  }
 }
 
 function loadData() {

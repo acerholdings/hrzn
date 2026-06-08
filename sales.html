@@ -243,31 +243,38 @@ function renderInsights(insights, container) {
   container.innerHTML = html;
 }
 
+let _salesInsights = [];  // shown insights, for exclusion + ceiling
+
 async function generateInsights(d) {
   const container = document.getElementById('insightsContainer');
   if(!container) return;
   container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your data...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
   try {
     const calcCtx = buildSalesContext(d);
-    const { system } = HRZN.getInsightPrompt('sales');
+    // Route through central engine; Refresh excludes already-shown insights so it
+    // produces a genuinely different set instead of re-deriving the same points.
+    const priorTitles = _salesInsights.map(i => i.title);
+    const { system, prompt } = HRZN.getInsightPrompt('sales', calcCtx, priorTitles.length ? { exclude: priorTitles } : {});
     const r = await fetch('/api/chat', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1500,
-        system: system + '\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',
-        messages: [{role:'user', content: calcCtx}]
+        system, messages: [{role:'user', content: prompt}]
       })
     });
     const data = await r.json();
     const text = data.content?.[0]?.text || '[]';
     const clean = text.replace(/```json|```/g,'').trim();
     const insights = JSON.parse(clean);
-    renderInsights(insights, container);
+    _salesInsights = Array.isArray(insights) ? insights : [];
+    _salesInsights._tapped = false;
+    renderInsights(_salesInsights, container);
   } catch(e) {
     container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Error generating insights: '+e.message+'</div>';
   }
+  updateSalesMoreBtn();
 }
 
 function buildSalesContext(d) {
@@ -331,8 +338,10 @@ RULES: Use ONLY the dollar amounts above. Never recalculate. Discounts at ${disc
 async function generateMoreInsights() {
   const btn = document.getElementById('moreInsightsBtn');
   const container = document.getElementById('insightsContainer');
-  if(btn){ btn.textContent='Generating...'; btn.disabled=true; }
   if(!container) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if(_salesInsights.length >= ceiling){ updateSalesMoreBtn(); return; }
+  if(btn){ btn.textContent='Generating...'; btn.disabled=true; }
   const loadingDiv = document.createElement('div');
   loadingDiv.id = 'more-insights-loading';
   loadingDiv.style.cssText = 'padding:20px;text-align:center;border-top:1px solid var(--border);';
@@ -342,17 +351,18 @@ async function generateMoreInsights() {
   try {
     const d = HRZN.getData();
     const calcCtx = buildSalesContext(d);
-    const system = HRZN.getSystemPrompt(d);
-    const morePrompt = calcCtx.replace(
-      'provide exactly 6 specific insights',
-      'provide exactly 6 MORE insights focused on growth strategies, operational improvements, and hidden opportunities DIFFERENT from typical credit card, discount, and tip insights'
-    );
+    const remaining = ceiling - _salesInsights.length;
+    const asked = Math.min(6, remaining);
+    // Pass the real already-shown insights as the exclusion list (replaces the old
+    // blind "DIFFERENT from credit card/discount/tip" topic-guess).
+    const { system, prompt } = HRZN.getInsightPrompt('sales', calcCtx, {
+      more: true, count: asked, exclude: _salesInsights.map(i => i.title)
+    });
     const r = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
-        system: system + '\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',
-        messages:[{role:'user',content:morePrompt}]
+        system, messages:[{role:'user',content:prompt}]
       })
     });
     const data = await r.json();
@@ -361,29 +371,54 @@ async function generateMoreInsights() {
     const insights = JSON.parse(clean);
     const loading = document.getElementById('more-insights-loading');
     if(loading) loading.remove();
-    const divider = document.createElement('div');
-    divider.style.cssText = 'padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
-    divider.textContent = 'Additional Insights';
-    container.appendChild(divider);
-    const cols = 3;
-    const grid = document.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
-    insights.forEach((ins, i) => {
-      const border = (i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
-      const topBorder = i>=cols?'border-top:1px solid var(--border);':'';
-      const div = document.createElement('div');
-      div.style.cssText = 'padding:18px;'+border+topBorder;
-      div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
-      grid.appendChild(div);
-    });
-    container.appendChild(grid);
-    container.scrollTop = container.scrollHeight;
+    const fresh = Array.isArray(insights) ? insights : [];
+    if(fresh.length === 0){
+      container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Upload more history for deeper analysis.</div>');
+      _salesInsights._tapped = true;
+    } else {
+      const divider = document.createElement('div');
+      divider.style.cssText = 'padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);';
+      divider.textContent = 'Additional Insights';
+      container.appendChild(divider);
+      const cols = 3;
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:0;';
+      fresh.forEach((ins, i) => {
+        const border = (i%cols!==cols-1)?'border-right:1px solid var(--border);':'';
+        const topBorder = i>=cols?'border-top:1px solid var(--border);':'';
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:18px;'+border+topBorder;
+        div.innerHTML = '<div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:6px;">'+ins.emoji+' '+ins.title+'</div><div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div>';
+        grid.appendChild(div);
+      });
+      container.appendChild(grid);
+      container.scrollTop = container.scrollHeight;
+      _salesInsights = _salesInsights.concat(fresh);
+      if(fresh.length < asked){
+        container.insertAdjacentHTML('beforeend', '<div style="padding:12px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">That\'s the distinct analysis your current data supports. Upload more history for deeper insights.</div>');
+        _salesInsights._tapped = true;
+      }
+    }
   } catch(e){
     const loading = document.getElementById('more-insights-loading');
     if(loading) loading.remove();
     console.error('Error:', e);
   }
   if(btn){ btn.textContent='+ Generate More'; btn.disabled=false; }
+  updateSalesMoreBtn();
+}
+
+function updateSalesMoreBtn() {
+  const moreBtn = document.getElementById('moreInsightsBtn');
+  if(!moreBtn) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if(_salesInsights.length >= ceiling || _salesInsights._tapped){
+    moreBtn.disabled = true; moreBtn.textContent = 'Max insights';
+    moreBtn.style.opacity = '0.5'; moreBtn.style.cursor = 'default';
+  } else {
+    moreBtn.disabled = false; moreBtn.textContent = '+ Generate More';
+    moreBtn.style.opacity = '1'; moreBtn.style.cursor = 'pointer';
+  }
 }
 
 function renderDataBadges(sources) {
