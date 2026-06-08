@@ -779,7 +779,12 @@ TARGETS (from operator settings):
 - Labor target: ${laborTarget}%${targets.labor ? '' : ' (default — set in Settings)'}
 - Weekly revenue target: ${revenueTarget > 0 ? '$' + revenueTarget.toLocaleString() : 'not set'}
 - Avg check target: ${checkTarget > 0 ? '$' + checkTarget : 'not set'}
-- DoorDash target: ${ddTarget}%`;
+- DoorDash target: ${ddTarget}%
+
+CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
+- Use ONLY the figures provided above. Never invent a revenue target, sales goal, or any benchmark number.
+- If a target shows "not set", do NOT make one up. Either omit target-based framing, or describe performance against the industry benchmark ranges given above (clearly labeled as an industry benchmark, not the owner's target), or suggest the owner set the target in Settings.
+- Every dollar amount, percentage, and target in your answer must trace to a number above. If you don't have it, say so rather than estimating a specific figure.`;
   },
 
   // getInsightPrompt(type, extra, opts)
