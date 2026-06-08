@@ -57,6 +57,17 @@ function hrznSetupSidebar() {
     const locEl = document.querySelector('.business-loc-text') || document.querySelector('.business-loc') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = settings.bizLocation || '—';
   } catch(e) {}
+  // Nav "Alerts" badge: show the REAL count (critical + warning), one source of truth.
+  // Hide the badge entirely when the count is 0 so it doesn't show a misleading dot.
+  try {
+    if (typeof HRZN !== 'undefined' && HRZN.getAlertCount) {
+      const n = HRZN.getAlertCount();
+      document.querySelectorAll('.nav-badge').forEach(b => {
+        b.textContent = n;
+        b.style.display = n > 0 ? '' : 'none';
+      });
+    }
+  } catch(e) {}
 }
 
 function hrznRequireAuth() {
@@ -385,6 +396,58 @@ const HRZN = {
     const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
     s.laborRate = { value: +pct, mode: mode || 'fallback' };
     localStorage.setItem('hrzn-settings', JSON.stringify(s));
+  },
+
+  // Targets used by alerts + badge. Mirrors alerts.html's getTargets() so the
+  // count is computed from one place. Reads user overrides from hrzn-settings.
+  getTargets() {
+    try {
+      const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+      const tg = s.targets || {};
+      return {
+        labor: parseFloat(tg.labor || 28),
+        food: parseFloat(tg.food || 30),
+        margin: parseFloat(tg.margin || 15),
+        weeklyRevenue: parseFloat(tg.revenue || 12000),
+        monthlyRevenue: parseFloat(tg.monthly || 50000),
+        avgCheck: parseFloat(tg.check || 15),
+        doordash: parseFloat(tg.doordash || 10),
+        discount: parseFloat(tg.discount || 5),
+      };
+    } catch (e) {
+      return { labor:28, food:30, margin:15, weeklyRevenue:12000, monthlyRevenue:50000, avgCheck:15, doordash:10, discount:5 };
+    }
+  },
+
+  // Single source of truth for the sidebar "Alerts" badge across all pages.
+  // Counts the SAME critical + warning conditions that alerts.html shows.
+  // Returns 0 cleanly when there's no data, so the badge never shows a fake number.
+  getAlertCount() {
+    if (typeof localStorage === 'undefined') return 0;
+    try {
+      const d = this.getData();
+      if (!d || !(d.netSales > 0)) return 0;
+      const t = this.getTargets();
+      const periodDays = d.periodDays || 148;
+      const weeks = periodDays / 7;
+      const weekly = Math.round((d.netSales || 0) / weeks);
+      const tenders = d.tenders || {};
+      const discountPct = d.grossSales > 0 ? parseFloat(((d.discounts || 0) / d.grossSales * 100).toFixed(1)) : 0;
+      const avgCheck = parseFloat(d.avgCheck || 0);
+      const laborPct = this.getLaborRate ? this.getLaborRate() : 32;
+
+      let count = 0;
+      // Critical
+      if (laborPct > t.labor + 4) count++;                 // labor well over target
+      if (weekly < t.weeklyRevenue * 0.85) count++;         // revenue >15% below target
+      // Warning
+      if (laborPct > t.labor && laborPct <= t.labor + 4) count++; // labor slightly over
+      if (discountPct > t.discount) count++;                // discounts over target
+      if (avgCheck > 0 && avgCheck < t.avgCheck) count++;   // avg check below target
+      return count;
+    } catch (e) {
+      return 0;
+    }
   },
 
   getBenchmarkContext() {
