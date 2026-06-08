@@ -627,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const alerts = [];
   if(laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
   if(doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'menu.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'products.html'});
   if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');
@@ -675,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const recs = [];
   if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
   if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'menu.html'});
+  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'products.html'});
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');
