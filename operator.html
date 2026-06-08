@@ -575,8 +575,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(laborPct != null && laborPct > t.labor) alerts.push({color:'var(--red)', text:'Labor at '+laborPct.toFixed(0)+'% vs '+t.labor+'% target', q:'How do I get labor costs down to '+t.labor+'%?'});
     // Delivery alert only for categories where delivery is a relevant concept (e.g. restaurants).
     if(concepts.delivery && doorDashPct < t.doordash) alerts.push({color:'var(--red)', text:'DoorDash only '+doorDashPct+'% of revenue', q:'How should I grow DoorDash revenue?'});
-    // Avg-ticket alert only when the category has a meaningful target (>0), using its own label.
-    if(t.avgCheck > 0 && avgCheck > 0 && avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:ticketLabel+' $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase '+ticketLabel.toLowerCase()+'?'});
+    const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
+    // Avg-ticket alert only when the category itself defines a ticket target, using its own label.
+    if(ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:ticketLabel+' $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase '+ticketLabel.toLowerCase()+'?'});
     if(discountPct > t.discount) alerts.push({color:'var(--orange)', text:'Discounts at '+discountPct+'% of gross sales', q:'Are my discounts hurting my margins?'});
     if(weekly < t.weeklyRevenue) alerts.push({color:'var(--orange)', text:'Weekly avg $'+Math.round(weekly).toLocaleString()+' below target', q:'What can I do to increase weekly revenue?'});
 

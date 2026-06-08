@@ -413,15 +413,20 @@ function pct(n,t){return t>0?(n/t*100).toFixed(1):'0';}
 function getTargets(){
   try{
     const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+    // Category-aware fallbacks: user's saved targets win; otherwise fall back to the
+    // business category's benchmark (not hardcoded restaurant numbers).
+    const b = (typeof HRZN!=='undefined' && HRZN.getBenchmarks) ? HRZN.getBenchmarks() : {};
+    const t = s.targets || {};
+    const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
     return {
-      labor: parseFloat(s.targets?.labor||28),
-      food: parseFloat(s.targets?.food||30),
-      margin: parseFloat(s.targets?.margin||15),
-      weeklyRevenue: parseFloat(s.targets?.revenue||12000),
-      monthlyRevenue: parseFloat(s.targets?.monthly||50000),
-      avgCheck: parseFloat(s.targets?.check||15),
-      doordash: parseFloat(s.targets?.doordash||10),
-      discount: parseFloat(s.targets?.discount||5),
+      labor: num(t.labor, b.laborPct != null ? b.laborPct : 28),
+      food: num(t.food, b.cogsPct != null ? b.cogsPct : 30),
+      margin: num(t.margin, b.netMarginTarget != null ? b.netMarginTarget : 15),
+      weeklyRevenue: num(t.revenue, 12000),
+      monthlyRevenue: num(t.monthly, 50000),
+      avgCheck: num(t.check, b.avgTicket ? b.avgTicket : 15),
+      doordash: num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
+      discount: num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 5),
     };
   }catch(e){return {labor:28,food:30,margin:15,weeklyRevenue:12000,monthlyRevenue:50000,avgCheck:15,doordash:10,discount:5};}
 }
@@ -462,6 +467,10 @@ function generateAlerts(){
   const tipsPct = d.netSales>0 ? (d.tips||0)/d.netSales*100 : 0;
   const avgCheck = parseFloat(d.avgCheck||0);
   const source = d._source||'demo';
+  // Category awareness: which concepts apply + how to label the avg-ticket metric.
+  const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const concepts = bm.concepts || { delivery:true };
+  const ticketLabel = bm.avgTicketLabel || 'Avg check';
 
   const critical=[], warning=[], opportunity=[], wins=[];
 
@@ -512,20 +521,21 @@ function generateAlerts(){
     });
   }
 
-  // Avg check below target
-  if(avgCheck < t.avgCheck){
+  // Avg ticket below target (only when the CATEGORY itself defines a ticket target)
+  const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
+  if(ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck){
     warning.push({
-      type:'warning', category:'Menu',
-      title:`Avg check $${parseFloat(avgCheck).toFixed(2)} is below $${parseFloat(t.avgCheck).toFixed(2)} target`,
-      desc:`Your average check of $${avgCheck} per item is $${(t.avgCheck-avgCheck).toFixed(2)} below target. Focus on upselling Wagyu and Toro handrolls, and push Edamame as an add-on to every order.`,
+      type:'warning', category:'Pricing',
+      title:`${ticketLabel} $${parseFloat(avgCheck).toFixed(2)} is below $${parseFloat(t.avgCheck).toFixed(2)} target`,
+      desc:`Your ${ticketLabel.toLowerCase()} of $${avgCheck} is $${(t.avgCheck-avgCheck).toFixed(2)} below target. Focus on upselling higher-margin items and pairing add-ons to lift the average sale.`,
       value:`$${avgCheck} per item`,
-      action:"navigate('products.html')", actionLabel:'View Menu →'
+      action:"navigate('products.html')", actionLabel:'View Products →'
     });
   }
 
   // ── OPPORTUNITIES ────────────────────────────────
-  // DoorDash underperforming
-  if(doorDashPct < t.doordash){
+  // DoorDash underperforming (only for categories where delivery is a relevant concept)
+  if(concepts.delivery && doorDashPct < t.doordash){
     const ddGapPeriodAmt = Math.round(m.ddGapPeriod);
     const ddGapWeeklyAmt = Math.round(m.ddGapWeekly);
     const ddGapAnnualAmt = Math.round(m.ddGapAnnual);
@@ -553,10 +563,15 @@ function generateAlerts(){
   // Revenue growth opportunity
   const revenueGap = t.monthlyRevenue - monthly;
   if(revenueGap > 0){
+    const extraSales = (avgCheck > 0) ? Math.round(revenueGap/avgCheck/30) : 0;
+    const pctLift = monthly > 0 ? ((t.monthlyRevenue/monthly-1)*100).toFixed(0) : '0';
+    const howTo = extraSales > 0
+      ? `Closing this gap requires either ${extraSales} additional sales per day or a ${pctLift}% increase in average sale value.`
+      : `Closing this gap requires growing volume or increasing your average sale value by about ${pctLift}%.`;
     opportunity.push({
       type:'opportunity', category:'Revenue',
       title:`${fmt(revenueGap)} from your monthly revenue target`,
-      desc:`Your monthly average of ${fmt(monthly)} is ${fmt(revenueGap)} below your ${fmt(t.monthlyRevenue)} target. Closing this gap requires either ${Math.round(revenueGap/avgCheck/30)} additional covers per day or a ${((t.monthlyRevenue/monthly-1)*100).toFixed(0)}% increase in avg item price.`,
+      desc:`Your monthly average of ${fmt(monthly)} is ${fmt(revenueGap)} below your ${fmt(t.monthlyRevenue)} target. ${howTo}`,
       value:`${fmt(monthly)} vs ${fmt(t.monthlyRevenue)} target`,
       action:"navigate('revenue.html')", actionLabel:'View Revenue →'
     });
