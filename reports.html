@@ -129,7 +129,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     </div>
   </div>
 <div id="demo-banner" style="display:none;background:rgba(201,168,76,0.1);border-bottom:1px solid rgba(201,168,76,0.2);padding:8px 28px;font-size:11px;color:var(--gold);align-items:center;justify-content:space-between;">
-    <span>👀 You're viewing a demo with sample data from ${bizName}</span>
+    <span id="demo-banner-text">👀 You're viewing a demo with sample data</span>
     <a href="signup.html" style="color:var(--gold);font-weight:500;text-decoration:none;">Start Free Trial →</a>
   </div>
 
@@ -144,8 +144,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Last Report</div>
-        <div class="kpi-value" style="font-size:18px;">Today</div>
-        <div class="kpi-sub">Weekly summary · May 28</div>
+        <div class="kpi-value" style="font-size:18px;" id="stat-last-report">—</div>
+        <div class="kpi-sub" id="stat-last-report-sub">No reports yet this session</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Scheduled Reports</div>
@@ -226,7 +226,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     </div>
 
     <!-- AI REPORT GENERATOR -->
-    <div class="card fade-3" style="margin-bottom:20px;" id="reportOutputCard" style="display:none;">
+    <div class="card fade-3" style="margin-bottom:20px;display:none;" id="reportOutputCard">
       <div class="card-header">
         <div class="card-title" id="reportOutputTitle">Generated Report</div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -238,11 +238,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     </div>
 
     <!-- CUSTOM REPORT INPUT -->
-    <div class="card fade-3" style="margin-bottom:20px;" id="customReportCard" style="display:none;">
+    <div class="card fade-3" style="margin-bottom:20px;display:none;" id="customReportCard">
       <div class="card-header"><div class="card-title">Custom Report Request</div></div>
       <div class="card-body">
         <div style="font-size:12px;color:var(--text-mid);margin-bottom:12px;">Describe what you want HRZN to analyze and report on:</div>
-        <textarea id="customReportInput" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px;outline:none;transition:border-color 0.2s;" placeholder="e.g. Analyze my Tuesday performance vs Friday and tell me why Tuesday is so much slower..." onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <textarea id="customReportInput" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px;outline:none;transition:border-color 0.2s;" placeholder="e.g. Compare my slowest day to my busiest day and tell me what's driving the difference..." onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"></textarea>
         <div style="margin-top:12px;">
           <button class="generate-btn" onclick="generateCustomReport()">&#9654; Generate Report</button>
         </div>
@@ -270,7 +270,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div style="font-size:11px;color:var(--text-dim);">Reports generated this session appear above. Connect your account to save history across sessions · <span style="color:var(--gold);cursor:pointer;">Set up account →</span></div>
       </div>
     </div>
-  
+
   <!-- DISCLAIMER FOOTER -->
   <div style="padding:16px 28px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;">
     <p style="font-size:10px;color:var(--text-dim);line-height:1.6;max-width:900px;">
@@ -287,58 +287,7 @@ function getTheme(){return localStorage.getItem(THEME_KEY)||'dark';}
 function applyTheme(theme){const body=document.body,track=document.getElementById('toggleTrack'),label=document.getElementById('toggleLabel'),logo=document.getElementById('sidebarLogo');if(theme==='light'){body.classList.add('light');if(track)track.classList.add('on');if(label)label.textContent='Light mode';if(logo)logo.style.filter='brightness(0.15) saturate(0.5)';}else{body.classList.remove('light');if(track)track.classList.remove('on');if(label)label.textContent='Dark mode';if(logo)logo.style.filter='none';}}
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(p){ hrznNavigate(p); }
-function getRC(){
-  let salesData = {};
-  try {
-    const saved = localStorage.getItem('hrzn-sales-data');
-    if(saved) salesData = JSON.parse(saved);
-  } catch(e){}
-  const netSales = salesData.netSales || 211844;
-  const grossSales = salesData.grossSales || 217613;
-  const amountCollected = salesData.amountCollected || 268466;
-  const tips = salesData.tips || 33642;
-  const discounts = salesData.discounts || 5769;
-  const taxes = salesData.taxes || 20657;
-  const itemsSold = salesData.itemsSold || 15473;
-  const avgCheck = salesData.avgCheck || 13.70;
-  const period = salesData.period || 'Jan 1 – May 28, 2026';
-  const creditCard = (salesData.tenders||{}).creditCard || 199893;
-  const debitCard = (salesData.tenders||{}).debitCard || 48860;
-  const doorDash = (salesData.tenders||{}).doorDash || 9807;
-  const cash = (salesData.tenders||{}).cash || 9906;
-  const doorDashPct = amountCollected > 0 ? (doorDash/amountCollected*100).toFixed(1) : 3.7;
-  const discountPct = grossSales > 0 ? (discounts/grossSales*100).toFixed(2) : 2.65;
-  const tipsPct = netSales > 0 ? (tips/netSales*100).toFixed(1) : 15.9;
-  const months = 4.9;
-  const monthlyAvg = Math.round(netSales / months);
-  const weeklyAvg = Math.round(netSales / (148/7));
-  const settings2 = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const bizName = settings2.businessName || 'this restaurant';
-  const digitalTotal = creditCard + debitCard + doorDash;
-  const digitalPct = amountCollected > 0 ? (digitalTotal/amountCollected*100).toFixed(1) : 96.3;
-  return `You are HRZN, an elite AI business operator for ${bizName}, a restaurant in Los Angeles.
-REAL BUSINESS DATA (from Clover POS, ${period}):
-- Gross Sales: $${Math.round(grossSales).toLocaleString()}
-- Discounts: $${Math.round(discounts).toLocaleString()} (${discountPct}% of gross — EXCELLENT, well below 3% threshold)
-- Net Sales: $${Math.round(netSales).toLocaleString()}
-- Tips: $${Math.round(tips).toLocaleString()} (${tipsPct}% of net sales — STRONG, above 15% benchmark)
-- Taxes & Fees: $${Math.round(taxes).toLocaleString()}
-- Total Collected: $${Math.round(amountCollected).toLocaleString()}
-- Items Sold: ${itemsSold.toLocaleString()}
-- Avg Item Price: $${avgCheck} vs $15.00 target
-- Monthly Average Revenue: ~$${monthlyAvg.toLocaleString()}/month
-- Weekly Average Revenue: ~$${weeklyAvg.toLocaleString()}/week
-PAYMENT METHODS:
-- Credit Card: $${Math.round(creditCard).toLocaleString()} (${(creditCard/amountCollected*100).toFixed(1)}%)
-- Debit Card: $${Math.round(debitCard).toLocaleString()} (${(debitCard/amountCollected*100).toFixed(1)}%)
-- DoorDash: $${Math.round(doorDash).toLocaleString()} (${doorDashPct}% — below 10% target, growth opportunity)
-- Cash: $${Math.round(cash).toLocaleString()} (${(cash/amountCollected*100).toFixed(1)}%)
-- Digital Total (credit+debit+DoorDash): ${digitalPct}% of collected
-LABOR (estimated): Avg ~32% of revenue. Target is 28%. Tuesday tends to be overstaffed.
-MENU items: Salmon Handroll, Yellowtail Handroll, Spicy Tuna Handroll, Wagyu Handroll, Shrimp Handroll, Crab Handroll, Edamame, Miso Soup.
-Be specific, reference real numbers from the data above, give concrete action steps.`;
-}
-const RC = getRC();
+
 function renderMarkdown(text){
   let html = text
     .replace(/&/g,'&amp;')
@@ -446,6 +395,16 @@ async function generateSpecificReport(type) {
   const digitalPct = d.amountCollected > 0 ? (digitalTotal/d.amountCollected*100).toFixed(1) : 0;
   const priceGap = Math.round((15.00-(d.avgCheck||0))*(d.itemsSold||0));
   const ddGapAnn = Math.round(((d.netSales||0)*0.10-(t.doorDash||0))/monthsReal*12);
+
+  // Labor rate from the central labor-rate chain (Item 2.5), not a hardcoded 32%.
+  let laborMeta = null;
+  try { if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(d); } catch(e) {}
+  const laborRate = laborMeta && laborMeta.rate != null ? Number(laborMeta.rate) : null;
+  const laborIsEstimate = !laborMeta || laborMeta.estimate !== false;
+  const laborLine = laborRate != null
+    ? ('Labor: ' + laborRate.toFixed(1) + '% of revenue' + (laborIsEstimate ? ' (estimated — no live payroll connected)' : '') + ' vs 28% target')
+    : 'Labor: not enough data to state a labor percentage; do not invent one';
+
   const reportPrompts = {
     weekly: `Write a comprehensive weekly business summary report for ${bizName}. Use this EXACT real data:
 - Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'} (${Math.round(weeksReal)} weeks)
@@ -467,17 +426,15 @@ Format as a professional report with sections: Revenue Overview, Key Wins, Areas
 Format as P&L report with Revenue, Cost Analysis, Profitability, and Recommendations sections.`,
     labor: `Write a detailed labor efficiency report for ${bizName}. Use this EXACT real data:
 - Revenue: $${Math.round(d.netSales||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
-- Estimated labor: 32% of revenue (above 28% target)
+- ${laborLine}
 - Weekly revenue: $${weeklyReal.toLocaleString()} | Items/week: ${Math.round((d.itemsSold||0)/weeksReal)}
-- Strongest day: Friday ($${Math.round(weeklyReal*0.2072).toLocaleString()}) — labor ~23%
-- Weakest day: Tuesday ($${Math.round(weeklyReal*0.10).toLocaleString()}) — labor ~49%
-Format with: Labor Overview, Day-by-Day Analysis, Staffing Recommendations, Savings Opportunity.`,
+Do not fabricate day-by-day labor percentages or single out a specific weekday unless that data is provided above. If day-level data is not available, say so and give general staffing guidance instead.
+Format with: Labor Overview, Staffing Recommendations, Savings Opportunity.`,
     menu: `Write a menu profitability report for ${bizName}. Use this EXACT real data:
 - Items sold: ${(d.itemsSold||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
 - Avg item price: $${(d.avgCheck||0).toFixed(2)} vs $15 target
 - Revenue gap from pricing: $${priceGap.toLocaleString()} this period
 - Net sales: $${Math.round(d.netSales||0).toLocaleString()}
-- Known menu items: Salmon Handroll, Yellowtail Handroll, Spicy Tuna Handroll, Wagyu Handroll, Shrimp Handroll, Crab Handroll, Edamame, Miso Soup
 Format with: Pricing Analysis, Menu Engineering Recommendations, Top Items to Promote, Price Increase Strategy.`,
     executive: `Write an executive summary for ${bizName} suitable for investors or lenders. Use this EXACT real data:
 - Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'}
@@ -537,6 +494,12 @@ async function generateCustomReport() {
 function addToReportHistory(reportTitle, type) {
   const counter = document.getElementById('stat-reports-count');
   if(counter) counter.textContent = parseInt(counter.textContent||0) + 1;
+  // Update the "Last Report" KPI to reflect the real most-recent report.
+  const nowLabel = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const lastEl = document.getElementById('stat-last-report');
+  const lastSubEl = document.getElementById('stat-last-report-sub');
+  if(lastEl) lastEl.textContent = 'Today';
+  if(lastSubEl) lastSubEl.textContent = reportTitle + ' · ' + nowLabel;
   const list = document.getElementById('report-history-list');
   if(!list) return;
   const empty = list.querySelector('[data-empty]');
@@ -595,19 +558,17 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e) {}
   if (hrznIsDemo()) {
     const banner = document.getElementById('demo-banner');
-    if (banner) banner.style.display = 'flex';
+    if (banner) {
+      // Fill in the business name from real settings instead of printing a literal placeholder.
+      try {
+        const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const bizName = settings.businessName || 'Sama Handroll';
+        const txt = document.getElementById('demo-banner-text');
+        if (txt) txt.textContent = "👀 You're viewing a demo with sample data from " + bizName;
+      } catch(e) {}
+      banner.style.display = 'flex';
+    }
   }
-  try {
-    const d = HRZN.getData();
-    
-    const weekly = Math.round((d.netSales||0)/months/4.33);
-    
-    const fmt = n => '$'+Math.round(n).toLocaleString();
-    const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-    set('hist-rev-this', fmt(weekly));
-    set('hist-rev-last', fmt(Math.round(weekly*0.95)));
-    set('hist-rev-month', fmt(monthly));
-  } catch(e) {}
   renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"},{label:"Item Sales",key:"hrzn-data-items",oldKey:""}]);
   HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
