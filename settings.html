@@ -225,11 +225,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
               <div class="field-row">
                 <div><div class="field-label">Business Type</div><div class="field-desc">Your industry category</div></div>
                 <select class="field-select" id="biz-type" onchange="markDirty()">
-                  <option selected>Restaurant</option>
-                  <option>Retail</option>
-                  <option>E-Commerce</option>
-                  <option>Service Business</option>
-                  <option>Other</option>
+                  <option value="restaurant" selected>Restaurant</option>
+                  <option value="retail">Retail</option>
+                  <option value="online">E-Commerce</option>
+                  <option value="service">Service Business</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
               <div class="field-row">
@@ -482,6 +482,7 @@ function saveAll(){
     businessName: document.getElementById('biz-name')?.value,
     bizLocation: document.getElementById('biz-location')?.value,
     bizType: document.getElementById('biz-type')?.value,
+    businessType: document.getElementById('biz-type')?.value,
     bizSpecialty: document.getElementById('biz-specialty')?.value,
     ownerName: document.getElementById('owner-name')?.value,
     ownerEmail: document.getElementById('owner-email')?.value,
@@ -544,6 +545,13 @@ function loadSettings(){
     const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
     if(s.bizName || s.businessName) document.getElementById('biz-name').value = s.bizName || s.businessName;
     if(s.bizLocation) document.getElementById('biz-location').value = s.bizLocation;
+    // Restore business type dropdown (read new key, fall back to legacy bizType).
+    const savedType = s.businessType || s.bizType;
+    if(savedType){
+      const typeEl = document.getElementById('biz-type');
+      if(typeEl) typeEl.value = String(savedType).toLowerCase();
+    }
+    if(s.bizSpecialty){ const sp = document.getElementById('biz-specialty'); if(sp) sp.value = s.bizSpecialty; }
     if(s.ownerName) document.getElementById('owner-name').value = s.ownerName;
     if(s.ownerEmail) document.getElementById('owner-email').value = s.ownerEmail;
     if(s.ownerPhone) document.getElementById('owner-phone').value = s.ownerPhone;
