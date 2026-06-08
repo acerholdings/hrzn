@@ -247,13 +247,15 @@ function buildAlertsContext(d) {
   const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
   const laborRate = laborMeta.value;
   const laborTgt = (settings.targets && settings.targets.labor) || 28;
+  // Real weekly revenue target (matches the value getMetrics uses for the gap math).
+  const weeklyRevTgt = parseFloat((settings.targets && settings.targets.revenue) || 12000);
 
   const lines = [
     'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
     '',
     'EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:',
     'Period: ' + (d.periodStart||'Jan 1') + ' – ' + (d.periodEnd||'May 28, 2026') + ' (' + Math.round(weeks) + ' weeks, ' + months.toFixed(1) + ' months)',
-    'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $12,000 target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
+    'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $' + weeklyRevTgt.toLocaleString() + ' target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
     'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross — EXCELLENT WIN (below 3%)',
     'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'),
     'Labor cost: ' + laborRate + '% of revenue (ACTUAL' + (laborMeta.isEstimate ? ', estimated' : '') + ') vs ' + laborTgt + '% target — ' + (laborRate > laborTgt ? (laborRate-laborTgt).toFixed(0)+' points ABOVE target' : 'at or below target') + '. Use ' + laborRate + '% as the actual labor rate; do NOT use the ' + laborTgt + '% target as if it were the actual.',
