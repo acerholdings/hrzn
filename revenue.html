@@ -153,8 +153,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="card">
         <div class="card-header">
           <div class="card-title">Revenue Insights <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
+          <div style="display:flex;gap:8px;">
+            <button id="revRefreshBtn" onclick="generateRevenueInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Refresh</button>
+            <button id="revMoreBtn" onclick="generateMoreRevenueInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Generate More</button>
+          </div>
         </div>
-        <div id="rev-insights-list"></div>
+        <div id="rev-insights-list" style="max-height:440px;overflow-y:auto;"></div>
       </div>
 
     </div>
@@ -420,26 +424,8 @@ const months = HRZN.getMonths(d);
     }).join('');
   }
 
-  // Revenue Insights
-  const insightsList = document.getElementById('rev-insights-list');
-  if(insightsList) {
-    const weekendEst = Math.round((weekly * dayWeights.fri/7) + (weekly * dayWeights.sat/7) + (weekly * dayWeights.sun/7));
-    const weekendPct = Math.round(weekendEst / weekly * 100);
-    const tueEst = fmt(Math.round(weekly * dayWeights.tue/7));
-    const friEst = fmt(Math.round(weekly * dayWeights.fri/7));
-    const insights = [
-      {icon:'📈', title:'Weekend is your strongest period', body:'Fri–Sun estimated at '+fmt(weekendEst)+' (~'+weekendPct+'% of weekly revenue). Protect staffing on these days.'},
-      {icon:'⚠️', title:'Tuesday needs attention', body:'Tuesday estimated at '+tueEst+' — your slowest day. A Happy Hour promotion could close the gap.'},
-      {icon:'🎯', title:'Friday is your peak day', body:'Friday estimated at '+friEst+' — 45% above daily average. Your most efficient and profitable day.'},
-    ];
-    insightsList.innerHTML = insights.map(ins =>
-      '<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">' +
-      '<div style="font-size:18px;flex-shrink:0;">' + ins.icon + '</div>' +
-      '<div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">' + ins.title + '</div>' +
-      '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">' + ins.body + '</div></div></div>'
-    ).join('') +
-    '<div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">⚠ All estimates · real day-by-day data needs Clover live API</div>';
-  }
+  // Revenue Insights — real AI via central engine (replaces old hardcoded array)
+  generateRevenueInsights();
 
   // Daily breakdown table
   const tableBody = document.getElementById('rev-table-body');
@@ -476,6 +462,140 @@ const months = HRZN.getMonths(d);
     tableBody.innerHTML = rows.join('');
   }
 });
+
+// ── REVENUE AI INSIGHTS (central engine: anti-repetition + honest-depth + ceiling) ──
+let _revInsights = [];
+
+function buildRevenueContext() {
+  const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
+  const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const bizName = s.businessName || s.bizName || 'this business';
+  const weeks = m.weeks || 1;
+  const weekly = Math.round((d.netSales||0) / weeks);
+  const daily = Math.round(weekly / 7);
+  const weeklyItems = Math.round((d.itemsSold||0) / weeks);
+  const targetRev = (s.targets && s.targets.revenue) || m.targetRevenue || 12000;
+  const targetCheck = (s.targets && s.targets.check) || m.targetCheck || 15;
+  return `Analyze the revenue data for ${bizName}. Use ONLY the aggregate figures below. Do NOT invent day-of-week breakdowns, lunch/dinner splits, or per-day patterns — the data does not contain them (that requires Clover live integration).
+
+EXACT DATA — USE THESE NUMBERS ONLY:
+Total net sales: $${Math.round(d.netSales||0).toLocaleString()} over ${weeks.toFixed(1)} weeks
+Weekly revenue: $${weekly.toLocaleString()} vs $${(+targetRev).toLocaleString()} target — gap = $${(weekly - targetRev).toLocaleString()}/week
+Daily average: $${daily.toLocaleString()}
+Items sold per week: ${weeklyItems.toLocaleString()}
+Average check: $${d.avgCheck||0} vs $${targetCheck} target
+
+Focus on revenue trends, the gap to target, average-check opportunity, and the highest-impact lever to grow revenue. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
+}
+
+function renderRevInsights(list, container, append) {
+  const cardsHtml = list.map(ins =>
+    '<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">' +
+    '<div style="font-size:18px;flex-shrink:0;">'+(ins.emoji||'•')+'</div>' +
+    '<div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">'+ins.title+'</div>' +
+    '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div></div></div>'
+  ).join('');
+  if (append) {
+    const divider = '<div style="padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);">Additional Insights</div>';
+    container.insertAdjacentHTML('beforeend', divider + cardsHtml);
+    container.scrollTop = container.scrollHeight;
+  } else {
+    container.innerHTML = cardsHtml +
+      '<div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">⚠ Based on aggregate revenue · day-by-day data needs Clover live API</div>';
+  }
+}
+
+async function callRevInsights(opts) {
+  const { system, prompt } = HRZN.getInsightPrompt('revenue', buildRevenueContext(), opts);
+  const r = await fetch('/api/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-haiku-4-5-20251001', max_tokens:1500,
+      system, messages:[{role:'user', content: prompt}]
+    })
+  });
+  const data = await r.json();
+  const text = (data.content?.[0]?.text || '[]').replace(/```json|```/g,'').trim();
+  return JSON.parse(text);
+}
+
+async function generateRevenueInsights() {
+  const container = document.getElementById('rev-insights-list');
+  const refreshBtn = document.getElementById('revRefreshBtn');
+  const moreBtn = document.getElementById('revMoreBtn');
+  if (!container) return;
+  if (typeof hrznHasData === 'function' && !hrznHasData()) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to get AI revenue insights.</div>';
+    if (refreshBtn) refreshBtn.disabled = true;
+    if (moreBtn) moreBtn.disabled = true;
+    return;
+  }
+  container.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Analyzing revenue data...</div>';
+  if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = 'Analyzing...'; }
+  if (moreBtn) moreBtn.disabled = true;
+  try {
+    const priorTitles = _revInsights.map(i => i.title);
+    const insights = await callRevInsights(priorTitles.length ? { count: 6, exclude: priorTitles } : { count: 6 });
+    _revInsights = Array.isArray(insights) ? insights : [];
+    _revInsights._tapped = false;
+    if (_revInsights.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Not enough revenue data yet for specific insights. Upload more history for deeper analysis.</div>';
+    } else {
+      renderRevInsights(_revInsights, container, false);
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Could not generate insights: '+e.message+'</div>';
+  } finally {
+    if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = '+ Refresh'; }
+    updateRevMoreBtn();
+  }
+}
+
+async function generateMoreRevenueInsights() {
+  const container = document.getElementById('rev-insights-list');
+  const moreBtn = document.getElementById('revMoreBtn');
+  if (!container) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_revInsights.length >= ceiling) { updateRevMoreBtn(); return; }
+  if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Generating...'; }
+  try {
+    const remaining = ceiling - _revInsights.length;
+    const asked = Math.min(6, remaining);
+    const insights = await callRevInsights({
+      count: asked, more: true, exclude: _revInsights.map(i => i.title)
+    });
+    const fresh = Array.isArray(insights) ? insights : [];
+    if (fresh.length === 0) {
+      container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Upload more history for deeper analysis.</div>');
+      _revInsights._tapped = true;
+    } else {
+      renderRevInsights(fresh, container, true);
+      _revInsights = _revInsights.concat(fresh);
+      if (fresh.length < asked) {
+        container.insertAdjacentHTML('beforeend', '<div style="padding:12px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">That\'s the distinct revenue analysis your current data supports. Upload more history for deeper insights.</div>');
+        _revInsights._tapped = true;
+      }
+    }
+  } catch(e) {
+    container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--red);">Could not generate more: '+e.message+'</div>');
+  } finally {
+    updateRevMoreBtn();
+  }
+}
+
+function updateRevMoreBtn() {
+  const moreBtn = document.getElementById('revMoreBtn');
+  if (!moreBtn) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_revInsights.length >= ceiling || _revInsights._tapped) {
+    moreBtn.disabled = true; moreBtn.textContent = 'Max insights';
+    moreBtn.style.opacity = '0.5'; moreBtn.style.cursor = 'default';
+  } else {
+    moreBtn.disabled = false; moreBtn.textContent = '+ Generate More';
+    moreBtn.style.opacity = '1'; moreBtn.style.cursor = 'pointer';
+  }
+}
 </script>
 
 <!-- PAYWALL MODAL -->
