@@ -160,7 +160,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <button id="laborMoreBtn" onclick="generateMoreLaborInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Generate More</button>
           </div>
         </div>
-        <div id="labor-insights-list"></div>
+        <div id="labor-insights-list" style="max-height:440px;overflow-y:auto;"></div>
       </div>
 
     </div>
@@ -520,6 +520,7 @@ function renderLaborInsights(list, container, append) {
   if (append) {
     const divider = '<div style="padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);">Additional Insights</div>';
     container.insertAdjacentHTML('beforeend', divider + cardsHtml);
+    container.scrollTop = container.scrollHeight;  // show the newly added insights
   } else {
     container.innerHTML = cardsHtml +
       '<div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">⚠ Labor rate may be an estimate · connect Gusto for real per-shift data</div>';
@@ -555,8 +556,12 @@ async function generateLaborInsights() {
   if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = 'Analyzing...'; }
   if (moreBtn) moreBtn.disabled = true;
   try {
-    const insights = await callLaborInsights({ count: 6 });
+    // Refresh asks for a genuinely different angle than what's currently shown,
+    // so clicking Refresh doesn't just re-derive the same headline insights.
+    const priorTitles = _laborInsights.map(i => i.title);
+    const insights = await callLaborInsights(priorTitles.length ? { count: 6, exclude: priorTitles } : { count: 6 });
     _laborInsights = Array.isArray(insights) ? insights : [];
+    _laborInsights._tapped = false;
     if (_laborInsights.length === 0) {
       container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Not enough labor data yet for specific insights. Upload more history or connect Gusto for deeper analysis.</div>';
     } else {
