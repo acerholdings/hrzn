@@ -296,7 +296,19 @@ async function sendMessage(){
 function getTargets(){
   try{
     const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
-    return {labor:parseFloat(s.targets?.labor||28),food:parseFloat(s.targets?.food||30),weeklyRevenue:parseFloat(s.targets?.revenue||12000),avgCheck:parseFloat(s.targets?.check||15),doordash:parseFloat(s.targets?.doordash||10),discount:parseFloat(s.targets?.discount||5)};
+    // Category-aware fallbacks: user's saved targets always win; when a target
+    // isn't set, fall back to the business category's benchmark (not hardcoded restaurant).
+    const b = (typeof HRZN!=='undefined' && HRZN.getBenchmarks) ? HRZN.getBenchmarks() : {};
+    const t = s.targets || {};
+    const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
+    return {
+      labor:        num(t.labor,    b.laborPct != null ? b.laborPct : 28),
+      food:         num(t.food,     b.cogsPct  != null ? b.cogsPct  : 30),
+      weeklyRevenue:num(t.revenue,  12000),                                  // no benchmark equivalent
+      avgCheck:     num(t.check,    b.avgTicket ? b.avgTicket : 15),
+      doordash:     num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
+      discount:     num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 5)
+    };
   }catch(e){return {labor:28,food:30,weeklyRevenue:12000,avgCheck:15,doordash:10,discount:5};}
 }
 
@@ -553,11 +565,18 @@ document.addEventListener('DOMContentLoaded',()=>{
     } catch(e) {}
     const alertsList = document.getElementById('op-alerts-list');
 
+    // Category awareness: which concepts apply, and what to call the avg-ticket metric.
+    const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+    const concepts = bm.concepts || { delivery:true };
+    const ticketLabel = bm.avgTicketLabel || 'Avg check';
+
     const alerts = [];
 
     if(laborPct != null && laborPct > t.labor) alerts.push({color:'var(--red)', text:'Labor at '+laborPct.toFixed(0)+'% vs '+t.labor+'% target', q:'How do I get labor costs down to '+t.labor+'%?'});
-    if(doorDashPct < t.doordash) alerts.push({color:'var(--red)', text:'DoorDash only '+doorDashPct+'% of revenue', q:'How should I grow DoorDash revenue?'});
-    if(avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:'Avg check $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase average check size?'});
+    // Delivery alert only for categories where delivery is a relevant concept (e.g. restaurants).
+    if(concepts.delivery && doorDashPct < t.doordash) alerts.push({color:'var(--red)', text:'DoorDash only '+doorDashPct+'% of revenue', q:'How should I grow DoorDash revenue?'});
+    // Avg-ticket alert only when the category has a meaningful target (>0), using its own label.
+    if(t.avgCheck > 0 && avgCheck > 0 && avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:ticketLabel+' $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase '+ticketLabel.toLowerCase()+'?'});
     if(discountPct > t.discount) alerts.push({color:'var(--orange)', text:'Discounts at '+discountPct+'% of gross sales', q:'Are my discounts hurting my margins?'});
     if(weekly < t.weeklyRevenue) alerts.push({color:'var(--orange)', text:'Weekly avg $'+Math.round(weekly).toLocaleString()+' below target', q:'What can I do to increase weekly revenue?'});
 

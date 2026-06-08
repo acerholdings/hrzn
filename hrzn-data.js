@@ -404,15 +404,19 @@ const HRZN = {
     try {
       const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
       const tg = s.targets || {};
+      // Category-aware fallbacks: user's saved targets win; otherwise fall back to the
+      // business category's benchmark (not hardcoded restaurant numbers).
+      const b = this.getBenchmarks ? this.getBenchmarks() : {};
+      const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
       return {
-        labor: parseFloat(tg.labor || 28),
-        food: parseFloat(tg.food || 30),
-        margin: parseFloat(tg.margin || 15),
-        weeklyRevenue: parseFloat(tg.revenue || 12000),
-        monthlyRevenue: parseFloat(tg.monthly || 50000),
-        avgCheck: parseFloat(tg.check || 15),
-        doordash: parseFloat(tg.doordash || 10),
-        discount: parseFloat(tg.discount || 5),
+        labor: num(tg.labor, b.laborPct != null ? b.laborPct : 28),
+        food: num(tg.food, b.cogsPct != null ? b.cogsPct : 30),
+        margin: num(tg.margin, b.netMarginTarget != null ? b.netMarginTarget : 15),
+        weeklyRevenue: num(tg.revenue, 12000),         // no benchmark equivalent
+        monthlyRevenue: num(tg.monthly, 50000),        // no benchmark equivalent
+        avgCheck: num(tg.check, b.avgTicket ? b.avgTicket : 15),
+        doordash: num(tg.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
+        discount: num(tg.discount, b.discountMaxPct != null ? b.discountMaxPct : 5),
       };
     } catch (e) {
       return { labor:28, food:30, margin:15, weeklyRevenue:12000, monthlyRevenue:50000, avgCheck:15, doordash:10, discount:5 };
@@ -435,6 +439,9 @@ const HRZN = {
       const discountPct = d.grossSales > 0 ? parseFloat(((d.discounts || 0) / d.grossSales * 100).toFixed(1)) : 0;
       const avgCheck = parseFloat(d.avgCheck || 0);
       const laborPct = this.getLaborRate ? this.getLaborRate() : 32;
+      const bm = this.getBenchmarks ? this.getBenchmarks() : {};
+      // Avg-ticket only counts when the category actually defines a ticket target (restaurants).
+      const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
 
       let count = 0;
       // Critical
@@ -443,7 +450,7 @@ const HRZN = {
       // Warning
       if (laborPct > t.labor && laborPct <= t.labor + 4) count++; // labor slightly over
       if (discountPct > t.discount) count++;                // discounts over target
-      if (avgCheck > 0 && avgCheck < t.avgCheck) count++;   // avg check below target
+      if (ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck) count++;   // avg check below target
       return count;
     } catch (e) {
       return 0;
