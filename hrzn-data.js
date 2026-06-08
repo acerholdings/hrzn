@@ -450,7 +450,123 @@ const HRZN = {
     }
   },
 
+  // ── CENTRAL BENCHMARK SOURCE (single source of truth, per business category) ──
+  // These are user-overridable DEFAULTS (starting estimates from industry data),
+  // not fixed truths. Each category lists its benchmark numbers, the cost "pillars"
+  // it cares about, and which Settings fields should be visible for it.
+  // Restaurant = HRZN's original numbers (unchanged behaviour).
+  BENCHMARKS: {
+    restaurant: {
+      label: 'Restaurant',
+      laborPct: 28,          // % of revenue (target)
+      cogsPct: 30,           // food cost
+      cogsLabel: 'Food Cost',
+      grossMarginTarget: 70,
+      netMarginTarget: 10,
+      avgTicket: 15,         // avg check / item
+      avgTicketLabel: 'Avg Check',
+      discountMaxPct: 5,
+      // restaurant-specific extras
+      deliveryTargetPct: 10, // DoorDash etc.
+      tipsTargetPct: 15,
+      pillars: ['revenue','cogs','labor','rent','marketing'],
+      settingsFields: ['laborPct','cogsPct','avgTicket','deliveryTargetPct'],
+      concepts: { delivery: true, tips: true, dayparts: true } // lunch/dinner etc.
+    },
+    retail: {
+      label: 'Retail',
+      laborPct: 18,          // specialty retail 10-20%
+      cogsPct: 60,           // ~40% gross margin
+      cogsLabel: 'Cost of Goods',
+      grossMarginTarget: 40,
+      netMarginTarget: 5,
+      avgTicket: 0,          // no fixed default; user sets
+      avgTicketLabel: 'Avg Transaction',
+      discountMaxPct: 10,
+      pillars: ['revenue','cogs','labor','rent','marketing'],
+      settingsFields: ['laborPct','cogsPct','avgTicket'],
+      concepts: { delivery: false, tips: false, dayparts: false }
+    },
+    online: {
+      label: 'Online / E-commerce',
+      laborPct: 0,           // often founder-run; not a primary lever
+      cogsPct: 55,           // ~45% gross margin target
+      cogsLabel: 'Cost of Goods',
+      grossMarginTarget: 45,
+      netMarginTarget: 10,
+      avgTicket: 0,          // AOV — user sets
+      avgTicketLabel: 'Avg Order Value',
+      discountMaxPct: 10,
+      // online-specific extras (% of revenue)
+      shippingPct: 12,
+      returnsPct: 8,
+      cacPct: 20,            // customer acquisition / ad spend
+      pillars: ['revenue','cogs','shipping','returns','marketing','fees'],
+      settingsFields: ['cogsPct','avgTicket','shippingPct','returnsPct','cacPct'],
+      concepts: { delivery: false, tips: false, dayparts: false }
+    }
+  },
+
+  // Returns the benchmark set for the user's current business type (defaults to restaurant).
+  // Merges any user overrides saved under settings.benchmarks[category].
+  getBenchmarks() {
+    let cat = 'restaurant';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const bt = (s.businessType || 'restaurant').toLowerCase();
+        if (this.BENCHMARKS[bt]) cat = bt;
+        const base = this.BENCHMARKS[cat];
+        const overrides = (s.benchmarks && s.benchmarks[cat]) || {};
+        return Object.assign({ _category: cat }, base, overrides);
+      }
+    } catch (e) {}
+    return Object.assign({ _category: cat }, this.BENCHMARKS[cat]);
+  },
+
   getBenchmarkContext() {
+    // Category-aware: restaurants get the original full prompt (no behaviour drift).
+    // Retail / online get a tailored benchmark block built from the central BENCHMARKS source,
+    // so non-restaurant users no longer receive food-cost / tips / delivery advice.
+    let cat = 'restaurant';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const bt = (s.businessType || 'restaurant').toLowerCase();
+        if (this.BENCHMARKS[bt]) cat = bt;
+      }
+    } catch (e) {}
+
+    if (cat !== 'restaurant') {
+      const b = this.getBenchmarks();
+      const lines = [];
+      lines.push(`${b.label.toUpperCase()} INDUSTRY BENCHMARKS:`);
+      lines.push('');
+      lines.push('REVENUE HEALTH:');
+      lines.push('- Revenue vs target: >15% below = critical, 5-15% below = warning, on target = healthy');
+      lines.push('- Revenue trend: improving period-over-period = positive; declining 2+ periods = alert');
+      lines.push('');
+      lines.push(`COST STRUCTURE (${b.label}):`);
+      lines.push(`- ${b.cogsLabel} (COGS): target ~${b.cogsPct}% of revenue (gross margin target ~${b.grossMarginTarget}%)`);
+      if (b.laborPct > 0) lines.push(`- Labor: target ~${b.laborPct}% of revenue`);
+      if (b.shippingPct != null) lines.push(`- Shipping: target ~${b.shippingPct}% of revenue`);
+      if (b.returnsPct != null) lines.push(`- Returns: ~${b.returnsPct}% of revenue is typical — above that, investigate`);
+      if (b.cacPct != null) lines.push(`- Customer acquisition / ad spend: ~${b.cacPct}% of revenue; watch contribution margin after CAC`);
+      lines.push('');
+      lines.push('PROFITABILITY:');
+      lines.push(`- Gross margin target ~${b.grossMarginTarget}%; net margin target ~${b.netMarginTarget}%`);
+      lines.push('- Net margin negative = urgent action required');
+      lines.push('');
+      lines.push('DISCOUNTS & PROMOTIONS:');
+      lines.push(`- Keep discounts under ~${b.discountMaxPct}% of gross sales; do not flag below that as a problem`);
+      lines.push('');
+      lines.push('IMPORTANT: This is a ' + b.label + ' business. Do NOT apply restaurant-specific concepts');
+      lines.push('(food cost, covers, lunch/dinner dayparts, tips, DoorDash) unless the data clearly shows them.');
+      lines.push('These benchmarks are starting estimates and may be overridden by the owner in Settings.');
+      return '\n' + lines.join('\n') + '\n';
+    }
+
+    // ── RESTAURANT (original, unchanged) ──
     return `
 RESTAURANT & BUSINESS INDUSTRY BENCHMARKS:
 
