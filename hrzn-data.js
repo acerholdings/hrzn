@@ -261,12 +261,6 @@ async function hrznLoadFromCloud() {
       merged.targets.check = merged.targets.check || data.settings.target_avg_check;
       merged.targets.doordash = merged.targets.doordash || data.settings.target_doordash_pct;
       merged.targets.discount = merged.targets.discount || data.settings.target_discount_pct || 5;
-      // Restore the manual labor RATE (estimate), if one was synced. Only set it
-      // when there's no local value yet, so we never clobber an unsaved local edit.
-      // Shaped like setLaborRate() output so getLaborRateMeta() reads it as 'manual'.
-      if (data.settings.labor_rate_pct != null && !merged.laborRate) {
-        merged.laborRate = { value: +data.settings.labor_rate_pct, mode: 'fallback', _restoredFromCloud: true };
-      }
       // Also restore business info if synced
       if (data.settings.biz_name) merged.bizName = merged.bizName || data.settings.biz_name;
       if (data.settings.biz_name) merged.businessName = merged.businessName || data.settings.biz_name;
@@ -343,76 +337,6 @@ const HRZN = {
     doordash:  { opportunity: 5, good: [5, 15],     high: 20    },
     rent:      { healthy: 8,    monitor: [8, 12],   problem: 12 },
     net_margin:{ healthy: [3, 9] }
-  },
-
-  // ── LABOR RATE (central source of truth) ─────────────────────────────────
-  // The labor RATE (%) flows through the same priority chain as the data source:
-  //   live API data  →  manual settings value  →  labeled hardcoded fallback.
-  // This replaces the old hardcoded `laborPct = 32` that used to live (and be
-  // duplicated) in labor.html and dashboard.html. Every page now reads from here
-  // so the number stays consistent everywhere.
-  //
-  // NOTE: this is the RATE only. The detailed per-staff / per-shift breakdown is
-  // live → empty-state (a human can't hand-type per-shift data), so there is
-  // deliberately no manual fallback for that — only for the rate.
-  LABOR: {
-    FALLBACK_PCT: 32,            // labeled hardcoded estimate, used when nothing else
-    // Health-score thresholds (were the inline 28/30/32 in dashboard.html).
-    // Score = excellent → good → ok → poor as the rate climbs.
-    SCORE: { excellent: 28, good: 30, ok: 32 },
-    SCORE_VALS: { excellent: 95, good: 80, ok: 70, poor: 55 },
-  },
-
-  // Returns the active labor rate (%) following live → manual → fallback.
-  // Reads live integration data first (when a live source is active and carries a
-  // labor rate), then any manually-entered rate in settings, then the fallback.
-  getLaborRate() {
-    return this.getLaborRateMeta().value;
-  },
-
-  // Returns { value, source, isEstimate } so pages can label the number correctly.
-  //   source: 'api' | 'manual' | 'fallback'
-  //   isEstimate: true unless it came from a live integration
-  getLaborRateMeta() {
-    const fb = { value: this.LABOR.FALLBACK_PCT, source: 'fallback', isEstimate: true };
-    if (typeof localStorage === 'undefined') return fb;
-
-    // 1) Live API data — only when a live source is active and supplies a rate.
-    try {
-      if (this.getSource() === 'api') {
-        const apiRaw = localStorage.getItem(this.KEYS.API);
-        if (apiRaw) {
-          const api = JSON.parse(apiRaw);
-          const apiRate = api.laborPct != null ? +api.laborPct
-                        : (api.labor && api.labor.pct != null ? +api.labor.pct : null);
-          if (apiRate != null && !isNaN(apiRate) && apiRate > 0) {
-            return { value: apiRate, source: 'api', isEstimate: false };
-          }
-        }
-      }
-    } catch(e) {}
-
-    // 2) Manual value entered in settings (stored with a mode marker — see setLaborRate).
-    try {
-      const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-      const manual = s.laborRate;
-      if (manual && manual.value != null && !isNaN(+manual.value) && +manual.value > 0) {
-        return { value: +manual.value, source: 'manual', isEstimate: true };
-      }
-    } catch(e) {}
-
-    // 3) Labeled hardcoded fallback.
-    return fb;
-  },
-
-  // Store a manually-entered labor rate. We always tag it with a "mode" marker so
-  // override / supplement modes can be added later WITHOUT restructuring storage.
-  // For now mode is always 'fallback' (use manual only when no live data exists).
-  setLaborRate(pct, mode) {
-    if (typeof localStorage === 'undefined') return;
-    const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    s.laborRate = { value: +pct, mode: mode || 'fallback' };
-    localStorage.setItem('hrzn-settings', JSON.stringify(s));
   },
 
   getBenchmarkContext() {
@@ -607,25 +531,62 @@ TARGETS (from operator settings):
 - DoorDash target: ${ddTarget}%`;
   },
 
-  getInsightPrompt(type, extra) {
+  // getInsightPrompt(type, extra, opts)
+  //   type  : 'sales' | 'pl' | 'labor' | 'revenue' | 'menu' | 'alerts' | 'operator' | 'reports'
+  //   extra : optional string of additional context (legacy 3rd-arg behavior preserved)
+  //   opts  : optional { exclude: [{title}|string], more: bool, count: number }
+  //           - exclude: insights already shown to the user, so the model avoids repeating them
+  //           - more:    true when this is a "Generate More" expansion (changes framing)
+  //           - count:   how many to ask for (default 6)
+  // Backward compatible: existing callers using (type) or (type, extra) are unaffected.
+  getInsightPrompt(type, extra, opts) {
     const d = this.getData();
     const system = this.getSystemPrompt(d);
-    const jsonFormat = 'Respond ONLY with a JSON array of exactly 6 objects. No markdown, no explanation. Each object: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact dollar amounts and one specific action."}';
-    const mixRule = 'Include a mix: aim for 3 wins (✅) and 3 opportunities (🎯). Do not make every insight negative.';
+    opts = opts || {};
+    const count = opts.count || 6;
+    const jsonFormat = `Respond ONLY with a JSON array of UP TO ${count} objects. No markdown, no explanation. Each object: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact dollar amounts and one specific action."}`;
+    const mixRule = 'Include a mix: aim for wins (✅) and opportunities (🎯). Do not make every insight negative.';
+
+    // Honest-depth rule: the model may return FEWER than requested (even zero) rather
+    // than padding, repeating, or inventing specifics the data does not support.
+    const honestyRule = 'CRITICAL: Only generate insights the data genuinely supports. If the data is too limited to produce the full number of DISTINCT, well-grounded insights, return FEWER — it is correct to return an empty array [] if there is nothing new and specific to say. Never invent numbers, never pad with generic advice, and never restate an earlier point in different words just to reach a count. Quality and honesty over quantity.';
+
+    // Anti-repetition: pass the actual prior insights so the model can avoid them.
+    // This replaces brittle "avoid topic X" guessing with the real exclusion set.
+    let exclusionRule = '';
+    const ex = (opts.exclude || []).map(e => typeof e === 'string' ? e : (e && e.title) || '').filter(Boolean);
+    if (ex.length) {
+      exclusionRule = `\n\nThe user has ALREADY been shown these insights — do NOT repeat them, reword them, or make the same point with different numbers:\n- ${ex.join('\n- ')}\nGenerate only genuinely NEW insights covering different aspects of the data. If no sufficiently different insights remain, return fewer or an empty array [].`;
+    }
+    const moreFraming = opts.more
+      ? 'These are ADDITIONAL insights beyond an earlier batch. Focus on different angles: operational improvements, growth opportunities, and second-order patterns rather than the headline figures already covered. '
+      : '';
 
     const prompts = {
-      sales: `Analyze the sales and payment data. Identify what is performing well and what needs attention. ${mixRule} ${jsonFormat}`,
-      pl: `Analyze the profit & loss data. Focus on cost structure vs industry benchmarks, margin health, and the single highest-impact action to improve profitability. ${mixRule} ${jsonFormat}`,
-      operator: 'You are a real-time AI business advisor. Answer the user question directly using the business data provided. Be concise, specific, and actionable. Use exact numbers from the data.',
+      sales:   `Analyze the sales and payment data. Identify what is performing well and what needs attention. ${mixRule}`,
+      pl:      `Analyze the profit & loss data. Focus on cost structure vs industry benchmarks, margin health, and the single highest-impact action to improve profitability. ${mixRule}`,
+      labor:   `Analyze the labor data — labor cost as a % of revenue vs the target and industry benchmarks, and where labor efficiency is strong or weak. Use ONLY figures present in the data; the labor rate may be an estimate, so frame accordingly and do not fabricate per-shift or per-employee specifics that require payroll integration. ${mixRule}`,
+      revenue: `Analyze the revenue data — trends, day-of-week and period patterns, average check, and the highest-impact lever to grow revenue. Use exact figures from the data. ${mixRule}`,
+      operator:'You are a real-time AI business advisor. Answer the user question directly using the business data provided. Be concise, specific, and actionable. Use exact numbers from the data.',
       reports: 'Generate a comprehensive business analysis using the data provided. Use exact numbers, compare against industry benchmarks, and provide prioritized recommendations.',
-      alerts: `Identify the 3 most critical issues and 3 strongest wins from the business data. Be specific with dollar amounts. ${jsonFormat}`,
-      menu: `Analyze menu performance and item mix. Identify top performers to promote, underperformers to cut or reprice, and pricing opportunities. ${mixRule} ${jsonFormat}`,
+      alerts:  `Identify the most critical issues and strongest wins from the business data. Be specific with dollar amounts. ${mixRule}`,
+      menu:    `Analyze menu performance and item mix. Identify top performers to promote, underperformers to cut or reprice, and pricing opportunities. ${mixRule}`,
     };
 
     const basePrompt = prompts[type] || prompts.sales;
-    const fullPrompt = extra ? basePrompt + '\n\nADDITIONAL CONTEXT: ' + extra : basePrompt;
+    // operator/reports are conversational/long-form — they don't take the JSON card format.
+    const cardTypes = ['sales', 'pl', 'labor', 'revenue', 'alerts', 'menu'];
+    let fullPrompt = moreFraming + basePrompt;
+    if (cardTypes.includes(type)) {
+      fullPrompt += ' ' + honestyRule + ' ' + jsonFormat + exclusionRule;
+    }
+    if (extra) fullPrompt += '\n\nADDITIONAL CONTEXT: ' + extra;
     return { system, prompt: fullPrompt };
   },
+
+  // Per-page hard ceiling on total insights (backstop for cost + against forced repetition).
+  // Pages start with 6 and allow "Generate More" up to this total.
+  INSIGHT_MAX: 18,
 
   // ── GET ACTIVE SOURCE ────────────────────────
   getSource() {
@@ -720,11 +681,8 @@ TARGETS (from operator settings):
     const combinedPeriod   = periodGap + ddGapPeriod + priceGapPeriod;
     const combinedAnnual   = months > 0 ? combinedPeriod / months * 12 : 0;
 
-    // ── LABOR (live → manual → fallback; see getLaborRateMeta) ──
-    const laborMeta        = this.getLaborRateMeta();
-    const laborPct         = laborMeta.value;
-    const laborSource      = laborMeta.source;     // 'api' | 'manual' | 'fallback'
-    const laborIsEstimate  = laborMeta.isEstimate; // false only when live
+    // ── LABOR (estimated until Gusto connects) ──
+    const laborPct         = 32; // ⚠ Est.
     const laborExcessPct   = Math.max(0, laborPct - targetLabor);
     const laborExcessWeekly = weekly * (laborExcessPct / 100);
 
@@ -769,7 +727,7 @@ TARGETS (from operator settings):
       combinedPeriod, combinedAnnual,
 
       // Labor
-      laborPct, laborExcessPct, laborExcessWeekly, laborSource, laborIsEstimate,
+      laborPct, laborExcessPct, laborExcessWeekly,
 
       // Helpers
       dayWeights, LUNCH, DINNER,

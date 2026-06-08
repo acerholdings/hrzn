@@ -155,6 +155,10 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="card">
         <div class="card-header">
           <div class="card-title">Labor Insights <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
+          <div style="display:flex;gap:8px;">
+            <button id="laborRefreshBtn" onclick="generateLaborInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Refresh</button>
+            <button id="laborMoreBtn" onclick="generateMoreLaborInsights()" style="font-size:10px;padding:4px 12px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">+ Generate More</button>
+          </div>
         </div>
         <div id="labor-insights-list"></div>
       </div>
@@ -177,11 +181,13 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <!-- Scheduling Recommendation -->
     <div class="card fade-3">
       <div class="card-header">
-        <div class="card-title">Scheduling Recommendation <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
-        <div style="font-size:10px;color:var(--text-dim);">Based on estimated revenue by day</div>
+        <div class="card-title">Scheduling Recommendation</div>
+        <div style="font-size:10px;color:var(--text-dim);">Requires payroll integration</div>
       </div>
-      <div id="scheduling-list" style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;"></div>
-      <div style="padding:12px 16px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);" id="scheduling-note"></div>
+      <div id="scheduling-list" style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);line-height:1.7;">
+        Per-shift scheduling recommendations need real payroll and shift data.<br>
+        <span style="color:var(--gold);cursor:pointer;" onclick="navigate('integrations.html')">Connect Gusto →</span> to unlock staffing recommendations based on your actual labor costs and hours.
+      </div>
     </div>
 
   </div>
@@ -444,42 +450,10 @@ const months = HRZN.getMonths(d);
     '<div style="padding:6px 16px;font-size:10px;color:var(--text-dim);">--- Target line at '+tgt.labor+'%</div>';
   }
 
-  // Labor Insights
-  const insightsList = document.getElementById('labor-insights-list');
-  if(insightsList) {
-    const tueLaborPct = Math.round(laborPct * (allDays.reduce((s,d)=>s+dayWeights[d],0)/7/dayWeights.tue));
-    const friLaborPct = Math.round(laborPct * (allDays.reduce((s,d)=>s+dayWeights[d],0)/7/dayWeights.fri));
-    const insights = [
-      {icon:'⚡', title:'Tuesday overstaffing estimated at '+fmt(savings/7*2)+'/week', body:'Tuesday labor estimated at ~'+Math.min(tueLaborPct,55)+'% on your slowest revenue day. Removing 2 dinner shifts could bring Tuesday to target.'},
-      {icon:'🏆', title:'Friday is your most efficient day', body:'Estimated labor at ~'+friLaborPct+'% on your highest revenue day. Friday staffing model is working — maintain it.'},
-      {icon:'💡', title:'Connect Gusto for real labor data', body:'Upload your Gusto payroll CSV or connect the Gusto API to replace these estimates with real per-shift, per-employee labor costs.'},
-    ];
-    insightsList.innerHTML = insights.map(ins =>
-      '<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">' +
-      '<div style="font-size:18px;flex-shrink:0;">'+ins.icon+'</div>' +
-      '<div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">'+ins.title+'</div>' +
-      '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.body+'</div></div></div>'
-    ).join('') +
-    '<div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">⚠ All estimates based on revenue day weights · real data needs Gusto API</div>';
-  }
+  // Labor Insights — real AI via central engine (replaces old hardcoded array)
+  generateLaborInsights();
 
-  // Scheduling recommendation
-  const schedList = document.getElementById('scheduling-list');
-  const staffing = {mon:14,tue:12,wed:14,thu:15,fri:21,sat:19,sun:16};
-  const notes = {mon:'On target',tue:'Cut 2 shifts',wed:'On target',thu:'On target',fri:'Keep as is',sat:'Monitor',sun:'On target'};
-  const noteColors = {mon:'var(--text-dim)',tue:'var(--red)',wed:'var(--text-dim)',thu:'var(--text-dim)',fri:'var(--green)',sat:'var(--orange)',sun:'var(--text-dim)'};
-  if(schedList) {
-    schedList.innerHTML = allDays.map(day => {
-      return '<div style="padding:12px 8px;text-align:center;border-right:1px solid var(--border);">' +
-        '<div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;">'+dayNames[day]+'</div>' +
-        '<div style="font-size:18px;font-weight:300;color:var(--text);margin-bottom:4px;">'+staffing[day]+'</div>' +
-        '<div style="font-size:10px;color:'+noteColors[day]+';">'+notes[day]+'</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  const schedNote = document.getElementById('scheduling-note');
-  if(schedNote) schedNote.textContent = '⚠ Estimated staffing levels based on revenue day weights. Connect Gusto for real shift data.';
+  // Scheduling card is now an empty-state (needs Gusto payroll data) — no JS needed.
 
   // Employee list from CSV if available
   try {
@@ -512,6 +486,137 @@ const months = HRZN.getMonths(d);
     }
   } catch(e) {}
 });
+
+// ── LABOR AI INSIGHTS (central engine: anti-repetition + honest-depth + ceiling) ──
+let _laborInsights = [];  // everything currently shown, for exclusion + ceiling
+
+function buildLaborContext() {
+  const d = HRZN.getData();
+  const m = HRZN.getMetrics(d);
+  const rate = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: m.laborPct, source: 'fallback' };
+  const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+  const bizName = s.businessName || s.bizName || 'this business';
+  const tgtLabor = (s.targets && s.targets.labor) || 28;
+  const weekly = Math.round(m.weekly || 0);
+  return `Analyze the labor data for ${bizName}. Use ONLY the figures below — do not invent per-shift, per-employee, or per-day numbers (those require payroll integration we don't have yet).
+
+EXACT DATA — USE THESE NUMBERS ONLY:
+Labor rate: ${rate.value}% of revenue (source: ${rate.source}${rate.source !== 'api' ? ' — ESTIMATE, not from live payroll' : ' — live'})
+Labor cost target: ${tgtLabor}%
+Weekly revenue: $${weekly.toLocaleString()}
+Estimated weekly labor cost: $${Math.round(weekly * rate.value/100).toLocaleString()}
+Gap to target: ${(rate.value - tgtLabor).toFixed(1)} percentage points ${rate.value > tgtLabor ? 'ABOVE target (overspending)' : 'at or below target (healthy)'}
+
+If the labor rate is an estimate (not live), frame insights as estimates and recommend connecting Gusto for real per-shift labor data rather than inventing specifics.`;
+}
+
+function renderLaborInsights(list, container, append) {
+  const cardsHtml = list.map(ins =>
+    '<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">' +
+    '<div style="font-size:18px;flex-shrink:0;">'+(ins.emoji||'•')+'</div>' +
+    '<div><div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;">'+ins.title+'</div>' +
+    '<div style="font-size:11px;color:var(--text-mid);line-height:1.6;">'+ins.insight+'</div></div></div>'
+  ).join('');
+  if (append) {
+    const divider = '<div style="padding:8px 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border-top:1px solid var(--border);background:var(--surface2);">Additional Insights</div>';
+    container.insertAdjacentHTML('beforeend', divider + cardsHtml);
+  } else {
+    container.innerHTML = cardsHtml +
+      '<div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;">⚠ Labor rate may be an estimate · connect Gusto for real per-shift data</div>';
+  }
+}
+
+async function callLaborInsights(opts) {
+  const { system, prompt } = HRZN.getInsightPrompt('labor', buildLaborContext(), opts);
+  const r = await fetch('/api/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-haiku-4-5-20251001', max_tokens:1500,
+      system, messages:[{role:'user', content: prompt}]
+    })
+  });
+  const data = await r.json();
+  const text = (data.content?.[0]?.text || '[]').replace(/```json|```/g,'').trim();
+  return JSON.parse(text);
+}
+
+async function generateLaborInsights() {
+  const container = document.getElementById('labor-insights-list');
+  const refreshBtn = document.getElementById('laborRefreshBtn');
+  const moreBtn = document.getElementById('laborMoreBtn');
+  if (!container) return;
+  if (typeof hrznHasData === 'function' && !hrznHasData()) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to get AI labor insights.</div>';
+    if (refreshBtn) refreshBtn.disabled = true;
+    if (moreBtn) moreBtn.disabled = true;
+    return;
+  }
+  container.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Analyzing labor data...</div>';
+  if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = 'Analyzing...'; }
+  if (moreBtn) moreBtn.disabled = true;
+  try {
+    const insights = await callLaborInsights({ count: 6 });
+    _laborInsights = Array.isArray(insights) ? insights : [];
+    if (_laborInsights.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Not enough labor data yet for specific insights. Upload more history or connect Gusto for deeper analysis.</div>';
+    } else {
+      renderLaborInsights(_laborInsights, container, false);
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Could not generate insights: '+e.message+'</div>';
+  } finally {
+    if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = '+ Refresh'; }
+    updateLaborMoreBtn();
+  }
+}
+
+async function generateMoreLaborInsights() {
+  const container = document.getElementById('labor-insights-list');
+  const moreBtn = document.getElementById('laborMoreBtn');
+  if (!container) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_laborInsights.length >= ceiling) { updateLaborMoreBtn(); return; }  // hard ceiling
+  if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Generating...'; }
+  try {
+    const remaining = ceiling - _laborInsights.length;
+    const insights = await callLaborInsights({
+      count: Math.min(6, remaining),
+      more: true,
+      exclude: _laborInsights.map(i => i.title)   // real exclusion list — no repeats
+    });
+    const fresh = Array.isArray(insights) ? insights : [];
+    if (fresh.length === 0) {
+      // Honest depth: model had nothing new to add
+      container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Connect Gusto or upload more history for deeper analysis.</div>');
+      _laborInsights._tapped = true;
+    } else {
+      renderLaborInsights(fresh, container, true);
+      _laborInsights = _laborInsights.concat(fresh);
+    }
+  } catch(e) {
+    container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--red);">Could not generate more: '+e.message+'</div>');
+  } finally {
+    updateLaborMoreBtn();
+  }
+}
+
+// Enforce ceiling + tapped-out state on the Generate More button
+function updateLaborMoreBtn() {
+  const moreBtn = document.getElementById('laborMoreBtn');
+  if (!moreBtn) return;
+  const ceiling = (HRZN.INSIGHT_MAX || 18);
+  if (_laborInsights.length >= ceiling || _laborInsights._tapped) {
+    moreBtn.disabled = true;
+    moreBtn.textContent = 'Max insights';
+    moreBtn.style.opacity = '0.5';
+    moreBtn.style.cursor = 'default';
+  } else {
+    moreBtn.disabled = false;
+    moreBtn.textContent = '+ Generate More';
+    moreBtn.style.opacity = '1';
+    moreBtn.style.cursor = 'pointer';
+  }
+}
 </script>
 
 <!-- PAYWALL MODAL -->
