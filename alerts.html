@@ -234,19 +234,28 @@ function buildAlertsContext(d) {
   const annualGap = Math.round(m.annualGap);
   const periodGap = Math.round(weeklyGap * weeks);
   const avgPrice = net > 0 && items > 0 ? net/items : 0;
-  const priceGapPeriod = Math.round((15.00 - avgPrice) * items);
-  const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
-  const ddGapPeriod = Math.round(net * 0.10 - dd);
-  const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
-  const combinedPeriod = periodGap + ddGapPeriod + priceGapPeriod;
-  const combinedAnnual = Math.round(combinedPeriod / months * 12);
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const bizName = settings.businessName || 'this restaurant';
+  const bizName = settings.businessName || 'this business';
+  // Category profile + real targets drive the math (no hardcoded restaurant 15 / 10%).
+  const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const concepts = bm.concepts || { delivery: true };
+  const ticketLabel = bm.avgTicketLabel || 'Avg Item Price';
+  const t = (typeof getTargets === 'function') ? getTargets() : { avgCheck: 15, doordash: 10 };
+  const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
+  const deliveryApplies = !!concepts.delivery;
+
+  const priceGapPeriod = ticketApplies ? Math.round((t.avgCheck - avgPrice) * items) : 0;
+  const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
+  const ddGapPeriod = deliveryApplies ? Math.round(net * (t.doordash/100) - dd) : 0;
+  const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
+  // Combined opportunity only includes gaps that apply to this category.
+  const combinedPeriod = periodGap + (ddGapPeriod > 0 ? ddGapPeriod : 0) + (priceGapPeriod > 0 ? priceGapPeriod : 0);
+  const combinedAnnual = Math.round(combinedPeriod / months * 12);
   // Labor rate from the central source (live → manual → fallback), stated explicitly
   // so the model never confuses the ACTUAL rate with the target.
   const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
   const laborRate = laborMeta.value;
-  const laborTgt = (settings.targets && settings.targets.labor) || 28;
+  const laborTgt = (settings.targets && settings.targets.labor) || t.labor || 28;
   // Real weekly revenue target (matches the value getMetrics uses for the gap math).
   const weeklyRevTgt = parseFloat((settings.targets && settings.targets.revenue) || 12000);
 
@@ -260,15 +269,15 @@ function buildAlertsContext(d) {
     'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'),
     'Labor cost: ' + laborRate + '% of revenue (ACTUAL' + (laborMeta.isEstimate ? ', estimated' : '') + ') vs ' + laborTgt + '% target — ' + (laborRate > laborTgt ? (laborRate-laborTgt).toFixed(0)+' points ABOVE target' : 'at or below target') + '. Use ' + laborRate + '% as the actual labor rate; do NOT use the ' + laborTgt + '% target as if it were the actual.',
     'Digital payments (credit+debit+DoorDash): $' + Math.round(digitalTotal).toLocaleString() + ' = ' + digitalPct + '% of collected — cash only ' + cashPct + '%',
-    'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to 10% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)',
-    'Avg Item Price: $' + avgPrice.toFixed(2) + ' vs $15 target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)',
+    (deliveryApplies ? 'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to ' + t.doordash + '% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)' : null),
+    (ticketApplies ? ticketLabel + ': $' + avgPrice.toFixed(2) + ' vs $' + t.avgCheck + ' target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)' : null),
     'Items Sold: ' + items.toLocaleString() + ' (' + Math.round(items/weeks) + '/week)',
-    'COMBINED addressable opportunity: $' + combinedPeriod.toLocaleString() + ' this period ($' + combinedAnnual.toLocaleString() + '/yr) = revenue gap + DoorDash gap + price gap',
+    'COMBINED addressable opportunity: $' + combinedPeriod.toLocaleString() + ' this period ($' + combinedAnnual.toLocaleString() + '/yr) = revenue gap' + (deliveryApplies ? ' + DoorDash gap' : '') + (ticketApplies ? ' + price gap' : ''),
     '',
     'RULES: Use ONLY numbers above. Never recalculate. When referencing total opportunity, use $' + combinedPeriod.toLocaleString() + ' this period. Include exactly 3 wins and 3 opportunities.',
     'Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}'
   ];
-  return lines.join('\n');
+  return lines.filter(function(l){ return l !== null; }).join('\n');
 }
 
 
