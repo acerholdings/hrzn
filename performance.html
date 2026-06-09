@@ -195,12 +195,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       </div>
       <div>
         <div style="font-size:11px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px;">Score breakdown</div>
-        <div class="score-metric"><div class="metric-label">Revenue Growth</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-rev-growth" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-rev-growth">—</div><div class="metric-grade" id="grade-rev-growth" style="color:var(--green);">—</div></div>
-        <div class="score-metric"><div class="metric-label">Gross Margin</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-gross-margin" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-gross-margin">—</div><div class="metric-grade" id="grade-gross-margin" style="color:var(--green);">—</div></div>
-        <div class="score-metric"><div class="metric-label">Customer Volume</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-cust-vol" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-cust-vol">—</div><div class="metric-grade" id="grade-cust-vol" style="color:var(--green);">—</div></div>
-        <div class="score-metric"><div class="metric-label">Labor Efficiency</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-labor-eff" style="width:0%;background:var(--orange);transition:width 0.6s;"></div></div><div class="metric-val" id="score-labor-eff">—</div><div class="metric-grade" id="grade-labor-eff" style="color:var(--orange);">—</div></div>
-        <div class="score-metric"><div class="metric-label">Inventory Health</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-inv-health" style="width:0%;background:var(--gold);transition:width 0.6s;"></div></div><div class="metric-val" id="score-inv-health">—</div><div class="metric-grade" id="grade-inv-health" style="color:var(--gold);">—</div></div>
-        <div class="score-metric"><div class="metric-label">Menu Profitability</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-menu-prof" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-menu-prof">—</div><div class="metric-grade" id="grade-menu-prof" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Revenue</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-revenue" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-revenue">—</div><div class="metric-grade" id="grade-revenue" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Profitability</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-profit" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-profit">—</div><div class="metric-grade" id="grade-profit" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Labor</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-labor" style="width:0%;background:var(--orange);transition:width 0.6s;"></div></div><div class="metric-val" id="score-labor">—</div><div class="metric-grade" id="grade-labor" style="color:var(--orange);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Cost Discipline</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-cogs" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-cogs">—</div><div class="metric-grade" id="grade-cogs" style="color:var(--green);">—</div></div>
+        <div class="score-metric"><div class="metric-label">Discounts</div><div class="metric-bar-bg"><div class="metric-bar" id="bar-discount" style="width:0%;background:var(--green);transition:width 0.6s;"></div></div><div class="metric-val" id="score-discount">—</div><div class="metric-grade" id="grade-discount" style="color:var(--green);">—</div></div>
       </div>
     </div>
     <div class="trend-grid fade-2">
@@ -612,33 +611,31 @@ const months = HRZN.getMonths(d);
   const ring = document.getElementById('health-ring');
   if(ring) ring.setAttribute('stroke-dasharray', Math.round((healthNum||0)/100*251.2) + ' 251.2');
 
-  // Map the 5 universal pillars onto the existing breakdown bars.
-  // Bars with no corresponding real pillar show an honest "—" no-data state (no fabricated number).
-  const pv = (key) => (byKey[key] && byKey[key].real) ? byKey[key].val : null;
-  const scores = [
-    {barId:'bar-rev-growth',  valId:'score-rev-growth',  gradeId:'grade-rev-growth',  val:pv('revenue')},
-    {barId:'bar-gross-margin',valId:'score-gross-margin', gradeId:'grade-gross-margin', val:pv('margin')},
-    {barId:'bar-cust-vol',    valId:'score-cust-vol',     gradeId:'grade-cust-vol',     val:null},
-    {barId:'bar-labor-eff',   valId:'score-labor-eff',    gradeId:'grade-labor-eff',    val:pv('labor')},
-    {barId:'bar-inv-health',  valId:'score-inv-health',   gradeId:'grade-inv-health',   val:null},
-    {barId:'bar-menu-prof',   valId:'score-menu-prof',    gradeId:'grade-menu-prof',    val:pv('cogs')},
-  ];
-
-  scores.forEach(s => {
-    const bar = document.getElementById(s.barId);
-    const val = document.getElementById(s.valId);
-    const grade = document.getElementById(s.gradeId);
-    if (s.val == null) {
+  // Map the 5 universal pillars onto the breakdown rows (ids match the pillar keys).
+  const pillarRows = {
+    revenue:  {barId:'bar-revenue',  valId:'score-revenue',  gradeId:'grade-revenue'},
+    margin:   {barId:'bar-profit',   valId:'score-profit',   gradeId:'grade-profit'},
+    labor:    {barId:'bar-labor',    valId:'score-labor',    gradeId:'grade-labor'},
+    cogs:     {barId:'bar-cogs',     valId:'score-cogs',     gradeId:'grade-cogs'},
+    discount: {barId:'bar-discount', valId:'score-discount', gradeId:'grade-discount'},
+  };
+  (hs && hs.pillars ? hs.pillars : []).forEach(p => {
+    const row = pillarRows[p.key];
+    if (!row) return;
+    const bar = document.getElementById(row.barId);
+    const val = document.getElementById(row.valId);
+    const grade = document.getElementById(row.gradeId);
+    if (!p.real || p.val == null) {
       // Honest no-data state — no fabricated score.
       if(bar) { bar.style.width = '0%'; }
       if(val) val.textContent = '—';
       if(grade) { grade.textContent = 'No data'; grade.style.color = 'var(--text-dim)'; }
       return;
     }
-    const color = s.val >= 85 ? 'var(--green)' : s.val >= 70 ? 'var(--gold)' : 'var(--orange)';
-    const gradeLabel = s.val >= 90 ? 'Excellent' : s.val >= 80 ? 'Strong' : s.val >= 70 ? 'Good' : s.val >= 60 ? 'Fair' : 'Needs work';
-    if(bar) { bar.style.width = s.val + '%'; bar.style.background = color; }
-    if(val) val.textContent = s.val;
+    const color = p.val >= 85 ? 'var(--green)' : p.val >= 70 ? 'var(--gold)' : 'var(--orange)';
+    const gradeLabel = p.val >= 90 ? 'Excellent' : p.val >= 80 ? 'Strong' : p.val >= 70 ? 'Good' : p.val >= 60 ? 'Fair' : 'Needs work';
+    if(bar) { bar.style.width = p.val + '%'; bar.style.background = color; }
+    if(val) val.textContent = p.val;
     if(grade) { grade.textContent = gradeLabel; grade.style.color = color; }
   });
 
