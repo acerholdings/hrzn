@@ -590,46 +590,49 @@ const months = HRZN.getMonths(d);
     });
   } catch(e) {}
 
-  // Calculate real health scores
-  const laborScore = laborPct <= laborTarget ? 95 : laborPct <= 30 ? 82 : laborPct <= 32 ? 70 : 55;
-  const marginScore = grossMargin !== '—' ? (parseFloat(grossMargin) >= 65 ? 92 : parseFloat(grossMargin) >= 50 ? 78 : 60) : 82;
-  const discountPct = parseFloat(d.discountPct||0);
-  const revenueScore = weekly >= 12000 ? 95 : weekly >= 10000 ? 85 : weekly >= 7000 ? 72 : 60;
-  const volumeScore = weeklyItems >= 800 ? 92 : weeklyItems >= 500 ? 80 : 70;
-  const menuScore = grossMargin !== '—' ? (parseFloat(grossMargin) >= 65 ? 88 : 75) : 75;
-  const invScore = 74; // needs inventory data
-  
-  const healthNum = Math.round((laborScore + marginScore + revenueScore + volumeScore + menuScore + invScore) / 6);
-  const healthLabel = healthNum >= 90 ? 'Excellent' : healthNum >= 80 ? 'Strong' : healthNum >= 70 ? 'Good' : healthNum >= 60 ? 'Fair' : 'Needs Work';
-  const healthColor = healthNum >= 80 ? 'var(--green)' : healthNum >= 65 ? 'var(--gold)' : 'var(--orange)';
+  // Health Score — single source of truth (HRZN.getHealthScore). No fabricated sub-scores.
+  const hs = HRZN.getHealthScore ? HRZN.getHealthScore(d) : null;
+  const byKey = {};
+  (hs && hs.pillars ? hs.pillars : []).forEach(p => { byKey[p.key] = p; });
 
-  set('perf-health-num', healthNum);
+  const healthNum = hs ? hs.score : null;
+  const healthLabel = hs ? hs.label : 'Add more data';
+  const healthColor = hs ? hs.color : 'var(--text-dim)';
 
+  set('perf-health-num', healthNum == null ? '—' : healthNum);
   set('perf-health-label', healthLabel);
-  set('perf-health-desc', (d._source==='demo' ? 'Based on demo sample data' : 'Based on your real ' + months.toFixed(1) + '-month data'));
-  set('perf-health-change', (d._source==='demo' ? 'Switch to CSV for real scores' : 'Calculated from real metrics'));
-  
+  set('perf-health-desc', (d._source==='demo' ? 'Based on demo sample data' : (hs ? hs.note : 'Based on your data')));
+  set('perf-health-change', (d._source==='demo' ? 'Switch to CSV for real scores' : (hs ? hs.note : '')));
+
   const scoreEl = document.getElementById('perf-health-num');
   if(scoreEl) scoreEl.style.color = healthColor;
 
-  // Update SVG ring if exists
   const ring = document.getElementById('health-ring');
-  if(ring) ring.setAttribute('stroke-dasharray', Math.round(healthNum/100*251.2) + ' 251.2');
+  if(ring) ring.setAttribute('stroke-dasharray', Math.round((healthNum||0)/100*251.2) + ' 251.2');
 
-  // Score breakdown
+  // Map the 5 universal pillars onto the existing breakdown bars.
+  // Bars with no corresponding real pillar show an honest "—" no-data state (no fabricated number).
+  const pv = (key) => (byKey[key] && byKey[key].real) ? byKey[key].val : null;
   const scores = [
-    {barId:'bar-rev-growth', valId:'score-rev-growth', gradeId:'grade-rev-growth', val:revenueScore},
-    {barId:'bar-gross-margin', valId:'score-gross-margin', gradeId:'grade-gross-margin', val:marginScore},
-    {barId:'bar-cust-vol', valId:'score-cust-vol', gradeId:'grade-cust-vol', val:volumeScore},
-    {barId:'bar-labor-eff', valId:'score-labor-eff', gradeId:'grade-labor-eff', val:laborScore},
-    {barId:'bar-inv-health', valId:'score-inv-health', gradeId:'grade-inv-health', val:invScore},
-    {barId:'bar-menu-prof', valId:'score-menu-prof', gradeId:'grade-menu-prof', val:menuScore},
+    {barId:'bar-rev-growth',  valId:'score-rev-growth',  gradeId:'grade-rev-growth',  val:pv('revenue')},
+    {barId:'bar-gross-margin',valId:'score-gross-margin', gradeId:'grade-gross-margin', val:pv('margin')},
+    {barId:'bar-cust-vol',    valId:'score-cust-vol',     gradeId:'grade-cust-vol',     val:null},
+    {barId:'bar-labor-eff',   valId:'score-labor-eff',    gradeId:'grade-labor-eff',    val:pv('labor')},
+    {barId:'bar-inv-health',  valId:'score-inv-health',   gradeId:'grade-inv-health',   val:null},
+    {barId:'bar-menu-prof',   valId:'score-menu-prof',    gradeId:'grade-menu-prof',    val:pv('cogs')},
   ];
 
   scores.forEach(s => {
     const bar = document.getElementById(s.barId);
     const val = document.getElementById(s.valId);
     const grade = document.getElementById(s.gradeId);
+    if (s.val == null) {
+      // Honest no-data state — no fabricated score.
+      if(bar) { bar.style.width = '0%'; }
+      if(val) val.textContent = '—';
+      if(grade) { grade.textContent = 'No data'; grade.style.color = 'var(--text-dim)'; }
+      return;
+    }
     const color = s.val >= 85 ? 'var(--green)' : s.val >= 70 ? 'var(--gold)' : 'var(--orange)';
     const gradeLabel = s.val >= 90 ? 'Excellent' : s.val >= 80 ? 'Strong' : s.val >= 70 ? 'Good' : s.val >= 60 ? 'Fair' : 'Needs work';
     if(bar) { bar.style.width = s.val + '%'; bar.style.background = color; }

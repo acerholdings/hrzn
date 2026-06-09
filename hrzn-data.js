@@ -423,9 +423,89 @@ const HRZN = {
     }
   },
 
-  // Single source of truth for the sidebar "Alerts" badge across all pages.
-  // Counts the SAME critical + warning conditions that alerts.html shows.
-  // Returns 0 cleanly when there's no data, so the badge never shows a fake number.
+  // ── SINGLE SOURCE OF TRUTH FOR THE BUSINESS HEALTH SCORE ──
+  // Five universal pillars (Revenue, Profitability, Labor, Cost discipline, Discounts),
+  // equally weighted, scored ONLY where real data exists (no fabricated fallbacks).
+  // Returns the score plus a per-pillar breakdown and a confidence read ("X of 5").
+  // If fewer than 2 pillars have real data, returns score:null (UI shows "add data").
+  // Every page (dashboard, performance, operator) should call THIS — never recompute.
+  getHealthScore(data) {
+    try {
+      const d = data || this.getData();
+      const m = this.getMetrics(d);
+      const t = this.getTargets();
+      const pillars = [];
+
+      // Helper: grade a "lower is better" % metric vs its target.
+      // at/below target = 95; within +2 pts = 82; within +4 = 70; worse = 55.
+      const gradeBelowTarget = (actual, target) => {
+        if (actual <= target) return 95;
+        if (actual <= target + 2) return 82;
+        if (actual <= target + 4) return 70;
+        return 55;
+      };
+
+      // 1) REVENUE vs target (real whenever there's revenue data)
+      if (m.netSales > 0 && m.targetRevenue > 0) {
+        const ratio = m.weekly / m.targetRevenue;
+        const val = ratio >= 1 ? 95 : ratio >= 0.85 ? 85 : ratio >= 0.7 ? 72 : ratio >= 0.5 ? 60 : 45;
+        pillars.push({ key:'revenue', label:'Revenue', val, real:true });
+      } else {
+        pillars.push({ key:'revenue', label:'Revenue', val:null, real:false });
+      }
+
+      // 2) PROFITABILITY (gross margin) — only if P&L/margin data is present
+      const margin = (d.plData && d.plData.grossProfitMargin != null) ? parseFloat(d.plData.grossProfitMargin)
+                   : (d.grossProfitMargin != null ? parseFloat(d.grossProfitMargin) : null);
+      if (margin != null && !isNaN(margin)) {
+        const tgt = t.margin || 65;
+        const val = margin >= tgt ? 92 : margin >= tgt*0.8 ? 78 : margin >= tgt*0.6 ? 65 : 50;
+        pillars.push({ key:'margin', label:'Profitability', val, real:true });
+      } else {
+        pillars.push({ key:'margin', label:'Profitability', val:null, real:false });
+      }
+
+      // 3) LABOR — real only when the rate is NOT a fallback estimate (live API or manual)
+      const laborMeta = this.getLaborRateMeta();
+      if (laborMeta && laborMeta.source !== 'fallback') {
+        pillars.push({ key:'labor', label:'Labor', val:gradeBelowTarget(laborMeta.value, t.labor), real:true });
+      } else {
+        pillars.push({ key:'labor', label:'Labor', val:null, real:false });
+      }
+
+      // 4) COST DISCIPLINE (COGS/food) — only if a real cost-of-goods figure exists
+      const cogsPctReal = (d.plData && d.plData.food_cost != null && m.netSales > 0)
+        ? (parseFloat(d.plData.food_cost) / m.netSales * 100) : null;
+      if (cogsPctReal != null && !isNaN(cogsPctReal)) {
+        pillars.push({ key:'cogs', label:'Cost Discipline', val:gradeBelowTarget(cogsPctReal, t.food), real:true });
+      } else {
+        pillars.push({ key:'cogs', label:'Cost Discipline', val:null, real:false });
+      }
+
+      // 5) DISCOUNTS — real whenever there's gross sales data
+      if (m.grossSales > 0) {
+        pillars.push({ key:'discount', label:'Discounts', val:gradeBelowTarget(m.discPct, t.discount), real:true });
+      } else {
+        pillars.push({ key:'discount', label:'Discounts', val:null, real:false });
+      }
+
+      const real = pillars.filter(p => p.real);
+      const totalPillars = pillars.length;
+      if (real.length < 2) {
+        return { score:null, label:'Add more data', color:'var(--text-dim)',
+                 pillars, realCount:real.length, totalPillars,
+                 note:'Connect or upload more data to see your health score.' };
+      }
+      const score = Math.round(real.reduce((s,p) => s + p.val, 0) / real.length);
+      const label = score>=90?'Excellent':score>=80?'Strong':score>=70?'Good':score>=60?'Fair':'Needs Work';
+      const color = score>=80?'var(--green)':score>=65?'var(--gold)':'var(--orange)';
+      return { score, label, color, pillars, realCount:real.length, totalPillars,
+               note:'Based on '+real.length+' of '+totalPillars+' metrics' };
+    } catch (e) {
+      return { score:null, label:'Add more data', color:'var(--text-dim)', pillars:[], realCount:0, totalPillars:5, note:'Connect or upload more data to see your health score.' };
+    }
+  },
+
   getAlertCount() {
     if (typeof localStorage === 'undefined') return 0;
     try {

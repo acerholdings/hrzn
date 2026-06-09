@@ -538,6 +538,24 @@ document.addEventListener('DOMContentLoaded',()=>{
       if (laborEl) laborEl.textContent = '—';
     }
 
+    // Health Score: single source of truth (HRZN.getHealthScore). Shows "—" honestly when <2 real metrics.
+    try {
+      const healthEl = document.getElementById('op-health');
+      if (healthEl) {
+        const hs = HRZN.getHealthScore ? HRZN.getHealthScore(d) : null;
+        if (hs && hs.score != null) {
+          healthEl.textContent = hs.score;
+          healthEl.style.color = hs.color;
+        } else {
+          healthEl.textContent = '—';
+          healthEl.style.color = 'var(--text-dim)';
+        }
+      }
+    } catch(e) {
+      const healthEl = document.getElementById('op-health');
+      if (healthEl) healthEl.textContent = '—';
+    }
+
     const period = (d.periodStart 
     ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
     : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();

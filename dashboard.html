@@ -645,23 +645,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Health Score
-  const scores = [
-    {label:'Pricing', val: discountPct<=3?95:discountPct<=5?85:discountPct<=8?70:50},
-    {label:'Labor', val: (() => { const L=(HRZN.LABOR)||{SCORE:{excellent:28,good:30,ok:32},SCORE_VALS:{excellent:95,good:80,ok:70,poor:55}}; return laborPct<=L.SCORE.excellent?L.SCORE_VALS.excellent:laborPct<=L.SCORE.good?L.SCORE_VALS.good:laborPct<=L.SCORE.ok?L.SCORE_VALS.ok:L.SCORE_VALS.poor; })()},
-    {label:'Delivery', val: doorDashPct>=10?90:doorDashPct>=5?75:doorDashPct>=3?65:55},
-    {label:'Check Size', val: avgCheck>=15?90:avgCheck>=13?80:avgCheck>=10?70:60},
-    {label:'Tips', val: d.netSales>0&&(d.tips||0)/d.netSales>0.12?90:80},
-  ];
-  const health = Math.round(scores.reduce((s,x)=>s+x.val,0)/scores.length);
-  const healthLabel = health>=90?'Excellent':health>=80?'Strong':health>=70?'Good':health>=60?'Fair':'Needs Work';
-  const healthColor = health>=80?'var(--green)':health>=65?'var(--gold)':'var(--orange)';
+  // Health Score — single source of truth (HRZN.getHealthScore)
+  const hs = HRZN.getHealthScore ? HRZN.getHealthScore(d) : null;
+  const scores = (hs && hs.pillars ? hs.pillars : []).filter(p => p.real).map(p => ({label:p.label, val:p.val}));
+  const health = hs ? hs.score : null;
+  const healthLabel = hs ? hs.label : 'Add more data';
+  const healthColor = hs ? hs.color : 'var(--text-dim)';
 
-  set('dash-health-score', health);
+  set('dash-health-score', health == null ? '—' : health);
   set('dash-health-label', healthLabel);
-  set('dash-health-desc', 'Based on '+(d._source==='demo' ? 'demo data' : months.toFixed(1)+' months of real data'));
+  set('dash-health-desc', hs ? hs.note : 'Based on your business data');
   const ring = document.getElementById('dash-health-ring');
-  if(ring) { ring.setAttribute('stroke-dasharray', Math.round(health/100*251.2)+' 251.2'); ring.setAttribute('stroke', healthColor); }
+  if(ring) { ring.setAttribute('stroke-dasharray', Math.round((health||0)/100*251.2)+' 251.2'); ring.setAttribute('stroke', healthColor); }
   const scoreEl = document.getElementById('dash-health-score');
   if(scoreEl) scoreEl.style.color = healthColor;
 
