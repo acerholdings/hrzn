@@ -205,7 +205,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     </div>
     <div class="trend-grid fade-2">
       <div class="trend-card"><div class="kpi-label">Weekly Revenue</div><div class="kpi-value" id="perf-weekly-revenue">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;" id="kpi-rev-change">Weekly avg</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,35 15,30 30,28 45,22 60,20 75,12 90,10 100,8" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
-      <div class="trend-card"><div class="kpi-label">Gross Margin</div><div class="kpi-value" id="perf-gross-margin">68%</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Overall margin</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,30 15,28 30,25 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
+      <div class="trend-card"><div class="kpi-label">Gross Margin</div><div class="kpi-value" id="perf-gross-margin">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Overall margin</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,30 15,28 30,25 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Labor Cost</div><div class="kpi-value" id="perf-labor-cost">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;" id="perf-labor-cost-note">vs target</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,22 30,18 45,25 60,24 75,28 90,26 100,30" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.4"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Items / Week</div><div class="kpi-value" id="perf-covers">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Total period</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,32 15,28 30,26 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Avg Item Price</div><div class="kpi-value" id="perf-avg-check">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">→ Flat vs last week</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,21 30,19 45,20 60,21 75,19 90,20 100,20" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.8"/></svg></div>
@@ -551,6 +551,8 @@ const months = HRZN.getMonths(d);
   const laborChangeEl = document.getElementById('vs-labor-change');
   if(laborChangeEl) laborChangeEl.style.color = laborPct > laborTarget ? 'var(--red)' : 'var(--green)';
   set('vs-margin-this', grossMargin);
+  // Top Gross Margin KPI tile — real value (was a hardcoded 68%); honest "—" when no item data.
+  set('perf-gross-margin', grossMargin);
   set('vs-margin-last', '—');
   // Gross margin: only show if we have real data
   set('vs-margin-change', '—');

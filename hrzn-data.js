@@ -454,11 +454,25 @@ const HRZN = {
         pillars.push({ key:'revenue', label:'Revenue', val:null, real:false });
       }
 
-      // 2) PROFITABILITY (gross margin) — only if P&L/margin data is present
-      const margin = (d.plData && d.plData.grossProfitMargin != null) ? parseFloat(d.plData.grossProfitMargin)
-                   : (d.grossProfitMargin != null ? parseFloat(d.grossProfitMargin) : null);
+      // 2) PROFITABILITY (gross margin) — read the SAME real source the pages use:
+      //    item-sales data (hrzn-data-items.grossProfitMargin), with the cached fallback
+      //    (hrzn-settings._cachedGrossMargin) for when Safari ITP clears the Items CSV.
+      let margin = null;
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const its = JSON.parse(localStorage.getItem('hrzn-data-items') || '{}');
+          if (its.grossProfitMargin != null) margin = parseFloat(its.grossProfitMargin);
+          if (margin == null) {
+            const cs = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+            if (cs._cachedGrossMargin != null) margin = parseFloat(cs._cachedGrossMargin);
+          }
+        }
+      } catch (e) {}
+      // Last-resort: a margin carried on the data object itself.
+      if (margin == null && d.grossProfitMargin != null) margin = parseFloat(d.grossProfitMargin);
       if (margin != null && !isNaN(margin)) {
-        const tgt = t.margin || 65;
+        const bm = this.getBenchmarks ? this.getBenchmarks() : {};
+        const tgt = (bm.grossMarginTarget != null) ? bm.grossMarginTarget : 65;
         const val = margin >= tgt ? 92 : margin >= tgt*0.8 ? 78 : margin >= tgt*0.6 ? 65 : 50;
         pillars.push({ key:'margin', label:'Profitability', val, real:true });
       } else {
