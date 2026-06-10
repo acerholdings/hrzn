@@ -166,7 +166,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="pl-section-header">Revenue</div>
         <div class="pl-row"><div class="pl-label">Net Sales</div><div class="pl-pct">100%</div><div class="pl-val" id="pl-revenue" style="color:var(--text);">—</div></div>
         <div class="pl-section-header">Cost of Goods Sold</div>
-        <div class="pl-row"><div class="pl-label">Food &amp; Beverage Cost</div><div class="pl-pct" id="pl-cogs-pct">—</div><div class="pl-val" id="pl-cogs" style="color:var(--red);">—</div></div>
+        <div class="pl-row"><div class="pl-label" id="pl-cogs-label">Food &amp; Beverage Cost</div><div class="pl-pct" id="pl-cogs-pct">—</div><div class="pl-val" id="pl-cogs" style="color:var(--red);">—</div></div>
         <div class="pl-row subtotal"><div class="pl-label" style="font-weight:500;">Gross Profit</div><div class="pl-pct" id="pl-gross-pct2">—</div><div class="pl-val" id="pl-gross2" style="color:var(--green);font-weight:500;">—</div></div>
         <div class="pl-section-header">Operating Expenses</div>
         <div class="pl-row"><div class="pl-label">Labor (wages + benefits)</div><div class="pl-pct" id="pl-labor-pct">—</div><div class="pl-val" id="pl-labor" style="color:var(--red);">—</div></div>
@@ -307,6 +307,24 @@ function loadSavedInputs(){
 
 function isEntered(id){const el=document.getElementById(id);return !!(el && el.value !== '' && !isNaN(parseFloat(el.value)));}
 
+// Shared by the AI insight builders: the SAME entered-or-estimated values the page displays.
+// (Raw empty inputs read as 0, which made the AI think all expenses were $0.)
+function getPLInsightValues(months, revenue){
+  const bm=(HRZN.getBenchmarks?HRZN.getBenchmarks():{})||{};
+  const concepts=bm.concepts||{delivery:true,tips:true};
+  const monthlyRev = months>0 ? revenue/months : 0;
+  const laborRate = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
+  const EST = { cogs: Math.round(monthlyRev*((bm.cogsPct||32)/100)), labor: Math.round(monthlyRev*(laborRate/100)),
+    rent:8500, utilities:1200, insurance:800, supplies:600, marketing:500, other:800, debt:7000 };
+  const isEst={}; const v={};
+  ['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'].forEach(f=>{
+    const entered=isEntered('input-'+f); isEst[f]=!entered; v[f]=(entered?getInputVal('input-'+f):EST[f])*months;
+  });
+  const anyEst=Object.values(isEst).some(x=>x);
+  const eTag=(f)=>isEst[f]?' [ESTIMATE \u2014 owner has not entered this]':'';
+  return {bm, concepts, v, isEst, anyEst, eTag};
+}
+
 function saveInputs(){
   // Save ONLY fields the user actually filled in. Estimates are displayed, never saved —
   // so downstream pages (cashflow) can tell real entries from industry-typical fallbacks.
@@ -331,8 +349,9 @@ function calcAndRender(){
   // an (est.) tag, never saved). Same estimate constants as cashflow.html.
   const monthlyRev = months > 0 ? revenue / months : 0;
   const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
+  const calcBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const EST = {
-    cogs: Math.round(monthlyRev*0.32), labor: Math.round(monthlyRev*(laborRatePct/100)),
+    cogs: Math.round(monthlyRev*((calcBm.cogsPct||32)/100)), labor: Math.round(monthlyRev*(laborRatePct/100)),
     rent: 8500, utilities: 1200, insurance: 800, supplies: 600, marketing: 500, other: 800, debt: 7000
   };
   const isEst = {};
@@ -351,6 +370,9 @@ function calcAndRender(){
   const estTag = (f) => isEst[f] ? ' (est.)' : '';
   const banner = document.getElementById('pl-est-banner');
   if(banner) banner.style.display = anyEst ? 'block' : 'none';
+  // Category-aware COGS label (Food & Beverage Cost / Cost of Goods / etc.)
+  const cogsLabelEl = document.getElementById('pl-cogs-label');
+  if(cogsLabelEl && calcBm.cogsLabel) cogsLabelEl.textContent = calcBm.cogsLabel;
 
   const grossProfit=revenue-cogs;
   const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;
@@ -425,15 +447,9 @@ async function generatePLInsights(){
   const period=d.period||(d.periodStart?(d.periodStart+(d.periodEnd?' - '+d.periodEnd:'')):'');
   const months=getMonths(period);
   const revenue=d.netSales||0;
-  const cogs=getInputVal('input-cogs')*months;
-  const labor=getInputVal('input-labor')*months;
-  const rent=getInputVal('input-rent')*months;
-  const utilities=getInputVal('input-utilities')*months;
-  const insurance=getInputVal('input-insurance')*months;
-  const supplies=getInputVal('input-supplies')*months;
-  const marketing=getInputVal('input-marketing')*months;
-  const other=getInputVal('input-other')*months;
-  const debt=getInputVal('input-debt')*months;
+  const {bm:plBm, concepts:plConcepts, v:plv, anyEst:anyInsEst, eTag} = getPLInsightValues(months, revenue);
+  const cogs=plv.cogs, labor=plv.labor, rent=plv.rent, utilities=plv.utilities, insurance=plv.insurance,
+        supplies=plv.supplies, marketing=plv.marketing, other=plv.other, debt=plv.debt;
   const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;
   const grossProfit=revenue-cogs;
   const netProfit=revenue-cogs-opex;
@@ -441,7 +457,7 @@ async function generatePLInsights(){
 
   // Pre-calculate insight numbers so AI uses real figures
   const laborPct = revenue>0 ? (labor/revenue*100).toFixed(1) : 0;
-  const laborTarget = 28;
+  const laborTarget = (HRZN.getTargets ? HRZN.getTargets().labor : 28) || 28;
   const laborOverageMo = revenue>0 ? Math.round((labor/revenue - laborTarget/100)*revenue/months) : 0;
   const laborOverageAnn = laborOverageMo * 12;
   const debtPct = revenue>0 ? (debt/revenue*100).toFixed(1) : 0;
@@ -468,26 +484,29 @@ async function generatePLInsights(){
   const moProfitFinal = Math.round(netProfit/months);
 
   const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl', null, _plInsights.length ? { exclude: _plInsights.map(i=>i.title) } : {});
+  const cogsTargetPct = plBm.cogsPct || 32;
+  const cogsLbl = plBm.cogsLabel || 'Food Cost';
+  const estNote = anyInsEst ? `\nIMPORTANT: Lines marked [ESTIMATE] are industry-typical placeholder figures — the owner has NOT entered these costs yet. Do NOT treat them as the owner's actual spending and do NOT claim data is missing or corrupted. Where relevant, encourage entering real expenses on this page for accurate analysis.\n` : '';
+  const tipsLinePL = plConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)` : '';
+  const ddLinePL = plConcepts.delivery ? `\n- DoorDash: ${ddPct}% of revenue` : '';
   const prompt = plBasePrompt + `
 
-P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:
+P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:${estNote}
 - Revenue (Net Sales): $${Math.round(revenue).toLocaleString()}
-- Food Cost (COGS): $${Math.round(cogs).toLocaleString()} (${cogsPct}% of revenue — ${parseFloat(cogsPct)<25?'✅ EXCELLENT <25%':parseFloat(cogsPct)<32?'✅ healthy 25-32%':'⚠️ above 32%'})
+- ${cogsLbl} (COGS): $${Math.round(cogs).toLocaleString()} (${cogsPct}% of revenue — target ~${cogsTargetPct}% for this business type — ${parseFloat(cogsPct)<=cogsTargetPct?'✅ at or below target':'⚠️ above target'})${eTag('cogs')}
 - Gross Profit: $${Math.round(grossProfit).toLocaleString()} (${grossPct}% margin)
-- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — target ${laborTarget}% — ${laborOverageMo>0?'⚠️ $'+laborOverageMo.toLocaleString()+'/mo OVER target':'✅ at or below target'})
-- Rent: $${Math.round(rent).toLocaleString()} (${revenue>0?(rent/revenue*100).toFixed(1):0}%)
-- Utilities: $${Math.round(utilities).toLocaleString()}
-- Insurance: $${Math.round(insurance).toLocaleString()}
-- Supplies: $${Math.round(supplies).toLocaleString()}
-- Marketing: $${Math.round(marketing).toLocaleString()} ($${mktMo.toLocaleString()}/mo — room to grow to 2% = $${mktAt2pct.toLocaleString()}/mo, $${mktExtra.toLocaleString()}/mo extra budget available)
-- Other: $${Math.round(other).toLocaleString()}
-- Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% benchmark — $'+debtMoDrag.toLocaleString()+'/mo drag':'✅ within healthy range'})
+- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — target ${laborTarget}% — ${laborOverageMo>0?'⚠️ $'+laborOverageMo.toLocaleString()+'/mo OVER target':'✅ at or below target'})${eTag('labor')}
+- Rent: $${Math.round(rent).toLocaleString()} (${revenue>0?(rent/revenue*100).toFixed(1):0}%)${eTag('rent')}
+- Utilities: $${Math.round(utilities).toLocaleString()}${eTag('utilities')}
+- Insurance: $${Math.round(insurance).toLocaleString()}${eTag('insurance')}
+- Supplies: $${Math.round(supplies).toLocaleString()}${eTag('supplies')}
+- Marketing: $${Math.round(marketing).toLocaleString()} ($${mktMo.toLocaleString()}/mo — room to grow to 2% = $${mktAt2pct.toLocaleString()}/mo, $${mktExtra.toLocaleString()}/mo extra budget available)${eTag('marketing')}
+- Other: $${Math.round(other).toLocaleString()}${eTag('other')}
+- Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% benchmark — $'+debtMoDrag.toLocaleString()+'/mo drag':'✅ within healthy range'})${eTag('debt')}
 - Total Expenses: $${Math.round(cogs+opex).toLocaleString()}
 - Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}% margin)
-- Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo
-- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)
-- Weekly Revenue: $${weekly.toLocaleString()}/week
-- DoorDash: ${ddPct}% of revenue
+- Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo${tipsLinePL}
+- Weekly Revenue: $${weekly.toLocaleString()}/week${ddLinePL}
 
 CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your own figures.`;
 
@@ -539,15 +558,9 @@ async function generateMorePLInsights(){
   const period=d.period||(d.periodStart?(d.periodStart+(d.periodEnd?' - '+d.periodEnd:'')):'');
   const months=getMonths(period);
   const revenue=d.netSales||0;
-  const cogs=getInputVal('input-cogs')*months;
-  const labor=getInputVal('input-labor')*months;
-  const rent=getInputVal('input-rent')*months;
-  const utilities=getInputVal('input-utilities')*months;
-  const insurance=getInputVal('input-insurance')*months;
-  const supplies=getInputVal('input-supplies')*months;
-  const marketing=getInputVal('input-marketing')*months;
-  const other=getInputVal('input-other')*months;
-  const debt=getInputVal('input-debt')*months;
+  const {bm:plBm, concepts:plConcepts, v:plv, anyEst:anyInsEst, eTag} = getPLInsightValues(months, revenue);
+  const cogs=plv.cogs, labor=plv.labor, rent=plv.rent, utilities=plv.utilities, insurance=plv.insurance,
+        supplies=plv.supplies, marketing=plv.marketing, other=plv.other, debt=plv.debt;
   const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;
   const netProfit=revenue-cogs-opex;
   const cogsPct = revenue>0?(cogs/revenue*100).toFixed(1):0;
@@ -828,7 +841,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+    notice.innerHTML = '<span style="color:var(--text-dim);">📊 Showing sample demo data — these are not your numbers. Upload your CSV to see your business.</span>' +
       '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {

@@ -159,9 +159,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         Analyzing your business...
       </div>
       <div style="padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);">
-        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">What should I focus on this week?</span>
-        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">How do I fix Tuesday labor?</span>
-        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">Grow DoorDash to 10%</span>
+        <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">What should I focus on this week?</span><span id="dash-ai-chips-dynamic" style="display:contents;"></span>
         <span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">Forecast next month</span>
       </div>
       <div style="padding:10px 14px;display:flex;gap:8px;align-items:center;background:var(--surface2);">
@@ -191,7 +189,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="card">
         <div class="card-header">
           <div class="card-title">Business Health Score</div>
-          <div style="font-size:10px;color:var(--text-dim);">0–100 · calculated from your real data</div>
+          <div style="font-size:10px;color:var(--text-dim);" id="dash-health-sub">0–100</div>
         </div>
         <div style="display:flex;align-items:center;gap:20px;padding:16px;">
           <div style="position:relative;width:100px;height:100px;flex-shrink:0;">
@@ -472,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+    notice.innerHTML = '<span style="color:var(--text-dim);">📊 Showing sample demo data — these are not your numbers. Upload your CSV to see your business.</span>' +
       '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {
@@ -626,9 +624,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Critical Alerts
   const alerts = [];
   if(laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'Avg item price $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on upselling premium items',link:'products.html'});
-  if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Well below the 6% industry warning threshold',link:'alerts.html'});
+  const dashBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const dashConcepts = dashBm.concepts || { delivery:true, tips:true };
+  const dashTicketApplies = !!(dashBm.avgTicket && dashBm.avgTicket > 0);
+  const dashTicketLabel = dashBm.avgTicketLabel || 'Avg item price';
+  if(dashConcepts.delivery && doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
+  if(dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:dashTicketLabel+' $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on lifting the average sale',link:'products.html'});
+  if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Below the '+(dashBm.discountMaxPct || 6)+'% warning threshold for your business type',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');
   if(alertsList) {
@@ -654,7 +656,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   set('dash-health-score', health == null ? '—' : health);
   set('dash-health-label', healthLabel);
-  set('dash-health-desc', hs ? hs.note : 'Based on your business data');
+  const isDemoData = d._source === 'demo';
+  set('dash-health-desc', isDemoData ? 'Based on demo sample data' : (hs ? hs.note : 'Based on your business data'));
+  set('dash-health-sub', isDemoData ? '0\u2013100 \u00b7 based on demo sample data' : '0\u2013100 \u00b7 calculated from your real data');
+
+  // Mini-operator chips: category-aware questions (was hardcoded "Fix Tuesday labor"/"Grow DoorDash")
+  try {
+    const chipHost = document.getElementById('dash-ai-chips-dynamic');
+    if (chipHost) {
+      const qBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+      const qs = (qBm.suggestedQuestions || []).filter(q => q !== 'What should I focus on this week?').slice(0, 2);
+      chipHost.innerHTML = qs.map(q => '<span class="dash-ai-chip" onclick="hrznAskWidget(this.textContent)">' + q + '</span>').join('');
+    }
+  } catch(e) {}
   const ring = document.getElementById('dash-health-ring');
   if(ring) { ring.setAttribute('stroke-dasharray', Math.round((health||0)/100*251.2)+' 251.2'); ring.setAttribute('stroke', healthColor); }
   const scoreEl = document.getElementById('dash-health-score');
@@ -668,9 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Top Recommendations
   const recs = [];
-  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Reduce Tuesday staffing',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
-  if(doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
-  if(avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Push premium item upsells',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'products.html'});
+  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Optimize staffing levels',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
+  if(dashConcepts.delivery && doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
+  if(dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Lift your average sale',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'products.html'});
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');

@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+    notice.innerHTML = '<span style="color:var(--text-dim);">📊 Showing sample demo data — these are not your numbers. Upload your CSV to see your business.</span>' +
       '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {
@@ -478,7 +478,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   const isReal = (k) => expenses[k] != null && expenses[k] !== '' && !isNaN(parseFloat(expenses[k]));
   // Labor fallback uses the CENTRAL rate chain (API → manual → fallback), not a stray hardcoded 32%.
   const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
-  const mCogs = isReal('cogs') ? parseFloat(expenses.cogs) : Math.round(monthly*0.32);
+  // COGS fallback uses the CATEGORY benchmark (restaurant ~32%, retail ~60%, online ~55%), not a fixed 32%.
+  const cfBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const cogsRatePct = cfBm.cogsPct || 32;
+  const mCogs = isReal('cogs') ? parseFloat(expenses.cogs) : Math.round(monthly*(cogsRatePct/100));
   const mLabor = isReal('labor') ? parseFloat(expenses.labor) : Math.round(monthly*(laborRatePct/100));
   const mRent = isReal('rent') ? parseFloat(expenses.rent) : 8500;
   const mUtils = isReal('utilities') ? parseFloat(expenses.utilities) : 1200;
@@ -567,21 +570,23 @@ document.addEventListener('DOMContentLoaded',()=>{
 function generateMonthlyRows(d, months, monthly, expenses){
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const rows = [];
-  // Parse start date from period
-  let startMonth = 0;
+  // Parse start date from period (month AND year — year was previously hardcoded to 2026)
+  let startMonth = 0, startYear = new Date().getFullYear();
   try {
     const parts = (d.periodStart||d.period||'Jan 1, 2026').replace(/12:00 AM|11:59 PM/g,'').trim().split(' - ');
     const startDate = new Date(parts[0].replace(/12:00 AM|11:59 PM/g,'').trim());
-    if (!isNaN(startDate.getTime())) startMonth = startDate.getMonth();
+    if (!isNaN(startDate.getTime())) { startMonth = startDate.getMonth(); startYear = startDate.getFullYear(); }
   } catch(e){}
 
   // Even split of period totals — no invented month-to-month variation.
   // (The CSV is a period total; real monthly detail arrives with live POS data.)
-  for(let i=0; i<Math.ceil(months); i++){
+  const rowCount = Math.max(1, Math.round(months));
+  for(let i=0; i<rowCount; i++){
     const mIdx = (startMonth + i) % 12;
+    const year = startYear + Math.floor((startMonth + i) / 12);
     const inflow = Math.round(monthly);
     const outflow = Math.round(expenses);
-    rows.push({label: monthNames[mIdx]+' 2026', inflow, outflow, net: inflow-outflow});
+    rows.push({label: monthNames[mIdx]+' '+year, inflow, outflow, net: inflow-outflow});
   }
   return rows;
 }

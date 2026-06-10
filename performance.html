@@ -221,9 +221,9 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-margin-change">—</div></div>
         </div>
       </div>
-      <div class="card">
+      <div class="card" id="daypart-heatmap-card">
         <div class="card-header"><div class="card-title">Typical Busy Periods — By Session & Day</div><div style="font-size:10px;color:var(--orange);">⚠ Industry-typical pattern · not your data yet</div></div>
-        <div class="card-body"><div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;">Shows when restaurants like yours are typically busiest. Your real day-by-day revenue will replace this pattern when the Clover live API connects.</div>
+        <div class="card-body"><div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;">Shows when businesses like yours are typically busiest. Your real day-by-day revenue will replace this pattern when a live POS integration connects.</div>
           <div class="heatmap-grid" id="heatmap-grid">
             <div></div>
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Mon</div>
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
+    notice.innerHTML = '<span style="color:var(--text-dim);">📊 Showing sample demo data — these are not your numbers. Upload your CSV to see your business.</span>' +
       '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {
@@ -562,6 +562,13 @@ const months = HRZN.getMonths(d);
   set('perf-monthly-target-pct', Math.round(monthly/monthlyTarget*100)+'% of target');
 
   // Heatmap — relative intensity pattern only (industry-typical day/meal weights).
+  // Lunch/Dinner dayparts are a restaurant concept: hide the card entirely for other categories.
+  try {
+    const hmBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+    const hmConcepts = hmBm.concepts || { dayparts: true };
+    const hmCard = document.getElementById('daypart-heatmap-card');
+    if (hmCard && hmConcepts.dayparts === false) { hmCard.style.display = 'none'; }
+  } catch(e) {}
   // No dollar figures: per-cell amounts were fabricated precision (invented weights × weekly avg).
   try {
     const dayWeights = {mon:0.85, tue:0.70, wed:0.95, thu:1.05, fri:1.45, sat:1.35, sun:1.10};
