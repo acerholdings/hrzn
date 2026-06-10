@@ -596,7 +596,7 @@ function loadSettings(){
         labor: tBm.laborPct, food: tBm.cogsPct, margin: tBm.netMarginTarget,
         doordash: tBm.deliveryTargetPct, discount: tBm.discountMaxPct,
         check: (tBm.avgTicket && tBm.avgTicket > 0) ? tBm.avgTicket : null,
-        revenue: 12000, monthly: 50000
+        revenue: '12k', monthly: '50k'
       };
       ['labor','food','margin','revenue','monthly','check','doordash','discount'].forEach(k=>{
         const el = document.getElementById('target-'+k);
