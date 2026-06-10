@@ -603,7 +603,7 @@ function loadSettings(){
         if(!el) return;
         const saved = s.targets ? s.targets[k] : undefined;
         if(saved !== undefined && saved !== '' && saved !== null) { el.value = saved; }
-        else { el.value = ''; if(ph[k] != null) el.placeholder = 'default: ' + ph[k]; }
+        else { el.value = ''; if(ph[k] != null) el.placeholder = '≈ ' + ph[k]; }
       });
     } catch(e) {
       if(s.targets){
