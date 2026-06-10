@@ -635,8 +635,7 @@ const months = HRZN.getMonths(d);
     if(grade) { grade.textContent = gradeLabel; grade.style.color = color; }
   });
 
-  // Monthly progress bar
-  const monthlyTarget = 50000;
+  // Monthly progress bar (uses the category-aware monthlyTarget declared above)
   const progressPct = Math.min(100, Math.round(monthly / monthlyTarget * 100));
   const progressBar = document.getElementById('perf-progress-bar');
   if(progressBar) progressBar.style.width = progressPct + '%';
