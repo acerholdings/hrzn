@@ -201,7 +201,7 @@ tr:hover td{background:rgba(128,128,128,0.03);}
           <div class="flow-val" id="cf-outflow2" style="color:var(--red);">—</div>
         </div>
         <div class="flow-row">
-          <div class="flow-label">Food Cost (COGS)</div>
+          <div class="flow-label" id="cf-cogs-label">Food Cost (COGS)</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-cogs" style="width:0%;background:var(--red);"></div></div>
           <div class="flow-pct" id="cf-cogs-pct">—</div>
           <div class="flow-val" id="cf-cogs-out" style="color:var(--red);">—</div>
@@ -481,6 +481,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   // COGS fallback uses the CATEGORY benchmark (restaurant ~32%, retail ~60%, online ~55%), not a fixed 32%.
   const cfBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const cogsRatePct = cfBm.cogsPct || 32;
+  const cfCogsLbl = document.getElementById('cf-cogs-label');
+  if(cfCogsLbl && cfBm.cogsLabel) cfCogsLbl.textContent = cfBm.cogsLabel + ' (COGS)';
   const mCogs = isReal('cogs') ? parseFloat(expenses.cogs) : Math.round(monthly*(cogsRatePct/100));
   const mLabor = isReal('labor') ? parseFloat(expenses.labor) : Math.round(monthly*(laborRatePct/100));
   const mRent = isReal('rent') ? parseFloat(expenses.rent) : 8500;

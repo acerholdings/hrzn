@@ -139,7 +139,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="kpi-card">
         <div class="kpi-label">Gross Profit</div>
         <div class="kpi-value" id="kpi-gross" style="color:var(--green);">—</div>
-        <div class="kpi-sub">After food cost &middot; <span id="kpi-gross-pct" style="color:var(--green);">—</span> margin</div>
+        <div class="kpi-sub">After <span id="kpi-cogs-word">cost of goods</span> &middot; <span id="kpi-gross-pct" style="color:var(--green);">—</span> margin</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Total Expenses</div>
@@ -192,7 +192,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Estimate labor from revenue</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter <strong style="color:var(--text);">monthly</strong> amounts. HRZN scales to your CSV period (<span id="period-months">1.0</span> months).</div>
-            <div class="input-row"><div class="input-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="e.g. 8,000 / mo" oninput="calcAndRender()"/></div>
+            <div class="input-row"><div class="input-label" id="input-cogs-label">Food Cost (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="e.g. 8,000 / mo" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" placeholder="e.g. 10,000 / mo" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" placeholder="e.g. 8,500 / mo" oninput="calcAndRender()"/></div>
             <div class="input-row"><div class="input-label">Utilities</div><input class="input-field" id="input-utilities" type="number" placeholder="e.g. 1,200 / mo" oninput="calcAndRender()"/></div>
@@ -207,7 +207,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="card">
           <div class="card-header"><div class="card-title">Expense Breakdown</div></div>
           <div class="card-body">
-            <div class="bar-row"><div class="bar-label">Food Cost</div><div class="bar-track"><div class="bar-fill" id="bar-cogs" style="background:var(--red);width:0%;"></div></div><div class="bar-val" id="bar-cogs-val">—</div></div>
+            <div class="bar-row"><div class="bar-label" id="bar-cogs-label">Food Cost</div><div class="bar-track"><div class="bar-fill" id="bar-cogs" style="background:var(--red);width:0%;"></div></div><div class="bar-val" id="bar-cogs-val">—</div></div>
             <div class="bar-row"><div class="bar-label">Labor</div><div class="bar-track"><div class="bar-fill" id="bar-labor" style="background:var(--orange);width:0%;"></div></div><div class="bar-val" id="bar-labor-val">—</div></div>
             <div class="bar-row"><div class="bar-label">Rent</div><div class="bar-track"><div class="bar-fill" id="bar-rent" style="background:var(--gold);width:0%;"></div></div><div class="bar-val" id="bar-rent-val">—</div></div>
             <div class="bar-row"><div class="bar-label">Utilities</div><div class="bar-track"><div class="bar-fill" id="bar-utilities" style="background:var(--blue);width:0%;"></div></div><div class="bar-val" id="bar-utilities-val">—</div></div>
@@ -370,9 +370,15 @@ function calcAndRender(){
   const estTag = (f) => isEst[f] ? ' (est.)' : '';
   const banner = document.getElementById('pl-est-banner');
   if(banner) banner.style.display = anyEst ? 'block' : 'none';
-  // Category-aware COGS label (Food & Beverage Cost / Cost of Goods / etc.)
+  // Category-aware COGS labels (Food & Beverage Cost / Cost of Goods / etc.)
   const cogsLabelEl = document.getElementById('pl-cogs-label');
   if(cogsLabelEl && calcBm.cogsLabel) cogsLabelEl.textContent = calcBm.cogsLabel;
+  const inputCogsLbl = document.getElementById('input-cogs-label');
+  if(inputCogsLbl && calcBm.cogsLabel) inputCogsLbl.textContent = calcBm.cogsLabel + ' (COGS)';
+  const barCogsLbl = document.getElementById('bar-cogs-label');
+  if(barCogsLbl && calcBm.cogsLabel) barCogsLbl.textContent = calcBm.cogsLabel;
+  const kpiCogsWord = document.getElementById('kpi-cogs-word');
+  if(kpiCogsWord && calcBm.cogsLabel) kpiCogsWord.textContent = calcBm.cogsLabel.toLowerCase();
 
   const grossProfit=revenue-cogs;
   const opex=labor+rent+utilities+insurance+supplies+marketing+other+debt;

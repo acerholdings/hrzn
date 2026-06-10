@@ -841,6 +841,16 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const checkTarget = targets.check || 0;
     const ddTarget = targets.doordash || 10;
 
+    // Category concepts: never push restaurant-only concepts (tips, delivery) into the AI's
+    // context for categories that don't have them — even if a target was saved in settings.
+    const spBm = this.getBenchmarks ? this.getBenchmarks() : {};
+    const spConcepts = (spBm && spBm.concepts) || { delivery: true, tips: true };
+    const ticketLbl = (spBm && spBm.avgTicketLabel) || 'Avg check';
+    const tipsLine = spConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — ${tipsLabel})` : '';
+    const showDD = spConcepts.delivery || (t.doorDash||0) > 0;
+    const ddPayLine = showDD ? `\n- DoorDash/Delivery: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — ${ddLabel})` : '';
+    const ddTargetLine = spConcepts.delivery ? `\n- DoorDash target: ${ddTarget}%` : '';
+
     // Target comparison strings
     const revenueVsTarget = revenueTarget > 0
       ? `$${weekly.toLocaleString()} vs $${revenueTarget.toLocaleString()} target (${weekly >= revenueTarget ? '✅ above' : `⚠️ $${(revenueTarget-weekly).toLocaleString()} below`})`
@@ -854,8 +864,7 @@ REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, ${d.periodS
 REVENUE:
 - Gross Sales: $${Math.round(d.grossSales||0).toLocaleString()}
 - Discounts: -$${Math.round(d.discounts||0).toLocaleString()} (${discPct}% of gross — ${discLabel})
-- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}
-- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — ${tipsLabel})
+- Net Sales: $${Math.round(d.netSales||0).toLocaleString()}${tipsLine}
 - Taxes & Fees: $${Math.round(d.taxes||0).toLocaleString()}
 - Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
 
@@ -871,16 +880,14 @@ PERIOD & VELOCITY:
 
 PAYMENT CHANNELS:
 - Credit Card: $${Math.round(t.creditCard||0).toLocaleString()} (${d.amountCollected > 0 ? Math.round((t.creditCard||0)/d.amountCollected*100) : 0}%)
-- Debit Card: $${Math.round(t.debitCard||0).toLocaleString()} (${d.amountCollected > 0 ? Math.round((t.debitCard||0)/d.amountCollected*100) : 0}%)
-- DoorDash/Delivery: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — ${ddLabel})
+- Debit Card: $${Math.round(t.debitCard||0).toLocaleString()} (${d.amountCollected > 0 ? Math.round((t.debitCard||0)/d.amountCollected*100) : 0}%)${ddPayLine}
 - Cash: $${Math.round(t.cash||0).toLocaleString()} (${cashPct}% — ${cashLabel})
 - Digital payments total: ${digitalPct}% of revenue (${digitalPct > 85 ? '✅ excellent data quality' : digitalPct > 70 ? 'good' : '⚠️ high cash use'})
 
 TARGETS (from operator settings):
 - Labor target: ${laborTarget}%${targets.labor ? '' : ' (default — set in Settings)'}
 - Weekly revenue target: ${revenueTarget > 0 ? '$' + revenueTarget.toLocaleString() : 'not set'}
-- Avg check target: ${checkTarget > 0 ? '$' + checkTarget : 'not set'}
-- DoorDash target: ${ddTarget}%
+- ${ticketLbl} target: ${checkTarget > 0 ? '$' + checkTarget : 'not set'}${ddTargetLine}
 
 CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 - Use ONLY the figures provided above. Never invent a revenue target, sales goal, or any benchmark number.
