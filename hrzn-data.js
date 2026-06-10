@@ -836,7 +836,10 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
 
     // Targets from settings
     const targets = settings.targets || {};
-    const laborTarget = targets.labor || 28;
+    // Category-aware fallback: an unset labor target must fall back to the CATEGORY benchmark
+    // (retail 18%, etc.), not a hardcoded restaurant 28 — otherwise the AI cites the wrong target.
+    const ctTargets = this.getTargets ? this.getTargets() : {};
+    const laborTarget = targets.labor || ctTargets.labor || 28;
     const revenueTarget = targets.revenue || 0;
     const checkTarget = targets.check || 0;
     const ddTarget = targets.doordash || 10;
@@ -857,7 +860,9 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
       : `$${weekly.toLocaleString()}/week`;
 
     return `You are HRZN, an elite AI business operator for ${bizName}${isDemo ? ' (demo mode)' : ''}. Business type: ${bizType}.
-${this.getBenchmarkContext()}
+${d._source === 'demo' ? `
+IMPORTANT — SAMPLE DATA: The figures below are SAMPLE DEMO DATA, not the user's real business. Make this clear naturally in your answer (e.g. "in this sample data...") and encourage uploading their CSV for real analysis. Never present demo figures as the user's own performance.
+` : ''}${this.getBenchmarkContext()}
 
 REAL BUSINESS DATA (${d._source === 'demo' ? 'Demo' : 'CSV Upload'}, ${d.periodStart ? d.periodStart + (d.periodEnd ? ' to ' + d.periodEnd : '') : 'reporting period'}):
 

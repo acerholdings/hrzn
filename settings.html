@@ -274,14 +274,14 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
                 </div>
                 <input class="target-input" id="labor-rate" type="number" value="32" oninput="markDirty()"/><div class="target-unit">%</div>
               </div>
-              <div class="target-row" id="row-target-labor"><div class="target-label" id="lbl-target-labor">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" value="28" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row" id="row-target-food"><div class="target-label" id="lbl-target-food">Food Cost Target</div><input class="target-input" id="target-food" type="number" value="30" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row" id="row-target-margin"><div class="target-label">Net Margin Target</div><input class="target-input" id="target-margin" type="number" value="15" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row" id="row-target-revenue"><div class="target-label">Weekly Revenue Target</div><input class="target-input" id="target-revenue" type="number" value="12000" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row" id="row-target-monthly"><div class="target-label">Monthly Revenue Target</div><input class="target-input" id="target-monthly" type="number" value="50000" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row" id="row-target-check"><div class="target-label" id="lbl-target-check">Avg Item Price Target</div><input class="target-input" id="target-check" type="number" value="15" oninput="markDirty()"/><div class="target-unit">$</div></div>
-              <div class="target-row" id="row-target-doordash"><div class="target-label">DoorDash Revenue Target</div><input class="target-input" id="target-doordash" type="number" value="10" oninput="markDirty()"/><div class="target-unit">%</div></div>
-              <div class="target-row" id="row-target-discount"><div class="target-label">Max Discount Rate</div><input class="target-input" id="target-discount" type="number" value="5" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-labor"><div class="target-label" id="lbl-target-labor">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-food"><div class="target-label" id="lbl-target-food">Food Cost Target</div><input class="target-input" id="target-food" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-margin"><div class="target-label">Net Margin Target</div><input class="target-input" id="target-margin" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-revenue"><div class="target-label">Weekly Revenue Target</div><input class="target-input" id="target-revenue" type="number" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-monthly"><div class="target-label">Monthly Revenue Target</div><input class="target-input" id="target-monthly" type="number" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-check"><div class="target-label" id="lbl-target-check">Avg Item Price Target</div><input class="target-input" id="target-check" type="number" oninput="markDirty()"/><div class="target-unit">$</div></div>
+              <div class="target-row" id="row-target-doordash"><div class="target-label">DoorDash Revenue Target</div><input class="target-input" id="target-doordash" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-discount"><div class="target-label">Max Discount Rate</div><input class="target-input" id="target-discount" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
             </div>
           </div>
         </div>
@@ -487,16 +487,16 @@ function saveAll(){
     ownerName: document.getElementById('owner-name')?.value,
     ownerEmail: document.getElementById('owner-email')?.value,
     ownerPhone: document.getElementById('owner-phone')?.value,
-    targets: {
-      labor: document.getElementById('target-labor')?.value,
-      food: document.getElementById('target-food')?.value,
-      margin: document.getElementById('target-margin')?.value,
-      revenue: document.getElementById('target-revenue')?.value,
-      monthly: document.getElementById('target-monthly')?.value,
-      check: document.getElementById('target-check')?.value,
-      doordash: document.getElementById('target-doordash')?.value,
-      discount: document.getElementById('target-discount')?.value,
-    }
+    // Save ONLY targets the user actually has values for — empty fields are OMITTED so
+    // the engine falls back to category benchmarks (prevents laundering display defaults).
+    targets: (function(){
+      const out = {};
+      ['labor','food','margin','revenue','monthly','check','doordash','discount'].forEach(k=>{
+        const el = document.getElementById('target-'+k);
+        if(el && el.value !== '' && !isNaN(parseFloat(el.value))) out[k] = el.value;
+      });
+      return out;
+    })()
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   // Save the manual labor rate through the central source (stores a mode marker
@@ -588,11 +588,27 @@ function loadSettings(){
     if(s.ownerName) document.getElementById('owner-name').value = s.ownerName;
     if(s.ownerEmail) document.getElementById('owner-email').value = s.ownerEmail;
     if(s.ownerPhone) document.getElementById('owner-phone').value = s.ownerPhone;
-    if(s.targets){
-      Object.keys(s.targets).forEach(k=>{
+    // Targets: show SAVED values; for unsaved fields show the category default as a
+    // PLACEHOLDER only (never a value) — so Save can't launder defaults into real targets.
+    try {
+      const tBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+      const ph = {
+        labor: tBm.laborPct, food: tBm.cogsPct, margin: tBm.netMarginTarget,
+        doordash: tBm.deliveryTargetPct, discount: tBm.discountMaxPct,
+        check: (tBm.avgTicket && tBm.avgTicket > 0) ? tBm.avgTicket : null,
+        revenue: 12000, monthly: 50000
+      };
+      ['labor','food','margin','revenue','monthly','check','doordash','discount'].forEach(k=>{
         const el = document.getElementById('target-'+k);
-        if(el) el.value = s.targets[k];
+        if(!el) return;
+        const saved = s.targets ? s.targets[k] : undefined;
+        if(saved !== undefined && saved !== '' && saved !== null) { el.value = saved; }
+        else { el.value = ''; if(ph[k] != null) el.placeholder = 'default: ' + ph[k]; }
       });
+    } catch(e) {
+      if(s.targets){
+        Object.keys(s.targets).forEach(k=>{ const el=document.getElementById('target-'+k); if(el) el.value=s.targets[k]; });
+      }
     }
     // Populate the estimated labor rate field from the central source.
     // Only override the default if a manual value was actually stored — when the
