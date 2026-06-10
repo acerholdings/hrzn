@@ -134,12 +134,12 @@ tr:hover td{background:rgba(128,128,128,0.03);}
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Net Cash Flow</div>
-        <div class="kpi-value" id="cf-net">-$11,298</div>
+        <div class="kpi-value" id="cf-net">—</div>
         <div class="kpi-sub">Monthly average</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Runway</div>
-        <div class="kpi-value" id="cf-runway">∞</div>
+        <div class="kpi-value" id="cf-runway">—</div>
         <div class="kpi-sub">At current burn rate</div>
       </div>
     </div>
@@ -151,7 +151,7 @@ tr:hover td{background:rgba(128,128,128,0.03);}
         <div style="display:flex;align-items:center;gap:16px;font-size:11px;">
           <span style="display:flex;align-items:center;gap:5px;color:var(--green);"><span style="width:10px;height:10px;border-radius:2px;background:rgba(76,175,125,0.6);display:inline-block;"></span>Revenue in</span>
           <span style="display:flex;align-items:center;gap:5px;color:var(--red);"><span style="width:10px;height:10px;border-radius:2px;background:rgba(224,85,85,0.6);display:inline-block;"></span>Expenses out</span>
-          <span style="font-size:10px;color:var(--text-dim);margin-left:4px;">· estimated from monthly averages</span>
+          <span style="font-size:10px;color:var(--text-dim);margin-left:4px;">· monthly averages (even split of period totals — real monthly detail arrives with live POS data)</span>
         </div>
       </div>
       <div class="card-body" style="padding:16px 16px 8px;">
@@ -178,14 +178,14 @@ tr:hover td{background:rgba(128,128,128,0.03);}
         <div class="flow-row">
           <div class="flow-label">Tips Collected</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" style="width:16%;background:var(--gold);"></div></div>
-          <div class="flow-pct" id="cf-tips-pct">16%</div>
-          <div class="flow-val" id="cf-tips-in" style="color:var(--gold);">$7,009</div>
+          <div class="flow-pct" id="cf-tips-pct">—</div>
+          <div class="flow-val" id="cf-tips-in" style="color:var(--gold);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">DoorDash Revenue</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" style="width:4%;background:var(--blue);"></div></div>
-          <div class="flow-pct" id="cf-doordash-pct">4%</div>
-          <div class="flow-val" id="cf-doordash-in" style="color:var(--blue);">$2,043</div>
+          <div class="flow-pct" id="cf-doordash-pct">—</div>
+          <div class="flow-val" id="cf-doordash-in" style="color:var(--blue);">—</div>
         </div>
         <div class="flow-row" style="background:var(--surface2);border-top:1px solid var(--border);">
           <div class="flow-label" style="font-size:11px;color:var(--text-dim);">Note: Tips are included in Total Collected amount above</div>
@@ -195,45 +195,46 @@ tr:hover td{background:rgba(128,128,128,0.03);}
       <!-- OUTFLOW -->
       <div class="card">
         <div class="card-header"><div class="card-title">Outflow Breakdown</div><div style="font-size:10px;color:var(--red);">Monthly avg · from P&L</div></div>
+        <div id="cf-est-banner" style="display:none;margin:8px 12px 0;padding:8px 12px;background:rgba(224,140,53,0.08);border:1px solid rgba(224,140,53,0.25);border-radius:6px;font-size:10px;color:var(--orange);">⚠ Estimated — expenses marked (est.) are industry-typical figures, not your actual costs. <span style="color:var(--gold);cursor:pointer;text-decoration:underline;" onclick="navigate('pl.html')">Enter your real expenses in P&L</span> to replace them.</div>
         <div class="flow-row" style="background:var(--surface2);">
           <div class="flow-label" style="font-weight:500;">Total Outflow</div>
           <div class="flow-val" id="cf-outflow2" style="color:var(--red);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Food Cost (COGS)</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-cogs" style="width:60%;background:var(--red);"></div></div>
-          <div class="flow-pct" id="cf-cogs-pct">29%</div>
-          <div class="flow-val" id="cf-cogs-out" style="color:var(--red);">$15,000</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-cogs" style="width:0%;background:var(--red);"></div></div>
+          <div class="flow-pct" id="cf-cogs-pct">—</div>
+          <div class="flow-val" id="cf-cogs-out" style="color:var(--red);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Labor</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-labor" style="width:100%;background:var(--orange);"></div></div>
-          <div class="flow-pct" id="cf-labor-pct">35%</div>
-          <div class="flow-val" id="cf-labor-out" style="color:var(--orange);">$18,000</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-labor" style="width:0%;background:var(--orange);"></div></div>
+          <div class="flow-pct" id="cf-labor-pct">—</div>
+          <div class="flow-val" id="cf-labor-out" style="color:var(--orange);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Rent &amp; Occupancy</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-rent" style="width:60%;background:var(--gold);"></div></div>
-          <div class="flow-pct" id="cf-rent-pct">33%</div>
-          <div class="flow-val" id="cf-rent-out" style="color:var(--gold);">$11,000</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-rent" style="width:0%;background:var(--gold);"></div></div>
+          <div class="flow-pct" id="cf-rent-pct">—</div>
+          <div class="flow-val" id="cf-rent-out" style="color:var(--gold);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Utilities</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-utils" style="width:4%;background:var(--blue);"></div></div>
-          <div class="flow-pct" id="cf-utils-pct">2%</div>
-          <div class="flow-val" id="cf-utils-out" style="color:var(--text-mid);">$1,200</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-utils" style="width:0%;background:var(--blue);"></div></div>
+          <div class="flow-pct" id="cf-utils-pct">—</div>
+          <div class="flow-val" id="cf-utils-out" style="color:var(--text-mid);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Debt Payments</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-debt" style="width:24%;background:var(--red);"></div></div>
-          <div class="flow-pct" id="cf-debt-pct">13%</div>
-          <div class="flow-val" id="cf-debt-out" style="color:var(--red);">$7,000</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-debt" style="width:0%;background:var(--red);"></div></div>
+          <div class="flow-pct" id="cf-debt-pct">—</div>
+          <div class="flow-val" id="cf-debt-out" style="color:var(--red);">—</div>
         </div>
         <div class="flow-row">
           <div class="flow-label">Insurance / Supplies / Other</div>
-          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-other" style="width:8%;background:var(--text-dim);"></div></div>
-          <div class="flow-pct" id="cf-other-pct">4%</div>
-          <div class="flow-val" id="cf-other-out" style="color:var(--text-mid);">$1,900</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-other" style="width:0%;background:var(--text-dim);"></div></div>
+          <div class="flow-pct" id="cf-other-pct">—</div>
+          <div class="flow-val" id="cf-other-out" style="color:var(--text-mid);">—</div>
         </div>
         <div class="flow-row" style="background:var(--surface2);border-top:1px solid var(--border);">
           <div class="flow-label" style="font-size:11px;color:var(--text-dim);">Edit expenses in <span style="color:var(--gold);cursor:pointer;" onclick="navigate('pl.html')">P&L →</span></div>
@@ -245,7 +246,7 @@ tr:hover td{background:rgba(128,128,128,0.03);}
     <div class="card fade-3" style="margin-bottom:20px;">
       <div class="card-header">
         <div class="card-title">Monthly Cash Flow Summary <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
-        <div style="font-size:10px;color:var(--text-dim);">Based on your CSV period with natural variation</div>
+        <div style="font-size:10px;color:var(--text-dim);">Monthly averages from your CSV period totals</div>
       </div>
       <table>
         <thead>
@@ -471,18 +472,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   const weekly = Math.round((d.netSales||0) / weeks);
   const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
 
-  // Get P&L expenses
+  // Get P&L expenses — track which are REAL (user-entered) vs ESTIMATED (industry-typical fallback).
   let expenses = {};
   try { expenses = JSON.parse(localStorage.getItem('hrzn-pl-data')||'{}'); } catch(e){}
-  const mCogs = (expenses.cogs||Math.round(monthly*0.32));
-  const mLabor = (expenses.labor||Math.round(monthly*0.32));
-  const mRent = (expenses.rent||8500);
-  const mUtils = (expenses.utilities||1200);
-  const mInsurance = (expenses.insurance||800);
-  const mSupplies = (expenses.supplies||600);
-  const mMarketing = (expenses.marketing||500);
-  const mOther = (expenses.other||800);
-  const mDebt = (expenses.debt||7000);
+  const isReal = (k) => expenses[k] != null && expenses[k] !== '' && !isNaN(parseFloat(expenses[k]));
+  // Labor fallback uses the CENTRAL rate chain (API → manual → fallback), not a stray hardcoded 32%.
+  const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
+  const mCogs = isReal('cogs') ? parseFloat(expenses.cogs) : Math.round(monthly*0.32);
+  const mLabor = isReal('labor') ? parseFloat(expenses.labor) : Math.round(monthly*(laborRatePct/100));
+  const mRent = isReal('rent') ? parseFloat(expenses.rent) : 8500;
+  const mUtils = isReal('utilities') ? parseFloat(expenses.utilities) : 1200;
+  const mInsurance = isReal('insurance') ? parseFloat(expenses.insurance) : 800;
+  const mSupplies = isReal('supplies') ? parseFloat(expenses.supplies) : 600;
+  const mMarketing = isReal('marketing') ? parseFloat(expenses.marketing) : 500;
+  const mOther = isReal('other') ? parseFloat(expenses.other) : 800;
+  const mDebt = isReal('debt') ? parseFloat(expenses.debt) : 7000;
+  const anyEstimated = !(isReal('cogs') && isReal('labor') && isReal('rent') && isReal('utilities') && isReal('insurance') && isReal('supplies') && isReal('marketing') && isReal('other') && isReal('debt'));
   const totalMonthlyExp = mCogs+mLabor+mRent+mUtils+mInsurance+mSupplies+mMarketing+mOther+mDebt;
   const netCashFlow = monthly - totalMonthlyExp;
   const isPositive = netCashFlow >= 0;
@@ -494,16 +499,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('cf-period', period || 'Jan 1 – May 28, 2026');
 
   // KPIs
+  const estTag = anyEstimated ? ' (est.)' : '';
   set('cf-inflow', fmt(monthly));
-  set('cf-outflow', fmt(totalMonthlyExp));
-  set('cf-outflow2', fmt(totalMonthlyExp));
-  set('cf-net', (isPositive?'+':'-')+fmt(netCashFlow));
-  set('cf-runway', isPositive ? '∞' : Math.round((monthly*2)/Math.abs(netCashFlow))+'mo');
+  set('cf-outflow', fmt(totalMonthlyExp) + estTag);
+  set('cf-outflow2', fmt(totalMonthlyExp) + estTag);
+  set('cf-net', (isPositive?'+':'-')+fmt(netCashFlow) + estTag);
+  // Runway requires cash-on-hand, which no current data source provides. Never fabricate it.
+  set('cf-runway', '—');
+  const runwayNote = document.getElementById('cf-runway');
+  if(runwayNote && runwayNote.nextElementSibling) runwayNote.nextElementSibling.textContent = 'Needs cash on hand';
+
+  // Show the estimate banner when any expense line is a fallback.
+  const estBanner = document.getElementById('cf-est-banner');
+  if(estBanner) estBanner.style.display = anyEstimated ? 'block' : 'none';
 
   const netEl = document.getElementById('cf-net');
   if(netEl) netEl.style.color = isPositive ? 'var(--green)' : 'var(--red)';
   const runwayEl = document.getElementById('cf-runway');
-  if(runwayEl) runwayEl.style.color = isPositive ? 'var(--green)' : 'var(--orange)';
+  if(runwayEl) runwayEl.style.color = 'var(--text-dim)';
 
   // Inflow breakdown
   set('cf-revenue', fmt(monthly));
@@ -514,20 +527,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('cf-doordash-in', fmt((d.tenders?.doorDash||0)/months));
   set('cf-doordash-pct', pct((d.tenders?.doorDash||0)/months, monthly));
 
-  // Outflow breakdown
-  set('cf-cogs-out', fmt(mCogs));
-  set('cf-cogs-pct', pct(mCogs, totalMonthlyExp));
-  set('cf-labor-out', fmt(mLabor));
-  set('cf-labor-pct', pct(mLabor, totalMonthlyExp));
-  set('cf-rent-out', fmt(mRent));
-  set('cf-rent-pct', pct(mRent, totalMonthlyExp));
-  set('cf-utils-out', fmt(mUtils));
-  set('cf-utils-pct', pct(mUtils, totalMonthlyExp));
-  set('cf-insurance-out', fmt(mInsurance));
-  set('cf-debt-out', fmt(mDebt));
-  set('cf-debt-pct', pct(mDebt, totalMonthlyExp));
-  set('cf-other-out', fmt(mOther+mSupplies+mMarketing));
-  set('cf-other-pct', pct(mOther+mSupplies+mMarketing, totalMonthlyExp));
+  // Outflow breakdown — each line marked (est.) when it's a fallback, with bars sized by real share.
+  const setExp = (id, barId, val, real) => {
+    set(id+'-out', fmt(val) + (real ? '' : ' (est.)'));
+    set(id+'-pct', pct(val, totalMonthlyExp));
+    const bar = document.getElementById(barId);
+    if(bar) bar.style.width = (totalMonthlyExp > 0 ? Math.min(100, Math.round(val/totalMonthlyExp*100)) : 0) + '%';
+  };
+  setExp('cf-cogs',  'bar-cogs',  mCogs,  isReal('cogs'));
+  setExp('cf-labor', 'bar-labor', mLabor, isReal('labor'));
+  setExp('cf-rent',  'bar-rent',  mRent,  isReal('rent'));
+  setExp('cf-utils', 'bar-utils', mUtils, isReal('utilities'));
+  set('cf-insurance-out', fmt(mInsurance) + (isReal('insurance') ? '' : ' (est.)'));
+  setExp('cf-debt',  'bar-debt',  mDebt,  isReal('debt'));
+  const otherCombined = mInsurance + mSupplies + mMarketing + mOther;
+  const otherReal = isReal('insurance') && isReal('supplies') && isReal('marketing') && isReal('other');
+  setExp('cf-other', 'bar-other', otherCombined, otherReal);
 
   // Monthly summary rows
   const months_arr = generateMonthlyRows(d, months, monthly, totalMonthlyExp);
@@ -560,12 +575,12 @@ function generateMonthlyRows(d, months, monthly, expenses){
     if (!isNaN(startDate.getTime())) startMonth = startDate.getMonth();
   } catch(e){}
 
+  // Even split of period totals — no invented month-to-month variation.
+  // (The CSV is a period total; real monthly detail arrives with live POS data.)
   for(let i=0; i<Math.ceil(months); i++){
     const mIdx = (startMonth + i) % 12;
-    // Add some natural variation (+/- 8%)
-    const variation = 0.92 + (Math.sin(i*2.4)*0.08);
-    const inflow = Math.round(monthly * variation);
-    const outflow = Math.round(expenses * (0.96 + Math.sin(i*1.8)*0.04));
+    const inflow = Math.round(monthly);
+    const outflow = Math.round(expenses);
     rows.push({label: monthNames[mIdx]+' 2026', inflow, outflow, net: inflow-outflow});
   }
   return rows;
