@@ -219,13 +219,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-margin-change">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Best Day Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-best-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-best-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-best-change">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Slowest Day</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-slow-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-slow-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-slow-change">—</div></div>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Revenue Heatmap — By Session & Day</div><div style="font-size:10px;color:var(--orange);">⚠ Estimated · based on your real weekly avg + industry day weights</div></div>
-        <div class="card-body"><div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;">Each cell shows estimated revenue intensity by day and meal period. Based on your weekly average — will show real data when Clover live API connects.</div>
+        <div class="card-header"><div class="card-title">Typical Busy Periods — By Session & Day</div><div style="font-size:10px;color:var(--orange);">⚠ Industry-typical pattern · not your data yet</div></div>
+        <div class="card-body"><div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-bottom:8px;">Shows when restaurants like yours are typically busiest. Your real day-by-day revenue will replace this pattern when the Clover live API connects.</div>
           <div class="heatmap-grid" id="heatmap-grid">
             <div></div>
             <div style="font-size:10px;color:var(--text-dim);text-align:center;padding-bottom:4px;">Mon</div>
@@ -557,36 +555,34 @@ const months = HRZN.getMonths(d);
   set('vs-margin-change', '—');
   const marginChangeEl = document.getElementById('vs-margin-change');
   if(marginChangeEl) marginChangeEl.style.color = 'var(--text-dim)';
-  set('vs-best-this', fmt(Math.round(weekly/7*1.4)));
-  set('vs-best-last', fmt(Math.round(weekly*0.95/7*1.4)));
-  set('vs-slow-this', fmt(Math.round(weekly/7*0.6)));
-  set('vs-slow-last', '—');
+  // Best/Slowest day rows removed — they were fabricated (weekly/7 × invented 1.4/0.6
+  // multipliers) with no day-level data behind them. Real values arrive with the orders API.
 
-  set('perf-monthly-target-pct', Math.round(monthly/50000*100)+'% of target');
+  const monthlyTarget = (HRZN.getTargets ? HRZN.getTargets().monthlyRevenue : 50000) || 50000;
+  set('perf-monthly-target-pct', Math.round(monthly/monthlyTarget*100)+'% of target');
 
-  // Heatmap from real weekly avg + industry day weights
+  // Heatmap — relative intensity pattern only (industry-typical day/meal weights).
+  // No dollar figures: per-cell amounts were fabricated precision (invented weights × weekly avg).
   try {
     const dayWeights = {mon:0.85, tue:0.70, wed:0.95, thu:1.05, fri:1.45, sat:1.35, sun:1.10};
     const lunchSplit = 0.32, dinnerSplit = 0.68;
-    const dailyAvg = weekly / 7;
     const days = ['mon','tue','wed','thu','fri','sat','sun'];
-    const allVals = days.map(d => [dailyAvg*dayWeights[d]*lunchSplit, dailyAvg*dayWeights[d]*dinnerSplit]).flat();
+    const allVals = days.map(d => [dayWeights[d]*lunchSplit, dayWeights[d]*dinnerSplit]).flat();
     const maxVal = Math.max(...allVals);
+    const intensityLabel = (ratio) => ratio >= 0.7 ? 'High' : ratio >= 0.4 ? 'Med' : 'Low';
 
     days.forEach(day => {
-      const lunchVal = Math.round(dailyAvg * dayWeights[day] * lunchSplit);
-      const dinnerVal = Math.round(dailyAvg * dayWeights[day] * dinnerSplit);
-      const lunchOpacity = 0.1 + (lunchVal / maxVal) * 0.85;
-      const dinnerOpacity = 0.1 + (dinnerVal / maxVal) * 0.85;
+      const lunchRatio = (dayWeights[day] * lunchSplit) / maxVal;
+      const dinnerRatio = (dayWeights[day] * dinnerSplit) / maxVal;
       const lunchEl = document.getElementById('hm-lunch-' + day);
       const dinnerEl = document.getElementById('hm-dinner-' + day);
       if(lunchEl){
-        lunchEl.style.background = 'rgba(201,168,76,' + lunchOpacity.toFixed(2) + ')';
-        lunchEl.textContent = '$' + (lunchVal >= 1000 ? (lunchVal/1000).toFixed(1)+'K' : lunchVal);
+        lunchEl.style.background = 'rgba(201,168,76,' + (0.1 + lunchRatio*0.85).toFixed(2) + ')';
+        lunchEl.textContent = intensityLabel(lunchRatio);
       }
       if(dinnerEl){
-        dinnerEl.style.background = 'rgba(201,168,76,' + dinnerOpacity.toFixed(2) + ')';
-        dinnerEl.textContent = '$' + (dinnerVal >= 1000 ? (dinnerVal/1000).toFixed(1)+'K' : dinnerVal);
+        dinnerEl.style.background = 'rgba(201,168,76,' + (0.1 + dinnerRatio*0.85).toFixed(2) + ')';
+        dinnerEl.textContent = intensityLabel(dinnerRatio);
       }
     });
   } catch(e) {}
