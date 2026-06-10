@@ -50,6 +50,8 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
 .target-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
 .target-label{font-size:12px;color:#999;}
 .target-input{width:80px;background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 10px;font-size:12px;color:#e8e8e8;text-align:right;outline:none;font-family:'DM Sans',sans-serif;}
+.target-ctrl{display:flex;align-items:center;gap:6px;width:132px;justify-content:flex-end;}
+.target-unit{font-size:11px;color:#666;min-width:10px;text-align:left;}
 </style>
 </head>
 <body>
@@ -131,28 +133,38 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
 
     <!-- STEP 3: Targets -->
     <div class="step" id="step-3">
-      <div class="card-title">Set your targets</div>
-      <div class="card-sub">HRZN uses these to generate alerts and recommendations</div>
+      <div class="card-title">Set up your business</div>
+      <div class="card-sub">Pick your business type — HRZN tailors benchmarks, alerts, and AI advice to it</div>
 
-      <div class="target-row">
-        <div class="target-label">Labor Cost Target</div>
-        <input class="target-input" id="t-labor" type="number" value="28" min="0" max="100"/> <span style="font-size:11px;color:#666;">%</span>
+      <div class="pos-grid" id="cat-grid" style="margin-bottom:18px;">
+        <div class="pos-option" onclick="selectCategory('restaurant', this)"><div class="pos-icon">🍽</div><div class="pos-name">Restaurant</div></div>
+        <div class="pos-option" onclick="selectCategory('retail', this)"><div class="pos-icon">🛍</div><div class="pos-name">Retail</div></div>
+        <div class="pos-option" onclick="selectCategory('online', this)"><div class="pos-icon">🛒</div><div class="pos-name">E-Commerce</div></div>
+        <div class="pos-option" onclick="selectCategory('service', this)"><div class="pos-icon">🛠</div><div class="pos-name">Service</div></div>
+        <div class="pos-option" onclick="selectCategory('other', this)"><div class="pos-icon">⊡</div><div class="pos-name">Other</div></div>
       </div>
-      <div class="target-row">
-        <div class="target-label">Food Cost Target</div>
-        <input class="target-input" id="t-food" type="number" value="30" min="0" max="100"/> <span style="font-size:11px;color:#666;">%</span>
+
+      <div class="card-sub" style="margin-bottom:4px;">Targets are optional — leave blank to use smart defaults for your business type. You can change everything later in Settings.</div>
+
+      <div class="target-row" id="row-t-labor">
+        <div class="target-label" id="lbl-t-labor">Labor Cost Target</div>
+        <div class="target-ctrl"><input class="target-input" id="t-labor" type="number" placeholder="e.g. 28" min="0" max="100"/><span class="target-unit">%</span></div>
       </div>
-      <div class="target-row">
+      <div class="target-row" id="row-t-food">
+        <div class="target-label" id="lbl-t-food">Cost of Goods Target</div>
+        <div class="target-ctrl"><input class="target-input" id="t-food" type="number" placeholder="e.g. 30" min="0" max="100"/><span class="target-unit">%</span></div>
+      </div>
+      <div class="target-row" id="row-t-revenue">
         <div class="target-label">Weekly Revenue Goal</div>
-        <span style="font-size:11px;color:#666;">$</span> <input class="target-input" id="t-revenue" type="number" value="12000" min="0"/>
+        <div class="target-ctrl"><span class="target-unit">$</span><input class="target-input" id="t-revenue" type="number" placeholder="e.g. 12,000" min="0"/></div>
       </div>
-      <div class="target-row">
-        <div class="target-label">Avg Item Price Target</div>
-        <span style="font-size:11px;color:#666;">$</span> <input class="target-input" id="t-check" type="number" value="15" min="0"/>
+      <div class="target-row" id="row-t-check">
+        <div class="target-label" id="lbl-t-check">Avg Check Target</div>
+        <div class="target-ctrl"><span class="target-unit">$</span><input class="target-input" id="t-check" type="number" placeholder="e.g. 15" min="0"/></div>
       </div>
-      <div class="target-row" style="border-bottom:none;">
+      <div class="target-row" id="row-t-delivery" style="border-bottom:none;">
         <div class="target-label">Delivery % Target</div>
-        <input class="target-input" id="t-delivery" type="number" value="10" min="0" max="100"/> <span style="font-size:11px;color:#666;">%</span>
+        <div class="target-ctrl"><input class="target-input" id="t-delivery" type="number" placeholder="e.g. 10" min="0" max="100"/><span class="target-unit">%</span></div>
       </div>
 
       <button class="btn-primary" style="margin-top:16px;" id="finish-btn" onclick="finish()">Launch My Dashboard →</button>
@@ -169,6 +181,35 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
 const SUPABASE_URL = 'https://kkxsntywxvgpjiuaniuc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_vwR5ZxytRXriGjsIFSUvBg_uUH21z8U';
 let selectedPOS = null;
+
+// ── Business category (explicit pick, authoritative — mirrors Settings) ──
+let selectedCategory = null;
+// Local hint profiles for this pre-auth page (engine benchmarks live in hrzn-data.js;
+// the saved businessType key is what the app reads — these only drive hints/visibility here).
+const CATEGORY_PROFILES = {
+  restaurant: { cogsLabel:'Food Cost Target',     checkLabel:'Avg Check Target', showDelivery:true,  showCheck:true,  showLabor:true,  hints:{labor:28, food:30, revenue:'12,000', check:15, delivery:10} },
+  retail:     { cogsLabel:'Cost of Goods Target', checkLabel:'Avg Transaction Target', showDelivery:false, showCheck:false, showLabor:true,  hints:{labor:18, food:60, revenue:'12,000'} },
+  online:     { cogsLabel:'Cost of Goods Target', checkLabel:'Avg Order Value Target', showDelivery:false, showCheck:false, showLabor:false, hints:{food:55, revenue:'12,000'} },
+  service:    { cogsLabel:'Cost of Goods Target', checkLabel:'Avg Job Value Target',   showDelivery:false, showCheck:false, showLabor:true,  hints:{labor:30, food:20, revenue:'12,000'} },
+  other:      { cogsLabel:'Cost of Goods Target', checkLabel:'Avg Sale Target',        showDelivery:false, showCheck:false, showLabor:true,  hints:{labor:25, food:35, revenue:'12,000'} },
+};
+function selectCategory(key, el){
+  selectedCategory = key;
+  document.querySelectorAll('#cat-grid .pos-option').forEach(o => o.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+  const p = CATEGORY_PROFILES[key] || CATEGORY_PROFILES.other;
+  const show = (id, on) => { const r = document.getElementById(id); if (r) r.style.display = on ? '' : 'none'; };
+  const setLbl = (id, txt) => { const l = document.getElementById(id); if (l) l.textContent = txt; };
+  const setHint = (id, v) => { const i = document.getElementById(id); if (i && v != null) i.placeholder = 'e.g. ' + v; };
+  setLbl('lbl-t-food', p.cogsLabel);
+  setLbl('lbl-t-check', p.checkLabel);
+  show('row-t-delivery', p.showDelivery);
+  show('row-t-check', p.showCheck);
+  show('row-t-labor', p.showLabor);
+  setHint('t-labor', p.hints.labor); setHint('t-food', p.hints.food);
+  setHint('t-revenue', p.hints.revenue); setHint('t-check', p.hints.check); setHint('t-delivery', p.hints.delivery);
+  const e = document.getElementById('err-3'); if (e) e.textContent = '';
+}
 let authToken = null;
 let userId = null;
 let storedBizName = '';
@@ -257,29 +298,35 @@ async function finish() {
   btn.textContent = 'Setting up...';
   btn.disabled = true;
 
-  const bizName = storedBizName || document.getElementById('biz-name').value.trim() || 'My Restaurant';
+  const bizName = storedBizName || document.getElementById('biz-name').value.trim() || 'My Business';
   const location = storedBizLocation || document.getElementById('biz-location').value.trim() || '';
-  const targets = {
-    labor: document.getElementById('t-labor').value,
-    food: document.getElementById('t-food').value,
-    revenue: document.getElementById('t-revenue').value,
-    check: document.getElementById('t-check').value,
-    delivery: document.getElementById('t-delivery').value,
-  };
+  // Category is required — it's authoritative for benchmarks, alerts, and AI advice.
+  if (!selectedCategory) {
+    err.textContent = 'Please select your business type above.';
+    btn.textContent = 'Launch My Dashboard \u2192';
+    btn.disabled = false;
+    return;
+  }
+
+  // Save ONLY targets the user actually typed. Untouched fields are OMITTED so the app
+  // falls back to the category's smart defaults (previously this saved restaurant
+  // defaults on every account — planting wrong targets for non-restaurant businesses).
+  const entered = (id) => { const el = document.getElementById(id); if (!el || el.closest('.target-row')?.style.display === 'none') return null; const v = el.value.trim(); return v !== '' && !isNaN(parseFloat(v)) ? parseFloat(v) : null; };
+  const targets = {};
+  const tLabor = entered('t-labor');    if (tLabor != null) targets.labor = tLabor;
+  const tFood = entered('t-food');      if (tFood != null) targets.food = tFood;
+  const tRev = entered('t-revenue');    if (tRev != null) targets.revenue = tRev;
+  const tCheck = entered('t-check');    if (tCheck != null) targets.check = tCheck;
+  const tDeliv = entered('t-delivery'); if (tDeliv != null) targets.doordash = tDeliv;
 
   // Save to localStorage for now (will sync to Supabase via API)
   localStorage.setItem('hrzn-settings', JSON.stringify({
     businessName: bizName,
     location,
     pos: selectedPOS,
-    targets: {
-      labor: targets.labor,
-      food: targets.food,
-      revenue: targets.revenue,
-      check: targets.check,
-      doordash: targets.delivery,
-      discount: 5
-    }
+    businessType: selectedCategory,
+    bizType: selectedCategory,
+    targets
   }));
 
   // Create business in Supabase if we have a token
@@ -293,6 +340,7 @@ async function finish() {
           name: bizName,
           location,
           pos: selectedPOS,
+          businessType: selectedCategory,
           targets
         })
       });

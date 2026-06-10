@@ -427,9 +427,14 @@ const months = HRZN.getMonths(d);
   // Revenue Insights — real AI via central engine (replaces old hardcoded array)
   generateRevenueInsights();
 
-  // Daily breakdown table
+  // Daily breakdown table — Lunch/Dinner dayparts are a restaurant concept:
+  // hide the whole card for categories without dayparts (retail, online).
+  const revBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const revConcepts = revBm.concepts || { dayparts: true };
+  const dpCard = document.getElementById('daypart-table-card');
+  if (dpCard && revConcepts.dayparts === false) dpCard.style.display = 'none';
   const tableBody = document.getElementById('rev-table-body');
-  if(tableBody) {
+  if(tableBody && revConcepts.dayparts !== false) {
     const rows = allDays.map(day => {
       const dayRev = Math.round(weekly * dayWeights[day] / 7);
       const lunch = Math.round(dayRev * 0.32);
@@ -477,6 +482,12 @@ function buildRevenueContext() {
   const weeklyItems = Math.round((d.itemsSold||0) / weeks);
   const targetRev = (s.targets && s.targets.revenue) || m.targetRevenue || 12000;
   const targetCheck = (s.targets && s.targets.check) || m.targetCheck || 15;
+  // Category gating for prompt lines (avg-check + delivery mentions)
+  const pBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const pConcepts = pBm.concepts || { delivery:true };
+  const pTicketApplies = !!(pBm.avgTicket && pBm.avgTicket > 0);
+  const pTicketLabel = pBm.avgTicketLabel || 'Average check';
+  const pDigitalLabel = pConcepts.delivery ? 'credit + debit + DoorDash' : 'credit + debit';
   // Pull canonical shared figures from getMetrics so this page never disagrees with
   // sales/pl/alerts. Digital = credit + debit + DoorDash (the single definition).
   const digitalPct = (m.digitalPct != null) ? (+m.digitalPct).toFixed(1) : null;
@@ -488,8 +499,8 @@ Total net sales: $${Math.round(d.netSales||0).toLocaleString()} over ${weeks.toF
 Weekly revenue: $${weekly.toLocaleString()} vs $${(+targetRev).toLocaleString()} target — gap = $${(weekly - targetRev).toLocaleString()}/week
 Daily average: $${daily.toLocaleString()}
 Items sold per week: ${weeklyItems.toLocaleString()}
-Average check: $${d.avgCheck||0} vs $${targetCheck} target${digitalPct!=null ? `
-Digital payments (credit + debit + DoorDash): ${digitalPct}% of collected${cashPctVal!=null ? ` — cash only ${cashPctVal}%` : ''}` : ''}
+${pTicketApplies ? `${pTicketLabel}: $${d.avgCheck||0} vs $${targetCheck} target
+` : ''}${digitalPct!=null ? `Digital payments (${pDigitalLabel}): ${digitalPct}% of collected${cashPctVal!=null ? ` — cash only ${cashPctVal}%` : ''}` : ''}
 
 When referencing digital payment share, use EXACTLY ${digitalPct!=null ? digitalPct+'%' : 'the figure above'} — do not recalculate it. Focus on revenue trends, the gap to target, average-check opportunity, and the highest-impact lever to grow revenue. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
 }
