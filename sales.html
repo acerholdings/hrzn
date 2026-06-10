@@ -179,21 +179,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div><div style="font-size:12px;color:var(--text);">Cash</div></div>
             <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);" id="val-cash">—</span>
           </div>
-          <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:6px;">
-            <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;">Card Split</div>
-            <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;display:flex;">
-              <div style="width:54%;background:#4c8faf;border-radius:4px 0 0 4px;"></div>
-              <div style="width:23%;background:var(--green);"></div>
-              <div style="width:18%;background:var(--gold);"></div>
-              <div style="width:2%;background:var(--orange);border-radius:0 4px 4px 0;"></div>
-            </div>
-            <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
-              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);"><div style="width:6px;height:6px;border-radius:50%;background:#4c8faf;"></div>Visa 54%</div>
-              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);"><div style="width:6px;height:6px;border-radius:50%;background:var(--green);"></div>Amex 25%</div>
-              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);"><div style="width:6px;height:6px;border-radius:50%;background:var(--gold);"></div>MC 18%</div>
-              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);"><div style="width:6px;height:6px;border-radius:50%;background:var(--orange);"></div>Disc 2%</div>
-            </div>
-          </div>
+          <!-- Card Split block removed — Visa/Amex/MC/Disc percentages were fabricated
+               (no card-brand data in CSV). Re-add when Clover live API provides tender brands. -->
         </div>
       </div>
     </div>
@@ -311,7 +298,16 @@ function buildSalesContext(d) {
   // Gaps from m (single source of truth)
   const avgTarget = m.targetCheck;
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const bizName = settings.businessName || 'this restaurant';
+  const bizName = settings.businessName || 'this business';
+  // Category profile: gate restaurant-only lines (tips, delivery) and use real targets in the text.
+  const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const concepts = bm.concepts || { delivery:true, tips:true };
+  const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
+  const ticketLabel = bm.avgTicketLabel || 'Avg Item Price';
+  const tipsLine = concepts.tips ? `Tips: $${Math.round(tips).toLocaleString()} = ${tipsPct}% of net sales — ${parseFloat(tipsPct)>15?'STRONG (above 15% benchmark)':'average'}\n` : '';
+  const ddLine = concepts.delivery ? `DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% of collected — gap to ${targetDoorDash}% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)\n` : '';
+  const priceLine = ticketApplies ? `${ticketLabel}: $${avgPrice} vs $${avgTarget} target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)\n` : '';
+  const tipsRule = concepts.tips ? ` Tips at ${tipsPct}% of net = ${parseFloat(tipsPct)>15?'STRONG WIN':'average'}.` : '';
 
   return `Analyze the sales data for ${bizName} and provide exactly 6 specific insights. Mix 3 wins (✅) and 3 opportunities (🎯). Use ONLY the pre-calculated numbers below — do not recalculate or estimate your own figures.
 
@@ -320,18 +316,15 @@ Period: ${d.periodStart || 'Jan 1'} – ${d.periodEnd || 'May 28, 2026'} (${Math
 Net Sales: $${Math.round(net).toLocaleString()}
 Gross Sales: $${Math.round(gross).toLocaleString()}
 Discounts: $${Math.round(disc).toLocaleString()} = ${discPct}% of gross — EXCELLENT (below 3% threshold)
-Tips: $${Math.round(tips).toLocaleString()} = ${tipsPct}% of net sales — ${parseFloat(tipsPct)>15?'STRONG (above 15% benchmark)':'average'}
-Total Collected: $${Math.round(collected).toLocaleString()}
+${tipsLine}Total Collected: $${Math.round(collected).toLocaleString()}
 Items Sold: ${items.toLocaleString()} avg ${items>0?Math.round(items/weeks):0}/week
-Avg Item Price: $${avgPrice} vs $${avgTarget} target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)
-Credit Card: $${Math.round(credit).toLocaleString()} (${collected>0?Math.round(credit/collected*100):0}% of collected)
+${priceLine}Credit Card: $${Math.round(credit).toLocaleString()} (${collected>0?Math.round(credit/collected*100):0}% of collected)
 Debit Card: $${Math.round(debit).toLocaleString()} (${collected>0?Math.round(debit/collected*100):0}% of collected)
-DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% of collected — gap to 10% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)
-Cash: $${Math.round(cash).toLocaleString()} = ${cashPct}% of collected
+${ddLine}Cash: $${Math.round(cash).toLocaleString()} = ${cashPct}% of collected
 Digital payments total (credit+debit+DoorDash): $${Math.round(digitalTotal).toLocaleString()} = ${digitalPct}% of collected
 Weekly revenue: $${weeklyRev.toLocaleString()} vs $${weeklyTarget.toLocaleString()} target — gap = $${weeklyGap.toLocaleString()}/wk ($${annualGap.toLocaleString()}/yr, $${periodGap.toLocaleString()} this period)
 
-RULES: Use ONLY the dollar amounts above. Never recalculate. Discounts at ${discPct}% = EXCELLENT WIN. Tips at ${tipsPct}% of net = ${parseFloat(tipsPct)>15?'STRONG WIN':'average'}.`;
+RULES: Use ONLY the dollar amounts above. Never recalculate. Discounts at ${discPct}% = EXCELLENT WIN.${tipsRule}`;
 }
 
 async function generateMoreInsights() {
