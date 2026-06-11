@@ -35,10 +35,17 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
 .btn-plan-outline:hover{border-color:rgba(201,168,76,0.4);color:#C9A84C;}
 .trial-note{text-align:center;font-size:11px;color:#444;padding:8px 0 20px;margin-top:-8px;}
 .cancelled-banner{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.2);border-radius:8px;padding:12px 20px;text-align:center;font-size:12px;color:#e05555;max-width:500px;margin:0 auto 40px;display:none;}
+#nav-hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:6px;}
+#nav-hamburger span{display:block;width:22px;height:2px;background:#111;border-radius:2px;}
 @media (max-width:768px){
   body{overflow-x:hidden;}
-  .topbar{padding:14px 20px;}
+  nav{padding:0 14px !important;}
+  nav img{height:22px !important;}
+  #nav-hamburger{display:flex;}
   #nav-links-row{display:none !important;}
+  #nav-links-row.mobile-open{display:flex !important;flex-direction:column !important;gap:0 !important;position:absolute;top:100%;left:0;right:0;background:#fbfaf8;border-bottom:1px solid rgba(0,0,0,0.08);padding:6px 20px 14px;z-index:99;}
+  #nav-links-row.mobile-open span{padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:14px;}
+  nav a{white-space:nowrap;font-size:11px !important;padding:7px 10px !important;}
   .hero{padding:56px 20px 32px;}
   h1{font-size:30px;}
   .sub{font-size:14px;padding:0 8px;}
@@ -63,6 +70,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
     <a href="login.html" style="font-size:13px;padding:8px 18px;border:1px solid rgba(0,0,0,0.12);border-radius:6px;color:#111;background:transparent;text-decoration:none;">Sign in</a>
     <a href="signup.html" style="font-size:13px;padding:8px 18px;border-radius:6px;background:#C9A84C;color:#000;font-weight:600;text-decoration:none;">Start Free Trial</a>
   </div>
+  <button id="nav-hamburger" aria-label="Menu" onclick="toggleNav()"><span></span><span></span><span></span></button>
 </nav>
 
 <div class="hero" style="padding-top:100px;">
@@ -159,7 +167,7 @@ h1{font-size:40px;font-weight:300;letter-spacing:-0.02em;margin-bottom:14px;}
       <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 20px;border-top:1px solid rgba(0,0,0,0.05);align-items:center;">
-      <span style="font-size:12px;color:#111;">BI Dashboards</span>
+      <span style="font-size:12px;color:#111;">BI dashboards (Tableau, Power BI)</span>
       <span style="font-size:12px;color:#999;text-align:center;text-decoration:line-through;">$150/mo</span>
       <span style="font-size:11px;color:#2e7d52;text-align:right;font-weight:500;">✓ Included</span>
     </div>
@@ -253,5 +261,11 @@ async function checkout(plan) {
   </div>
   <div style="font-size:12px;color:rgba(255,255,255,0.2);">© 2026 HRZN AI</div>
 </footer>
+<script>
+function toggleNav(){
+  var n = document.getElementById('nav-links-row');
+  if (n) n.classList.toggle('mobile-open');
+}
+</script>
 </body>
 </html>
