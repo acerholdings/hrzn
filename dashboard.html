@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
   set('kpi-revenue-change', 'Weekly avg: ' + fmt(weekly));
   set('kpi-items', (d.itemsSold||0).toLocaleString());
   set('kpi-items-change', months.toFixed(1) + ' month period');
-  set('kpi-avg-check', '$'+(d.avgCheck||0));
+  set('kpi-avg-check', '$'+parseFloat(d.avgCheck||0).toFixed(2));
   set('kpi-check-change', (d.itemsSold||0).toLocaleString() + ' items sold');
   set('kpi-collected', fmt(d.amountCollected||0));
 

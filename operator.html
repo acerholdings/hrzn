@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(welcomeRev2) welcomeRev2.textContent = fmt(Math.round((d.netSales||0)/opWeeks));
     if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/opWeeks));
     set('op-weekly', fmt(weekly));
-    set('op-avg-check', '$'+(d.avgCheck||0));
+    set('op-avg-check', '$'+parseFloat(d.avgCheck||0).toFixed(2));
     set('op-items', (d.itemsSold||0).toLocaleString());
     set('op-tips', tipsPct+'%');
     set('op-margin', grossMarginPct);
@@ -580,7 +580,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     const doorDashPct = d.amountCollected > 0 
       ? parseFloat(((tenders.doorDash||0) / d.amountCollected * 100).toFixed(1))
       : parseFloat(tenders.doorDashPct||0);
-    const discountPct = parseFloat(d.discountPct||0);
+    let discountPct = parseFloat(d.discountPct||0);
+    if(!discountPct && (d.grossSales||0) > 0 && (d.discounts||0) > 0) discountPct = +(((d.discounts/d.grossSales)*100).toFixed(1));
     const avgCheck = parseFloat(d.avgCheck||0);
     // Real labor rate (API → manual → fallback), not a hardcoded 32%.
     let laborPct = null;

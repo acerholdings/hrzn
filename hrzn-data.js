@@ -1121,12 +1121,15 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 
     // ── TARGETS (from settings, with defaults) ──
     const settings       = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}') : {};
-    const targetRevenue  = +(settings.targets?.revenue  || 12000);
-    const targetCheck    = +(settings.targets?.check    || 15);
-    const targetLabor    = +(settings.targets?.labor    || 28);
-    const targetFood     = +(settings.targets?.food     || 25);
-    const targetDoorDash = +(settings.targets?.doordash || 10);
-    const targetDiscount = +(settings.targets?.discount || 5);
+    // Category-aware targets: user-saved wins, otherwise this business type's benchmark
+    // (was hardcoded restaurant fallbacks — caused 28%-vs-18% conflicts across pages).
+    const _ct = this.getTargets ? this.getTargets() : {};
+    const targetRevenue  = +(settings.targets?.revenue  || _ct.weeklyRevenue || 12000);
+    const targetCheck    = +(settings.targets?.check    || _ct.avgCheck || 15);
+    const targetLabor    = +(settings.targets?.labor    || _ct.labor || 28);
+    const targetFood     = +(settings.targets?.food     || _ct.food || 25);
+    const targetDoorDash = +(settings.targets?.doordash || _ct.doordash || 10);
+    const targetDiscount = +(settings.targets?.discount || _ct.discount || 5);
 
     // ── PERCENTAGES ──
     const discPct      = grossSales > 0 ? (discounts / grossSales * 100) : 0;

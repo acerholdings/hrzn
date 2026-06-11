@@ -491,7 +491,7 @@ const months = HRZN.getMonths(d);
 
   set('perf-date-label', _period || 'Jan 1 – May 28, 2026');
   set('perf-weekly-revenue', fmt(weekly));
-  set('perf-avg-check', '$' + (d.avgCheck||0));
+  set('perf-avg-check', '$' + parseFloat(d.avgCheck||0).toFixed(2));
   set('perf-monthly-revenue', fmt(monthly));
   set('perf-total-revenue', fmt(d.netSales||0));
   set('perf-covers', weeklyItems.toLocaleString());
@@ -530,7 +530,7 @@ const months = HRZN.getMonths(d);
   set('vs-rev-last', fmt(lastWeekly));
   set('vs-covers-this', weeklyItems.toLocaleString());
   set('vs-covers-last', lastItems.toLocaleString());
-  set('vs-check-this', '$'+(d.avgCheck||0));
+  set('vs-check-this', '$'+parseFloat(d.avgCheck||0).toFixed(2));
   set('vs-check-last', '—');
   set('vs-labor-this', laborPct + '%' + (laborIsEst ? ' (est.)' : ''));
   // Keep the top Labor Cost KPI tile consistent with this same rate (was blank + fake "+3.1%").
