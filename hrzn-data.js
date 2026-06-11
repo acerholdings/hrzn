@@ -663,6 +663,50 @@ const HRZN = {
         'How are my shipping and return costs affecting profit?',
         'Is my customer acquisition cost sustainable?'
       ]
+    },
+    service: {
+      label: 'Service Business',
+      laborPct: 30,          // service delivery labor — primary cost lever
+      cogsPct: 20,           // materials, parts, supplies
+      cogsLabel: 'Materials & Supplies',
+      grossMarginTarget: 80,
+      netMarginTarget: 15,
+      avgTicket: 0,          // job/engagement value — user sets
+      avgTicketLabel: 'Avg Job Value',
+      discountMaxPct: 10,
+      pillars: ['revenue','cogs','labor','overhead','marketing'],
+      settingsFields: ['laborPct','cogsPct','avgTicket'],
+      concepts: { delivery: false, tips: false, dayparts: false },
+      suggestedQuestions: [
+        'What should I focus on this week?',
+        'What is my biggest opportunity right now?',
+        'Forecast my revenue for next month',
+        'Is my labor cost healthy for a service business?',
+        'How can I increase my average job value?',
+        'Which services are most profitable?'
+      ]
+    },
+    other: {
+      label: 'Other',
+      laborPct: 25,          // generic cross-industry baseline
+      cogsPct: 35,
+      cogsLabel: 'Cost of Goods',
+      grossMarginTarget: 65,
+      netMarginTarget: 10,
+      avgTicket: 0,          // user sets
+      avgTicketLabel: 'Avg Sale',
+      discountMaxPct: 10,
+      pillars: ['revenue','cogs','labor','overhead','marketing'],
+      settingsFields: ['laborPct','cogsPct','avgTicket'],
+      concepts: { delivery: false, tips: false, dayparts: false },
+      suggestedQuestions: [
+        'What should I focus on this week?',
+        'What is my biggest opportunity right now?',
+        'Forecast my revenue for next month',
+        'Is my margin healthy?',
+        'How can I increase my average sale?',
+        'Where am I overspending?'
+      ]
     }
   },
 
