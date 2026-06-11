@@ -33,6 +33,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,
 .dark-section p{font-size:15px;color:rgba(255,255,255,0.5);margin-bottom:32px;}
 .gold{color:#C9A84C;}
 footer{background:#050505;border-top:1px solid rgba(255,255,255,0.05);padding:32px 60px;display:flex;align-items:center;justify-content:space-between;}
+@media (max-width:768px){
+  body{overflow-x:hidden;}
+  .topbar{padding:14px 20px;}
+  .nav-links{display:none !important;}
+  .page-hero{padding:64px 20px 32px;}
+  .page-hero h1{font-size:30px;}
+  .section{padding:48px 20px;}
+  .section-h2{font-size:26px;}
+  .grid-3{grid-template-columns:1fr;gap:16px;}
+  .grid-2{grid-template-columns:1fr;gap:16px;}
+  footer{flex-direction:column;gap:14px;text-align:center;padding:28px 20px;}
+  img,svg{max-width:100%;}
+}
 </style>
 </head>
 <body>
