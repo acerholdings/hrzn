@@ -1280,8 +1280,11 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  type: 'Live API', detail: 'Clover · Real-time' },
       csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   type: 'Sales Overview', detail: 'CSV Upload' },
       demo: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'Demo Data', detail: 'Sample data' },
+      empty: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'No Data', detail: 'Upload CSV' },
     };
-    const c = configs[source] || configs.demo;
+    // Label by what's ACTUALLY displayed (d._source), not the selected preference —
+    // otherwise a fresh account shows "Sales Overview · CSV Upload" with nothing uploaded.
+    const c = configs[d._source] || configs[source] || configs.demo;
     return `<div style="display:inline-flex;align-items:center;gap:6px;font-size:10px;color:${c.color};background:${c.bg};border:1px solid ${c.border};padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;" onclick="HRZN.openSourceSwitcher()" title="Click to switch data source">
       <span style="color:${c.dot};font-size:8px;">●</span>
       <span style="font-weight:500;">${c.type}</span>
