@@ -406,6 +406,8 @@ function calcAndRender(){
     const eb = document.getElementById('pl-est-banner'); if (eb) eb.style.display = 'none';
     try {
       const emBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+      // Category structure applies even with no data — show this business type's lines.
+      applyPLLineVisibility(plCategoryLines(emBm));
       if (emBm.cogsLabel) {
         const s1 = document.getElementById('pl-cogs-label');   if (s1) s1.textContent = emBm.cogsLabel;
         const s2 = document.getElementById('input-cogs-label');if (s2) s2.textContent = emBm.cogsLabel + ' (COGS)';
