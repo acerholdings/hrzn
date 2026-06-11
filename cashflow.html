@@ -175,13 +175,13 @@ tr:hover td{background:rgba(128,128,128,0.03);}
           <div class="flow-pct" id="cf-revenue-pct">100%</div>
           <div class="flow-val" id="cf-revenue2" style="color:var(--green);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-tips-in">
           <div class="flow-label">Tips Collected</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" style="width:16%;background:var(--gold);"></div></div>
           <div class="flow-pct" id="cf-tips-pct">—</div>
           <div class="flow-val" id="cf-tips-in" style="color:var(--gold);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-dd-in">
           <div class="flow-label">DoorDash Revenue</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" style="width:4%;background:var(--blue);"></div></div>
           <div class="flow-pct" id="cf-doordash-pct">—</div>
@@ -200,38 +200,56 @@ tr:hover td{background:rgba(128,128,128,0.03);}
           <div class="flow-label" style="font-weight:500;">Total Outflow</div>
           <div class="flow-val" id="cf-outflow2" style="color:var(--red);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-cogs">
           <div class="flow-label" id="cf-cogs-label">Cost of Goods (COGS)</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-cogs" style="width:0%;background:var(--red);"></div></div>
           <div class="flow-pct" id="cf-cogs-pct">—</div>
           <div class="flow-val" id="cf-cogs-out" style="color:var(--red);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-labor">
           <div class="flow-label">Labor</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-labor" style="width:0%;background:var(--orange);"></div></div>
           <div class="flow-pct" id="cf-labor-pct">—</div>
           <div class="flow-val" id="cf-labor-out" style="color:var(--orange);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-rent">
           <div class="flow-label">Rent &amp; Occupancy</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-rent" style="width:0%;background:var(--gold);"></div></div>
           <div class="flow-pct" id="cf-rent-pct">—</div>
           <div class="flow-val" id="cf-rent-out" style="color:var(--gold);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-utils">
           <div class="flow-label">Utilities</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-utils" style="width:0%;background:var(--blue);"></div></div>
           <div class="flow-pct" id="cf-utils-pct">—</div>
           <div class="flow-val" id="cf-utils-out" style="color:var(--text-mid);">—</div>
         </div>
-        <div class="flow-row">
+        <div class="flow-row" id="cfrow-shipping" style="display:none;">
+          <div class="flow-label">Shipping &amp; Fulfillment</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-shipping" style="width:0%;background:var(--gold);"></div></div>
+          <div class="flow-pct" id="cf-shipping-pct">—</div>
+          <div class="flow-val" id="cf-shipping-out" style="color:var(--gold);">—</div>
+        </div>
+        <div class="flow-row" id="cfrow-fees" style="display:none;">
+          <div class="flow-label">Payment / Platform Fees</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-fees" style="width:0%;background:var(--blue);"></div></div>
+          <div class="flow-pct" id="cf-fees-pct">—</div>
+          <div class="flow-val" id="cf-fees-out" style="color:var(--text-mid);">—</div>
+        </div>
+        <div class="flow-row" id="cfrow-returns" style="display:none;">
+          <div class="flow-label">Returns &amp; Refunds</div>
+          <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-returns" style="width:0%;background:var(--orange);"></div></div>
+          <div class="flow-pct" id="cf-returns-pct">—</div>
+          <div class="flow-val" id="cf-returns-out" style="color:var(--orange);">—</div>
+        </div>
+        <div class="flow-row" id="cfrow-debt">
           <div class="flow-label">Debt Payments</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-debt" style="width:0%;background:var(--red);"></div></div>
           <div class="flow-pct" id="cf-debt-pct">—</div>
           <div class="flow-val" id="cf-debt-out" style="color:var(--red);">—</div>
         </div>
-        <div class="flow-row">
-          <div class="flow-label">Insurance / Supplies / Other</div>
+        <div class="flow-row" id="cfrow-other">
+          <div class="flow-label" id="cf-other-label">Insurance / Supplies / Other</div>
           <div class="flow-bar-track"><div class="flow-bar-fill" id="bar-other" style="width:0%;background:var(--text-dim);"></div></div>
           <div class="flow-pct" id="cf-other-pct">—</div>
           <div class="flow-val" id="cf-other-out" style="color:var(--text-mid);">—</div>
@@ -482,17 +500,45 @@ document.addEventListener('DOMContentLoaded',()=>{
   const cogsRatePct = cfBm.cogsPct || 32;
   const cfCogsLbl = document.getElementById('cf-cogs-label');
   if(cfCogsLbl && cfBm.cogsLabel) cfCogsLbl.textContent = cfBm.cogsLabel + ' (COGS)';
-  const mCogs = isReal('cogs') ? parseFloat(expenses.cogs) : Math.round(monthly*(cogsRatePct/100));
-  const mLabor = isReal('labor') ? parseFloat(expenses.labor) : Math.round(monthly*(laborRatePct/100));
-  const mRent = isReal('rent') ? parseFloat(expenses.rent) : 8500;
-  const mUtils = isReal('utilities') ? parseFloat(expenses.utilities) : 1200;
-  const mInsurance = isReal('insurance') ? parseFloat(expenses.insurance) : 800;
-  const mSupplies = isReal('supplies') ? parseFloat(expenses.supplies) : 600;
-  const mMarketing = isReal('marketing') ? parseFloat(expenses.marketing) : 500;
-  const mOther = isReal('other') ? parseFloat(expenses.other) : 800;
-  const mDebt = isReal('debt') ? parseFloat(expenses.debt) : 7000;
-  const anyEstimated = !(isReal('cogs') && isReal('labor') && isReal('rent') && isReal('utilities') && isReal('insurance') && isReal('supplies') && isReal('marketing') && isReal('other') && isReal('debt'));
-  const totalMonthlyExp = mCogs+mLabor+mRent+mUtils+mInsurance+mSupplies+mMarketing+mOther+mDebt;
+  // Per-category expense structure — mirrors the P&L: retail adds payment fees;
+  // e-commerce swaps rent/utilities/insurance/supplies for shipping, fees, returns, software.
+  const cfCat = cfBm._category || 'restaurant';
+  const CF_SETS = {
+    restaurant: ['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'],
+    retail:     ['cogs','labor','rent','utilities','insurance','supplies','marketing','fees','other','debt'],
+    online:     ['cogs','labor','shipping','fees','returns','marketing','software','other','debt'],
+    service:    ['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'],
+    other:      ['cogs','labor','rent','utilities','insurance','supplies','marketing','other','debt'],
+  };
+  const cfLines = CF_SETS[cfCat] || CF_SETS.restaurant;
+  const has = (f) => cfLines.indexOf(f) !== -1;
+  const mVal = (f, est) => has(f) ? (isReal(f) ? parseFloat(expenses[f]) : est) : 0;
+  const mCogs = mVal('cogs', Math.round(monthly*(cogsRatePct/100)));
+  const mLabor = mVal('labor', Math.round(monthly*(laborRatePct/100)));
+  const mRent = mVal('rent', 8500);
+  const mUtils = mVal('utilities', 1200);
+  const mInsurance = mVal('insurance', 800);
+  const mSupplies = mVal('supplies', 600);
+  const mMarketing = mVal('marketing', cfCat==='online' ? Math.round(monthly*((cfBm.cacPct||20)/100)) : 500);
+  const mFees = mVal('fees', Math.round(monthly*0.03));
+  const mShipping = mVal('shipping', Math.round(monthly*((cfBm.shippingPct||12)/100)));
+  const mReturns = mVal('returns', Math.round(monthly*((cfBm.returnsPct||8)/100)));
+  const mSoftware = mVal('software', 300);
+  const mOther = mVal('other', 800);
+  const mDebt = mVal('debt', 7000);
+  const anyEstimated = cfLines.some(f => !isReal(f));
+  const mAll = { cogs:mCogs, labor:mLabor, rent:mRent, utilities:mUtils, insurance:mInsurance, supplies:mSupplies,
+                 marketing:mMarketing, fees:mFees, shipping:mShipping, returns:mReturns, software:mSoftware, other:mOther, debt:mDebt };
+  const totalMonthlyExp = cfLines.reduce((s,f)=>s+mAll[f],0);
+  // Show/hide rows for this category
+  const cfShow = (id,on) => { const el=document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  cfShow('cfrow-rent', has('rent'));
+  cfShow('cfrow-utils', has('utilities'));
+  cfShow('cfrow-shipping', has('shipping'));
+  cfShow('cfrow-fees', has('fees'));
+  cfShow('cfrow-returns', has('returns'));
+  // Labor row hides when the category assumes $0 labor and nothing real was entered (e-commerce).
+  cfShow('cfrow-labor', mLabor > 0 || isReal('labor'));
   const netCashFlow = monthly - totalMonthlyExp;
   const isPositive = netCashFlow >= 0;
 
@@ -533,6 +579,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('cf-tips-pct', pct((d.tips||0)/months, monthly));
   set('cf-doordash-in', fmt((d.tenders?.doorDash||0)/months));
   set('cf-doordash-pct', pct((d.tenders?.doorDash||0)/months, monthly));
+  // Tips/DoorDash inflow rows are restaurant concepts — hide for other categories unless dollars exist.
+  const cfInConcepts = cfBm.concepts || { delivery:true, tips:true };
+  const tipsRow = document.getElementById('cfrow-tips-in');
+  if (tipsRow) tipsRow.style.display = (cfInConcepts.tips || (d.tips||0) > 0) ? '' : 'none';
+  const ddRow = document.getElementById('cfrow-dd-in');
+  if (ddRow) ddRow.style.display = (cfInConcepts.delivery || (d.tenders?.doorDash||0) > 0) ? '' : 'none';
 
   // Outflow breakdown — each line marked (est.) when it's a fallback, with bars sized by real share.
   const setExp = (id, barId, val, real) => {
@@ -542,7 +594,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(bar) bar.style.width = (totalMonthlyExp > 0 ? Math.min(100, Math.round(val/totalMonthlyExp*100)) : 0) + '%';
   };
   if (cfEmpty) {
-    ['cf-cogs','cf-labor','cf-rent','cf-utils','cf-debt','cf-other'].forEach(id => {
+    ['cf-cogs','cf-labor','cf-rent','cf-utils','cf-debt','cf-other','cf-shipping','cf-fees','cf-returns'].forEach(id => {
       set(id+'-out','—'); set(id+'-pct','—');
       const bar = document.getElementById(id.replace('cf-','bar-')); if(bar) bar.style.width = '0%';
     });
@@ -550,12 +602,19 @@ document.addEventListener('DOMContentLoaded',()=>{
   } else {
   setExp('cf-cogs',  'bar-cogs',  mCogs,  isReal('cogs'));
   setExp('cf-labor', 'bar-labor', mLabor, isReal('labor'));
-  setExp('cf-rent',  'bar-rent',  mRent,  isReal('rent'));
-  setExp('cf-utils', 'bar-utils', mUtils, isReal('utilities'));
-  set('cf-insurance-out', fmt(mInsurance) + (isReal('insurance') ? '' : ' (est.)'));
+  if (has('rent'))  setExp('cf-rent',  'bar-rent',  mRent,  isReal('rent'));
+  if (has('utilities')) setExp('cf-utils', 'bar-utils', mUtils, isReal('utilities'));
+  if (has('shipping')) setExp('cf-shipping', 'bar-shipping', mShipping, isReal('shipping'));
+  if (has('fees')) setExp('cf-fees', 'bar-fees', mFees, isReal('fees'));
+  if (has('returns')) setExp('cf-returns', 'bar-returns', mReturns, isReal('returns'));
+  set('cf-insurance-out', has('insurance') ? fmt(mInsurance) + (isReal('insurance') ? '' : ' (est.)') : '—');
   setExp('cf-debt',  'bar-debt',  mDebt,  isReal('debt'));
-  const otherCombined = mInsurance + mSupplies + mMarketing + mOther;
-  const otherReal = isReal('insurance') && isReal('supplies') && isReal('marketing') && isReal('other');
+  // Combined "other" row adapts: e-commerce groups Marketing/Software/Other; others group Ins/Supp/Mktg/Other.
+  const otherParts = cfCat === 'online' ? ['marketing','software','other'] : ['insurance','supplies','marketing','other'];
+  const otherCombined = otherParts.reduce((s,f)=>s+mAll[f],0);
+  const otherReal = otherParts.every(f=>isReal(f));
+  const otherLbl = document.getElementById('cf-other-label');
+  if (otherLbl) otherLbl.textContent = cfCat === 'online' ? 'Marketing / Software / Other' : 'Insurance / Supplies / Other';
   setExp('cf-other', 'bar-other', otherCombined, otherReal);
   } // end non-empty outflow rows
 
