@@ -272,7 +272,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
                   Estimated Labor Rate
                   <div style="font-size:10px;color:var(--text-dim);margin-top:3px;font-weight:400;">Your current actual labor % — used for estimates until you connect live payroll (Gusto), which will replace it.</div>
                 </div>
-                <input class="target-input" id="labor-rate" type="number" value="32" oninput="markDirty()"/><div class="target-unit">%</div>
+                <input class="target-input" id="labor-rate" type="number" oninput="markDirty()"/><div class="target-unit">%</div>
               </div>
               <div class="target-row" id="row-target-labor"><div class="target-label" id="lbl-target-labor">Labor Cost Target</div><input class="target-input" id="target-labor" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
               <div class="target-row" id="row-target-food"><div class="target-label" id="lbl-target-food">Food Cost Target</div><input class="target-input" id="target-food" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
@@ -616,7 +616,8 @@ function loadSettings(){
     const laborRateEl = document.getElementById('labor-rate');
     if (laborRateEl && typeof HRZN !== 'undefined' && HRZN.getLaborRateMeta) {
       const meta = HRZN.getLaborRateMeta();
-      if (meta.source === 'manual') laborRateEl.value = meta.value;
+      if (meta.source === 'manual') { laborRateEl.value = meta.value; }
+      else { laborRateEl.value = ''; laborRateEl.placeholder = '\u2248 ' + meta.value; }
     }
     applyCategoryFieldVisibility();
   }catch(e){}

@@ -400,7 +400,12 @@ const HRZN = {
   },
 
   getLaborRateMeta() {
-    const fb = { value: this.LABOR.FALLBACK_PCT, source: 'fallback', isEstimate: true };
+    // Category-aware fallback: with no API/manual rate, assume this business type's
+    // benchmark labor % (retail 18, service 30, online 0...) instead of a restaurant 32 —
+    // the app must never fabricate a labor alarm out of a pure assumption.
+    let fbPct = this.LABOR.FALLBACK_PCT;
+    try { const b = this.getBenchmarks ? this.getBenchmarks() : null; if (b && b.laborPct != null) fbPct = b.laborPct; } catch(e) {}
+    const fb = { value: fbPct, source: 'fallback', isEstimate: true };
     if (typeof localStorage === 'undefined') return fb;
     try {
       if (this.getSource() === 'api') {

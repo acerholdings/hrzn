@@ -426,7 +426,10 @@ const months = HRZN.getMonths(d);
   set('labor-savings', labEmpty ? '—' : fmt(savings));
   set('labor-rev-ratio', labEmpty ? '—' : '$'+revRatio);
   set('labor-pct', laborPct + '%');
-  set('labor-pct-sub', labEmpty ? 'Estimated rate · upload data' : (laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target'));
+  const _lm = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : {source:'fallback'});
+  set('labor-pct-sub', labEmpty ? 'Estimated rate · upload data'
+    : (_lm.source === 'fallback' ? 'Assumed at your business-type benchmark · set your real rate in Settings'
+    : (laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target')));
 
   // Day weights
   const dayWeights = {mon:0.85,tue:0.70,wed:0.95,thu:1.05,fri:1.45,sat:1.35,sun:1.10};
