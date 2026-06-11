@@ -129,6 +129,19 @@ function hrznHasData() {
   );
 }
 
+// ── Demo-toggle globals (used by the shared no-data banner) ──
+function hrznViewDemo(){ if (typeof HRZN !== 'undefined') HRZN.enableDemoMode(); }
+function hrznExitDemo(){ if (typeof HRZN !== 'undefined') HRZN.exitDemoMode(); }
+function hrznNoDataBannerHTML(){
+  const demoOn = !!(typeof HRZN !== 'undefined' && HRZN.isDemoModeOn && HRZN.isDemoModeOn());
+  if (demoOn) {
+    return '<span style="color:var(--gold);">\ud83d\udc41 Demo mode on \u2014 these are sample numbers, not your business. <a href="javascript:void(0)" onclick="hrznExitDemo()" style="color:var(--gold);text-decoration:underline;">Exit demo</a></span>' +
+      '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV \u2192</a>';
+  }
+  return '<span style="color:var(--text-dim);">\ud83d\udcc2 No data yet \u2014 <a href="javascript:void(0)" onclick="hrznViewDemo()" style="color:var(--gold);text-decoration:underline;">\ud83d\udc41 View demo data</a> to explore, or upload your CSV to see your business.</span>' +
+    '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV \u2192</a>';
+}
+
 function hrznHasItems() {
   return !!localStorage.getItem('hrzn-data-items');
 }
@@ -336,6 +349,27 @@ const HRZN = {
       doorDashPct: 4.7,
       giftCard: 0
     }
+  },
+
+  // ── EMPTY DATASET (logged-in, no upload, demo NOT opted in) ──
+  // Same shape as DEMO_DATA so every page renders safely — all zeros, honest source tag.
+  EMPTY_DATA: {
+    _source: 'empty',
+    _filename: '',
+    period: '',
+    periodDays: 365,
+    periodStart: '',
+    periodEnd: '',
+    grossSales: 0,
+    discounts: 0,
+    discountPct: 0,
+    netSales: 0,
+    taxes: 0,
+    tips: 0,
+    amountCollected: 0,
+    itemsSold: 0,
+    avgCheck: 0,
+    tenders: { creditCard: 0, debitCard: 0, doorDash: 0, cash: 0, doorDashPct: 0, giftCard: 0 }
   },
 
 
@@ -1145,6 +1179,26 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     };
   },
 
+  // ── DEMO MODE TOGGLE ─────────────────────────
+  // Logged-in users with no upload see EMPTY data unless they explicitly opt in
+  // to demo mode ("View Demo Data"). Logged-out sandbox always shows demo.
+  isDemoModeOn() {
+    try { return localStorage.getItem('hrzn-demo-mode') === '1'; } catch(e) { return false; }
+  },
+  enableDemoMode() {
+    try { localStorage.setItem('hrzn-demo-mode', '1'); } catch(e) {}
+    location.reload();
+  },
+  exitDemoMode() {
+    try { localStorage.removeItem('hrzn-demo-mode'); } catch(e) {}
+    location.reload();
+  },
+  _noDataFallback() {
+    const loggedIn = (typeof hrznIsLoggedIn === 'function') ? hrznIsLoggedIn() : false;
+    if (!loggedIn || this.isDemoModeOn()) return { ...this.DEMO_DATA, _source: 'demo' };
+    return { ...this.EMPTY_DATA, _source: 'empty' };
+  },
+
   // ── GET ACTIVE DATA ──────────────────────────
   getData() {
     // If demo mode via URL param, always return demo data
@@ -1163,7 +1217,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
         if (d) return { ...JSON.parse(d), _source: 'csv' };
       }
     } catch(e) {}
-    return { ...this.DEMO_DATA, _source: 'demo' };
+    return this._noDataFallback();
   },
 
   // ── SAVE DATA ────────────────────────────────

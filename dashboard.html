@@ -470,8 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📊 Showing sample demo data — these are not your numbers. Upload your CSV to see your business.</span>' +
-      '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
+    notice.innerHTML = hrznNoDataBannerHTML();
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {
       topbar.parentNode.insertBefore(notice, topbar.nextSibling);
@@ -658,7 +657,8 @@ document.addEventListener('DOMContentLoaded', () => {
   set('dash-health-label', healthLabel);
   const isDemoData = d._source === 'demo';
   set('dash-health-desc', isDemoData ? 'Based on demo sample data' : (hs ? hs.note : 'Based on your business data'));
-  set('dash-health-sub', isDemoData ? '0\u2013100 \u00b7 based on demo sample data' : '0\u2013100 \u00b7 calculated from your real data');
+  const isEmptyData = d._source === 'empty';
+  set('dash-health-sub', isDemoData ? '0\u2013100 \u00b7 based on demo sample data' : (isEmptyData ? '0\u2013100 \u00b7 upload data to calculate' : '0\u2013100 \u00b7 calculated from your real data'));
 
   // Mini-operator chips: category-aware questions (was hardcoded "Fix Tuesday labor"/"Grow DoorDash")
   try {
