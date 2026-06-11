@@ -342,9 +342,20 @@ function calcAndRender(){
   const {revenue,period,filename}=getRevenue();
   const d = HRZN.getData();
   // Empty state: leave the statement's static "\u2014" placeholders untouched —
-  // industry estimates only make sense once revenue exists.
+  // industry estimates only make sense once revenue exists. Category labels still apply.
   if (d._source === 'empty') {
     const eb = document.getElementById('pl-est-banner'); if (eb) eb.style.display = 'none';
+    try {
+      const emBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+      if (emBm.cogsLabel) {
+        const s1 = document.getElementById('pl-cogs-label');   if (s1) s1.textContent = emBm.cogsLabel;
+        const s2 = document.getElementById('input-cogs-label');if (s2) s2.textContent = emBm.cogsLabel + ' (COGS)';
+        const s3 = document.getElementById('bar-cogs-label');  if (s3) s3.textContent = emBm.cogsLabel;
+        const s4 = document.getElementById('kpi-cogs-word');   if (s4) s4.textContent = emBm.cogsLabel.toLowerCase();
+      }
+      const months0 = (d.periodDays || 365) / 30.44;
+      const pp = document.getElementById('period-months-label'); if (pp) pp.textContent = 'Period: ' + months0.toFixed(1) + ' months';
+    } catch(e) {}
     return;
   }
   const periodDays = d.periodDays || 148;
