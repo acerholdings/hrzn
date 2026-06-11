@@ -545,8 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const coll = d.amountCollected || 0;
     const weekly = net / weeks;
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const tgt = { revenue: +(settings.targets?.revenue||12000), check: +(settings.targets?.check||15),
-                  labor: +(settings.targets?.labor||28), doordash: +(settings.targets?.doordash||10) };
+    const tgt = (HRZN.getTargets ? (function(){const t=HRZN.getTargets(); return { revenue:+(t.weeklyRevenue||12000), check:+(t.avgCheck||15), labor:+(t.labor||28), doordash:+(t.doordash||10), discount:+(t.discount||5) };})() : { revenue:12000, check:15, labor:28, doordash:10, discount:5 });
     const ddGapWeekly = Math.max(0, (net * tgt.doordash/100 - (t.doorDash||0)) / weeks);
     return {
       weeks, months, weekly, monthly: net/months, daily: weekly/7,
@@ -608,8 +607,9 @@ document.addEventListener('DOMContentLoaded', () => {
   set('val-cash', fmt(cash)); document.getElementById('bar-cash').style.width = (cash/maxP*100)+'%';
 
   // Targets from settings
+  // Category-aware targets (user-saved wins, else category benchmark) — was hardcoded restaurant values.
   let tgt = {labor:28,doordash:10,discount:5,check:15,revenue:12000};
-  try { const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}'); if(s.targets) tgt={labor:+s.targets.labor||28,doordash:+s.targets.doordash||10,discount:+s.targets.discount||5,check:+s.targets.check||15,revenue:+s.targets.revenue||12000}; } catch(e){}
+  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt = { labor:+(t.labor||28), doordash:+(t.doordash||10), discount:+(t.discount||5), check:+(t.avgCheck||15), revenue:+(t.weeklyRevenue||12000) }; } catch(e){}
 
   const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const doorDashPct = d.amountCollected > 0 
@@ -622,14 +622,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Critical Alerts
   const alerts = [];
-  if(laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
+  const dashEmpty = d._source === 'empty';
+  if(dashEmpty) {
+    alerts.push({icon:'📂',color:'var(--text-dim)',bg:'rgba(255,255,255,0.04)',title:'No data yet',desc:'Upload your CSV (or view demo data) to see alerts',link:'data.html'});
+  }
+  if(!dashEmpty && laborPct > tgt.labor) alerts.push({icon:'⚡',color:'var(--red)',bg:'rgba(224,85,85,0.1)',title:'Labor at '+laborPct+'% vs '+tgt.labor+'% target',desc:'~'+fmt(weekly*(laborPct-tgt.labor)/100)+'/week excess cost',link:'labor.html'});
   const dashBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const dashConcepts = dashBm.concepts || { delivery:true, tips:true };
   const dashTicketApplies = !!(dashBm.avgTicket && dashBm.avgTicket > 0);
   const dashTicketLabel = dashBm.avgTicketLabel || 'Avg item price';
-  if(dashConcepts.delivery && doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
-  if(dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:dashTicketLabel+' $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on lifting the average sale',link:'products.html'});
-  if(discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Below the '+(dashBm.discountMaxPct || 6)+'% warning threshold for your business type',link:'alerts.html'});
+  if(!dashEmpty && dashConcepts.delivery && doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
+  if(!dashEmpty && dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:dashTicketLabel+' $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on lifting the average sale',link:'products.html'});
+  if(!dashEmpty && discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Below the '+(dashBm.discountMaxPct || 6)+'% warning threshold for your business type',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');
   if(alertsList) {
@@ -682,9 +686,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Top Recommendations
   const recs = [];
-  if(laborPct > tgt.labor) recs.push({icon:'✂️',title:'Optimize staffing levels',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
-  if(dashConcepts.delivery && doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
-  if(dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Lift your average sale',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'products.html'});
+  if(!dashEmpty && laborPct > tgt.labor) recs.push({icon:'✂️',title:'Optimize staffing levels',impact:'Est. '+fmt(Math.round(m.laborExcessWeekly))+'/week savings',link:'labor.html'});
+  if(!dashEmpty && dashConcepts.delivery && doorDashPct < tgt.doordash) recs.push({icon:'🚗',title:'Grow DoorDash to '+tgt.doordash+'%',impact:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week upside',link:'data.html'});
+  if(!dashEmpty && dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) recs.push({icon:'📈',title:'Lift your average sale',impact:'$1 lift = '+fmt(Math.round(m.itemsPerWeek))+'/week',link:'products.html'});
   recs.push({icon:'💬',title:'Ask AI for personalized plan',impact:'Personalized to your business',link:'operator.html'});
 
   const recsList = document.getElementById('dash-recs-list');

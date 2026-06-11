@@ -288,8 +288,13 @@ async function generateAlertsInsights() {
   const btn = document.getElementById('refreshAlertsBtn');
   if(!container) return;
   if(btn){btn.textContent='Analyzing...';btn.disabled=true;}
-  container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your business...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
   const d = HRZN.getData();
+  if (d._source === 'empty') {
+    container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-dim);font-size:12px;">Upload your data to get AI analysis.</div>';
+    if(btn){btn.textContent='+ Refresh';btn.disabled=false;}
+    return;
+  }
+  container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your business...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
   const calcCtx = buildAlertsContext(d);
   // Route through central engine: Refresh excludes what's already shown so it
   // produces a genuinely different set rather than re-deriving the same alerts.
@@ -463,6 +468,11 @@ function makeAlertCard(alert){
 
 function generateAlerts(){
   const d = HRZN.getData();
+  // Empty state: no fabricated $0 alerts — return the empty structure so renderAlerts
+  // zeroes the KPIs and shows the built-in #empty-state element.
+  if (d._source === 'empty') {
+    return { critical: [], warning: [], opportunity: [], wins: [] };
+  }
   const m = HRZN.getMetrics(d);
   const t = getTargets();
   const periodDays = d.periodDays || 148;
@@ -655,7 +665,7 @@ function renderAlerts(){
     const period = (d.periodStart 
     ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
     : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
-    subtitle.textContent = `Based on your ${d._source==='demo'?'demo':d._source==='api'?'live':'uploaded'} data · ${period||'Jan–May 2026'}`;
+    subtitle.textContent = d._source==='empty' ? 'No data yet — upload your CSV to see alerts' : `Based on your ${d._source==='demo'?'demo':d._source==='api'?'live':'uploaded'} data · ${period||''}`.trim();
   }
 
   // Render sections

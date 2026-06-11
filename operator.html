@@ -589,6 +589,11 @@ document.addEventListener('DOMContentLoaded',()=>{
       if (lm && lm.value != null && !isNaN(+lm.value)) laborPct = Number(lm.value);
     } catch(e) {}
     const alertsList = document.getElementById('op-alerts-list');
+    // Empty state: no fabricated $0 alerts in the snapshot panel (no early return —
+    // later init like the chat send listeners must still run).
+    if (d._source === 'empty') {
+      if (alertsList) alertsList.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:6px 0;">No data yet — upload your CSV to see alerts.</div>';
+    } else {
 
     // Category awareness: which concepts apply, and what to call the avg-ticket metric.
     const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
@@ -617,10 +622,11 @@ document.addEventListener('DOMContentLoaded',()=>{
           const q = a.q.replace(/'/g, '&#39;');
           return '<div class="alert-pill" onclick="askQuestion(this.dataset.q)" data-q="'+a.q+'">' +
             '<div style="width:6px;height:6px;border-radius:50%;background:'+a.color+';flex-shrink:0;"></div>' +
-            '<div style="font-size:11px;color:var(--text);">'+a.text+'</div></div>';
+            '<div style="font-size:11px;color:'+'var(--text)'+';">'+a.text+'</div></div>';
         }).join('');
       }
     }
+    } // end non-empty branch
   } catch(e) {}
   HRZN.injectBadge('hrzn-source-badge');
   HRZN.injectBadge('hrzn-source-badge');

@@ -334,8 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Slim topbar notice
     const notice = document.createElement('div');
     notice.style.cssText = 'background:rgba(201,168,76,0.07);border-bottom:1px solid rgba(201,168,76,0.12);padding:8px 28px;display:flex;align-items:center;justify-content:space-between;font-size:12px;';
-    notice.innerHTML = '<span style="color:var(--text-dim);">📂 No data uploaded yet — your dashboard is ready and waiting.</span>' +
-      '<a href="data.html" style="color:var(--gold);font-weight:500;text-decoration:none;font-size:11px;border:1px solid rgba(201,168,76,0.3);padding:3px 12px;border-radius:4px;white-space:nowrap;">Upload CSV →</a>';
+    notice.innerHTML = hrznNoDataBannerHTML();
     const topbar = document.querySelector('.topbar');
     if (topbar && topbar.parentNode) {
       topbar.parentNode.insertBefore(notice, topbar.nextSibling);
@@ -400,12 +399,16 @@ const months = HRZN.getMonths(d);
   const dayOrder = ['fri','sat','sun','thu','wed','mon','tue'];
   const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
 
+  // Empty state: day estimates are weekly-avg math — meaningless at $0.
+  const revEmpty = d._source === 'empty';
   // Best day estimate
-  set('rev-best-day', fmt(Math.round(weekly * dayWeights.fri / 7)));
+  set('rev-best-day', revEmpty ? '—' : fmt(Math.round(weekly * dayWeights.fri / 7)));
 
   // Revenue by Day bars
   const revByDay = document.getElementById('rev-by-day-list');
-  if(revByDay) {
+  if(revByDay && revEmpty) {
+    revByDay.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to see revenue by day.</div>';
+  } else if(revByDay) {
     const maxVal = weekly * dayWeights.fri / 7;
     revByDay.innerHTML = dayOrder.map(day => {
       const val = Math.round(weekly * dayWeights[day] / 7);
@@ -432,9 +435,9 @@ const months = HRZN.getMonths(d);
   const revBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const revConcepts = revBm.concepts || { dayparts: true };
   const dpCard = document.getElementById('daypart-table-card');
-  if (dpCard && revConcepts.dayparts === false) dpCard.style.display = 'none';
+  if (dpCard && (revConcepts.dayparts === false || HRZN.getData()._source === 'empty')) dpCard.style.display = 'none';
   const tableBody = document.getElementById('rev-table-body');
-  if(tableBody && revConcepts.dayparts !== false) {
+  if(tableBody && revConcepts.dayparts !== false && d._source !== 'empty') {
     const rows = allDays.map(day => {
       const dayRev = Math.round(weekly * dayWeights[day] / 7);
       const lunch = Math.round(dayRev * 0.32);

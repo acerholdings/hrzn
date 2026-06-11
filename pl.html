@@ -341,6 +341,12 @@ function calcAndRender(){
   saveInputs();
   const {revenue,period,filename}=getRevenue();
   const d = HRZN.getData();
+  // Empty state: leave the statement's static "\u2014" placeholders untouched —
+  // industry estimates only make sense once revenue exists.
+  if (d._source === 'empty') {
+    const eb = document.getElementById('pl-est-banner'); if (eb) eb.style.display = 'none';
+    return;
+  }
   const periodDays = d.periodDays || 148;
   const weeks = periodDays / 7;
   const months = periodDays / 30.44;
@@ -444,6 +450,11 @@ function calcAndRender(){
 
 let _plInsights = [];  // shown insights, for exclusion + ceiling
 async function generatePLInsights(){
+  if (HRZN.getData()._source === 'empty') {
+    const c = document.getElementById('plInsightsContainer');
+    if (c) c.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-dim);font-size:12px;">Upload your data to get AI P&L insights.</div>';
+    return;
+  }
   const container=document.getElementById('plInsightsContainer');
   const btn=document.getElementById('plInsightsBtn');
   if(!container)return;
@@ -547,6 +558,11 @@ function renderPLInsights(insights, container) {
 }
 
 async function generateMorePLInsights(){
+  if (HRZN.getData()._source === 'empty') {
+    const c = document.getElementById('plInsightsContainer');
+    if (c) c.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-dim);font-size:12px;">Upload your data to get AI P&L insights.</div>';
+    return;
+  }
   const container=document.getElementById('plInsightsContainer');
   const btn=document.getElementById('plMoreInsightsBtn');
   if(!container)return;

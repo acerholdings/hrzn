@@ -171,7 +171,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div><div style="font-size:12px;color:var(--text);">Debit Card</div></div>
             <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);" id="val-debit">—</span>
           </div>
-          <div class="data-row">
+          <div class="data-row" id="pay-row-doordash">
             <div><div style="font-size:12px;color:var(--text);">DoorDash</div><div style="font-size:10px;color:var(--text-dim);margin-top:2px;"><span id="val-doordash-pct">—</span> of revenue</div></div>
             <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);" id="val-doordash">—</span>
           </div>
@@ -235,6 +235,10 @@ let _salesInsights = [];  // shown insights, for exclusion + ceiling
 async function generateInsights(d) {
   const container = document.getElementById('insightsContainer');
   if(!container) return;
+  if (d && d._source === 'empty') {
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-dim);font-size:12px;">Upload your data to get AI sales insights.</div>';
+    return;
+  }
   container.innerHTML = '<div style="padding:32px;text-align:center;"><div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Analyzing your data...</div><div style="width:40px;height:2px;background:var(--gold);margin:0 auto;animation:pulse 1s infinite;"></div></div>';
   try {
     const calcCtx = buildSalesContext(d);
@@ -483,7 +487,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     const d = HRZN.getData();
     if(d._source !== 'demo') {
       updateDashboard(d);
-      if(status){ status.textContent='✓ Showing data from '+(d._filename||d._source); status.style.color='var(--green)'; }
+      if(status){
+        if (d._source === 'empty') { status.textContent='No CSV uploaded yet'; status.style.color='var(--text-dim)'; }
+        else { status.textContent='✓ Showing data from '+(d._filename||d._source); status.style.color='var(--green)'; }
+      }
       if(zone){ zone.style.borderColor='var(--green)'; }
     } else {
       generateInsights(d);
@@ -535,6 +542,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('val-taxes', fmt(d.taxes||0));
     set('val-items', (d.itemsSold||0).toLocaleString());
     set('val-avg-check', '$'+(Math.round((d.avgCheck||0)*100)/100).toFixed(2));
+    // DoorDash row is a delivery concept — hide for categories without it (unless dollars exist).
+    try {
+      const sBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+      const sConcepts = sBm.concepts || { delivery:true };
+      const ddRow = document.getElementById('pay-row-doordash');
+      if (ddRow) ddRow.style.display = (sConcepts.delivery || (t.doorDash||0) > 0) ? '' : 'none';
+    } catch(e) {}
     set('val-doordash', fmt(t.doorDash||0));
     const ddPct = d.amountCollected > 0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : '0.0';
     set('val-doordash-pct', ddPct+'%');

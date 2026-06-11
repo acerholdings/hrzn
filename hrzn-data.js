@@ -1544,13 +1544,14 @@ function hrznInjectFloatingAI() {
       </div>
       <div id="hrzn-panel-msgs">
         <div class="hrzn-msg-ai">
-          Analyzing ${bizName}. Revenue is <strong style="color:var(--text,#e8e8e8)">$${weekly.toLocaleString()}/week</strong>. What would you like to know?
+          ${HRZN.getData()._source === 'empty'
+            ? `I don't have ${bizName}'s data yet \u2014 upload your CSV and ask me anything.`
+            : `Analyzing ${bizName}. Revenue is <strong style="color:var(--text,#e8e8e8)">$${weekly.toLocaleString()}/week</strong>. What would you like to know?`}
         </div>
       </div>
       <div id="hrzn-panel-chips">
         <span class="hrzn-chip">What should I focus on?</span>
-        <span class="hrzn-chip">Fix Tuesday labor</span>
-        <span class="hrzn-chip">Grow DoorDash</span>
+        ${(((HRZN.getBenchmarks && HRZN.getBenchmarks().suggestedQuestions) || ['Top 3 profit actions','Forecast next month']).slice(1,3)).map(q => '<span class="hrzn-chip">' + q + '</span>').join('')}
       </div>
       <div id="hrzn-panel-input-row">
         <input id="hrzn-panel-input" placeholder="Ask anything about your business..." />

@@ -502,23 +502,26 @@ document.addEventListener('DOMContentLoaded',()=>{
     : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   set('cf-period', period || 'Jan 1 – May 28, 2026');
 
+  // Empty state: industry estimates only make sense once revenue exists —
+  // show dashes instead of flat-dollar estimated outflows against $0 income.
+  const cfEmpty = d._source === 'empty';
   // KPIs
   const estTag = anyEstimated ? ' (est.)' : '';
-  set('cf-inflow', fmt(monthly));
-  set('cf-outflow', fmt(totalMonthlyExp) + estTag);
-  set('cf-outflow2', fmt(totalMonthlyExp) + estTag);
-  set('cf-net', (isPositive?'+':'-')+fmt(netCashFlow) + estTag);
+  set('cf-inflow', cfEmpty ? '—' : fmt(monthly));
+  set('cf-outflow', cfEmpty ? '—' : fmt(totalMonthlyExp) + estTag);
+  set('cf-outflow2', cfEmpty ? '—' : fmt(totalMonthlyExp) + estTag);
+  set('cf-net', cfEmpty ? '—' : (isPositive?'+':'-')+fmt(netCashFlow) + estTag);
   // Runway requires cash-on-hand, which no current data source provides. Never fabricate it.
   set('cf-runway', '—');
   const runwayNote = document.getElementById('cf-runway');
   if(runwayNote && runwayNote.nextElementSibling) runwayNote.nextElementSibling.textContent = 'Needs cash on hand';
 
-  // Show the estimate banner when any expense line is a fallback.
+  // Show the estimate banner when any expense line is a fallback (never on empty).
   const estBanner = document.getElementById('cf-est-banner');
-  if(estBanner) estBanner.style.display = anyEstimated ? 'block' : 'none';
+  if(estBanner) estBanner.style.display = (anyEstimated && !cfEmpty) ? 'block' : 'none';
 
   const netEl = document.getElementById('cf-net');
-  if(netEl) netEl.style.color = isPositive ? 'var(--green)' : 'var(--red)';
+  if(netEl) netEl.style.color = cfEmpty ? 'var(--text-dim)' : (isPositive ? 'var(--green)' : 'var(--red)');
   const runwayEl = document.getElementById('cf-runway');
   if(runwayEl) runwayEl.style.color = 'var(--text-dim)';
 
@@ -538,6 +541,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     const bar = document.getElementById(barId);
     if(bar) bar.style.width = (totalMonthlyExp > 0 ? Math.min(100, Math.round(val/totalMonthlyExp*100)) : 0) + '%';
   };
+  if (cfEmpty) {
+    ['cf-cogs','cf-labor','cf-rent','cf-utils','cf-debt','cf-other'].forEach(id => {
+      set(id+'-out','—'); set(id+'-pct','—');
+      const bar = document.getElementById(id.replace('cf-','bar-')); if(bar) bar.style.width = '0%';
+    });
+    set('cf-insurance-out','—');
+  } else {
   setExp('cf-cogs',  'bar-cogs',  mCogs,  isReal('cogs'));
   setExp('cf-labor', 'bar-labor', mLabor, isReal('labor'));
   setExp('cf-rent',  'bar-rent',  mRent,  isReal('rent'));
@@ -547,11 +557,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   const otherCombined = mInsurance + mSupplies + mMarketing + mOther;
   const otherReal = isReal('insurance') && isReal('supplies') && isReal('marketing') && isReal('other');
   setExp('cf-other', 'bar-other', otherCombined, otherReal);
+  } // end non-empty outflow rows
 
   // Monthly summary rows
   const months_arr = generateMonthlyRows(d, months, monthly, totalMonthlyExp);
   const tbody = document.getElementById('cf-monthly-rows');
-  if(tbody){
+  if(tbody && cfEmpty){
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px 16px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to see monthly cash flow.</td></tr>';
+  } else if(tbody){
     tbody.innerHTML = months_arr.map(m => {
       const pos = m.net >= 0;
       return `<tr>

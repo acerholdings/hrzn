@@ -412,11 +412,14 @@ const months = HRZN.getMonths(d);
   const savings = weeklyLaborCost - targetLaborCost;
   const revRatio = (1/(laborPct/100)).toFixed(1);
 
-  set('labor-weekly-cost', fmt(weeklyLaborCost));
-  set('labor-savings', fmt(savings));
-  set('labor-rev-ratio', '$'+revRatio);
+  // Empty state: dollar figures and the revenue/labor ratio are pure math on the
+  // estimated rate — fabricated noise without revenue. Show dashes instead.
+  const labEmpty = d._source === 'empty';
+  set('labor-weekly-cost', labEmpty ? '—' : fmt(weeklyLaborCost));
+  set('labor-savings', labEmpty ? '—' : fmt(savings));
+  set('labor-rev-ratio', labEmpty ? '—' : '$'+revRatio);
   set('labor-pct', laborPct + '%');
-  set('labor-pct-sub', laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target');
+  set('labor-pct-sub', labEmpty ? 'Estimated rate · upload data' : (laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target'));
 
   // Day weights
   const dayWeights = {mon:0.85,tue:0.70,wed:0.95,thu:1.05,fri:1.45,sat:1.35,sun:1.10};
@@ -426,7 +429,9 @@ const months = HRZN.getMonths(d);
   // Labor pct by day - lower revenue days have higher labor % (fixed costs)
   // Use inverse of day weight to estimate labor pct (fixed staff costs on slow days = higher %)
   const laborByDay = document.getElementById('labor-by-day-list');
-  if(laborByDay) {
+  if(laborByDay && labEmpty) {
+    laborByDay.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to see estimated labor cost by day.</div>';
+  } else if(laborByDay) {
     const avgWeight = allDays.reduce((s,d) => s+dayWeights[d],0)/7;
     laborByDay.innerHTML = allDays.map(day => {
       const dayRev = Math.round(weekly * dayWeights[day]/7);
