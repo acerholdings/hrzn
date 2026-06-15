@@ -190,6 +190,45 @@ nav {
   box-shadow: 0 24px 60px rgba(0,0,0,0.15);
 }
 
+/* LIVE DASHBOARD IFRAME (hero) */
+.hero-browser {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #fff;
+}
+.hero-browser-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 14px;
+  background: #f1efea;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.hbb-dot { width: 10px; height: 10px; border-radius: 50%; background: #d6d2c8; }
+.hero-browser-url {
+  margin-left: 10px; font-size: 11px; color: #999;
+  background: #fff; border-radius: 5px; padding: 4px 12px; flex: 1;
+}
+.hero-iframe-wrap {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+/* Render the dashboard at 140% then scale to 0.714 so the full layout fits, crisp */
+.hero-iframe {
+  width: 140%;
+  height: 644px;            /* 460 / 0.714 */
+  border: 0;
+  transform: scale(0.714);
+  transform-origin: top left;
+}
+/* Transparent click-catcher: page scrolls freely, click opens full demo */
+.hero-iframe-overlay {
+  position: absolute; inset: 0; display: block; cursor: pointer; background: transparent;
+}
+
 .preview-topbar {
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -734,6 +773,10 @@ footer {
     z-index: 100;
   }
   .nav-links.mobile-open { display: flex; }
+
+  /* Hero live-demo iframe shrinks on mobile */
+  .hero-iframe-wrap { height: 300px; }
+  .hero-iframe { width: 175%; height: 525px; transform: scale(0.571); }
   .nav-links span, .nav-links a {
     padding: 12px 20px;
     font-size: 14px;
@@ -882,36 +925,14 @@ html, body { background: var(--white) !important; }
       <div class="hero-sub">Free to join · No credit card required</div>
     </div>
     <div class="hero-right">
-      <div class="dashboard-preview">
-        <div class="preview-topbar">
-          <div class="preview-logo">Sama Handroll</div>
-          <div class="preview-greeting">Good evening, Sama.</div>
-          <div class="preview-live"><div class="preview-live-dot"></div> Live</div>
+      <div class="hero-browser">
+        <div class="hero-browser-bar">
+          <span class="hbb-dot"></span><span class="hbb-dot"></span><span class="hbb-dot"></span>
+          <div class="hero-browser-url">app.usehrzn.ai/dashboard</div>
         </div>
-        <div class="preview-kpis">
-          <div class="preview-kpi">
-            <div class="preview-kpi-label">Revenue</div>
-            <div class="preview-kpi-val">8,240</div>
-            <div class="preview-kpi-change preview-up">↑ 14.2% vs last week</div>
-          </div>
-          <div class="preview-kpi">
-            <div class="preview-kpi-label">Labor cost</div>
-            <div class="preview-kpi-val">32%</div>
-            <div class="preview-kpi-change preview-down">↑ 3.1% — watch Tue</div>
-          </div>
-          <div class="preview-kpi">
-            <div class="preview-kpi-label">Gross margin</div>
-            <div class="preview-kpi-val">68%</div>
-            <div class="preview-kpi-change preview-up">↑ 5.4% vs last week</div>
-          </div>
-        </div>
-        <div class="preview-alert">
-          <div class="preview-alert-tag">⚡ Alert — labor spike</div>
-          <div class="preview-alert-text">Tuesday labor hit <strong>41% of revenue</strong>. Cutting 2 shifts saves ~<strong>00/week</strong>.</div>
-        </div>
-        <div class="preview-chat">
-          <div class="preview-chat-label">◈ HRZN AI</div>
-          <div class="preview-chat-text">Your Toro Handroll has a 68% margin but only 12% lunch penetration. A targeted lunch promotion could add 00–,200/week.</div>
+        <div class="hero-iframe-wrap">
+          <iframe class="hero-iframe" src="dashboard.html?demo=true" loading="lazy" title="Live HRZN dashboard demo" scrolling="no"></iframe>
+          <a class="hero-iframe-overlay" href="dashboard.html?demo=true" aria-label="Open interactive demo"></a>
         </div>
       </div>
     </div>
