@@ -430,7 +430,7 @@ async function connectClover(){
   const btn = document.getElementById('clover-btn');
   if (btn) { btn.textContent = 'Opening…'; btn.disabled = true; }
   try {
-    const r = await fetch('/api/clover-connect', {
+    const r = await fetch('/api/clover?action=connect', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const j = await r.json();
@@ -446,7 +446,7 @@ async function refreshCloverStatus(){
   const token = hrznGetToken();
   if (!token || hrznIsDemo()) return;
   try {
-    const r = await fetch('/api/clover-status', {
+    const r = await fetch('/api/clover?action=status', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const j = await r.json();
