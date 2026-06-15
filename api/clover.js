@@ -353,7 +353,11 @@ export default async function handler(req, res) {
       };
       if (businessId) row.business_id = businessId;
 
-      const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/clover_connections`, {
+      // Upsert keyed on business_id (the unique constraint). on_conflict tells
+      // PostgREST to UPDATE the existing row instead of failing with a 409
+      // duplicate-key error. Without it, merge-duplicates has no target column.
+      const conflictTarget = businessId ? 'business_id' : 'merchant_id';
+      const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/clover_connections?on_conflict=${conflictTarget}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
