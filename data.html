@@ -185,8 +185,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Sales, orders, menu items, inventory, employees</div>
             <div class="int-replaces">Replaces: <span>All CSV uploads above</span></div>
           </div>
-          <span class="int-status" style="background:var(--orange-dim);color:var(--orange);">CSV Mode</span>
-          <button class="int-btn">Apply for API →</button>
+          <span class="int-status" id="clover-status" style="background:var(--orange-dim);color:var(--orange);">CSV Mode</span>
+          <button class="int-btn" id="clover-btn" onclick="connectClover()">Connect →</button>
         </div>
         <div class="integration-row">
           <div class="int-logo">👥</div>
@@ -423,10 +423,70 @@ function updateSourceButtons(){
   });
 }
 
+// ── Clover live integration ──────────────────────────────────────
+async function connectClover(){
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) { showToast('Sign in to connect Clover', true); return; }
+  const btn = document.getElementById('clover-btn');
+  if (btn) { btn.textContent = 'Opening…'; btn.disabled = true; }
+  try {
+    const r = await fetch('/api/clover-connect', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const j = await r.json();
+    if (j.url) { window.location.href = j.url; return; }   // hand off to Clover's authorize screen
+    showToast(j.error || 'Could not start Clover connection', true);
+  } catch(e) {
+    showToast('Connection error: ' + e.message, true);
+  }
+  if (btn) { btn.textContent = 'Connect →'; btn.disabled = false; }
+}
+
+async function refreshCloverStatus(){
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) return;
+  try {
+    const r = await fetch('/api/clover-status', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const j = await r.json();
+    const status = document.getElementById('clover-status');
+    const btn = document.getElementById('clover-btn');
+    if (j.connected && status) {
+      status.textContent = 'Connected';
+      status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
+      status.style.color = 'var(--green, #2e7d52)';
+      if (btn) { btn.textContent = 'Reconnect →'; }
+    }
+  } catch(e) { /* leave default CSV Mode badge */ }
+}
+
+// Handle the ?clover=... flag the callback redirects back with
+(function handleCloverRedirect(){
+  const p = new URLSearchParams(window.location.search).get('clover');
+  if (!p) return;
+  const msgs = {
+    connected: ['✓ Clover connected successfully', false],
+    denied: ['Clover connection was cancelled', true],
+    token_failed: ['Clover authorization failed — please try again', true],
+    store_failed: ['Connected, but saving the connection failed — contact support', true],
+    bad_state: ['Connection expired — please try again', true],
+    config_error: ['Clover is not configured yet', true],
+    error: ['Something went wrong connecting Clover', true],
+  };
+  const m = msgs[p] || ['Clover: ' + p, true];
+  setTimeout(() => { try { showToast(m[0], m[1]); } catch(e){} }, 400);
+  // Clean the URL so a refresh doesn't repeat the toast
+  window.history.replaceState({}, '', '/data.html');
+})();
+
 document.addEventListener('DOMContentLoaded',()=>{
   
   // Update sidebar with logged-in user info
   hrznSetupSidebar();
+
+  // Reflect live Clover connection status on the integration row
+  refreshCloverStatus();
 
 
   // Trial countdown banner - only show if on trial plan
