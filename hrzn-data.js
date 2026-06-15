@@ -348,7 +348,11 @@ const HRZN = {
       cash:       24895,
       doorDashPct: 4.7,
       giftCard: 0
-    }
+    },
+    // Built-in targets so the demo always analyzes against real benchmarks
+    // (a logged-out visitor has no saved Settings). $9,500/wk sits just above the
+    // $9,115 actual, so the AI leads with an on-target read, not "set a target".
+    _targets: { revenue: 9500, monthly: 41000, check: 15, labor: 28, food: 30, margin: 15, doordash: 10, discount: 5 }
   },
 
   // ── EMPTY DATASET (logged-in, no upload, demo NOT opted in) ──
@@ -446,13 +450,15 @@ const HRZN = {
       // Category-aware fallbacks: user's saved targets win; otherwise fall back to the
       // business category's benchmark (not hardcoded restaurant numbers).
       const b = this.getBenchmarks ? this.getBenchmarks() : {};
+      // Demo dataset carries its own targets so the logged-out preview analyzes honestly.
+      const dt = (this.isDemoModeOn && this.isDemoModeOn() && this.DEMO_DATA && this.DEMO_DATA._targets) ? this.DEMO_DATA._targets : {};
       const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
       return {
         labor: num(tg.labor, b.laborPct != null ? b.laborPct : 28),
         food: num(tg.food, b.cogsPct != null ? b.cogsPct : 30),
         margin: num(tg.margin, b.netMarginTarget != null ? b.netMarginTarget : 15),
-        weeklyRevenue: num(tg.revenue, 12000),         // no benchmark equivalent
-        monthlyRevenue: num(tg.monthly, 50000),        // no benchmark equivalent
+        weeklyRevenue: num(tg.revenue, dt.revenue || 12000),   // demo target, else generic
+        monthlyRevenue: num(tg.monthly, dt.monthly || 50000),  // demo target, else generic
         avgCheck: num(tg.check, b.avgTicket ? b.avgTicket : 15),
         doordash: num(tg.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
         discount: num(tg.discount, b.discountMaxPct != null ? b.discountMaxPct : 5),
