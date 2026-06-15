@@ -120,12 +120,14 @@ export default async function handler(req, res) {
       const what = req.query.what || 'summary';
 
       if (what === 'summary') {
-        const r = await fetch(`${BASE}/payments?filter=createdTime>=${weekAgo}&filter=createdTime<${now}&limit=500`, { headers: HEADERS });
+        // Built on orders (not payments) so it works with the Orders permission
+        // alone. Order.total is in cents. Only count orders with a real total.
+        const r = await fetch(`${BASE}/orders?filter=createdTime>=${weekAgo}&filter=createdTime<${now}&limit=500`, { headers: HEADERS });
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
-        const payments = data.elements || [];
-        const totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0) / 100;
-        const count = payments.length;
+        const orders = (data.elements || []).filter(o => typeof o.total === 'number');
+        const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0) / 100;
+        const count = orders.length;
         return res.status(200).json({
           totalRevenue: Math.round(totalRevenue),
           totalTransactions: count,
