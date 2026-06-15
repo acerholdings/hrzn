@@ -3,6 +3,9 @@
 //   ?action=connect  → returns the Clover authorize URL (needs Bearer token)
 //   ?action=callback → Clover redirects here after approval (no token; uses state)
 //   ?action=status   → reports whether this business has a stored connection
+//   launch (App Market) → Clover sends ?merchant_id=&client_id= with no code and
+//                         no action. We redirect into /oauth/v2/authorize to begin
+//                         the OAuth handshake, carrying merchant_id in state.
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -19,7 +22,14 @@ export default async function handler(req, res) {
   // Clover appends ?code=&merchant_id=&state= to the redirect_uri (a bare path,
   // no action param — Clover validates the path as a Site URL subpath). So if a
   // `code` is present, this is the OAuth callback regardless of action.
-  const action = req.query.code ? 'callback' : req.query.action;
+  //
+  // The App Market "Connect" launch hits this same bare path but sends only
+  // ?merchant_id=&client_id= (no code, no action). Detect that and treat it as
+  // a `launch` so we can kick off the OAuth handshake.
+  let action = req.query.code ? 'callback' : req.query.action;
+  if (!action && req.query.merchant_id && !req.query.code) {
+    action = 'launch';
+  }
 
   // Resolve business_id from a Supabase bearer token (shared by connect + status).
   async function getBusinessId() {
@@ -40,6 +50,24 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ── LAUNCH: App Market "Connect" landed here with merchant_id only ─
+    // No code yet, and no HRZN user/token in this browser hop. Redirect the
+    // merchant into Clover's authorize screen; the merchant_id is stashed in
+    // state so the callback can resolve which business this connection is for.
+    if (action === 'launch') {
+      if (!CLOVER_APP_ID) return res.status(500).json({ error: 'CLOVER_APP_ID not configured' });
+      const merchantId = req.query.merchant_id;
+      const state = Buffer.from(JSON.stringify({ m: merchantId, t: Date.now() })).toString('base64url');
+      const redirectUri = `${APP_URL}/api/clover`;
+      const url = `${CLOVER_BASE}/oauth/v2/authorize`
+        + `?client_id=${encodeURIComponent(CLOVER_APP_ID)}`
+        + `&redirect_uri=${encodeURIComponent(redirectUri)}`
+        + `&response_type=code`
+        + `&merchant_id=${encodeURIComponent(merchantId)}`
+        + `&state=${encodeURIComponent(state)}`;
+      return res.redirect(302, url);
+    }
+
     // ── CONNECT: build the authorize URL ──────────────────────────
     if (action === 'connect') {
       if (!CLOVER_APP_ID) return res.status(500).json({ error: 'CLOVER_APP_ID not configured' });
@@ -121,10 +149,26 @@ export default async function handler(req, res) {
       if (!code || !merchant_id) return back('denied');
 
       let businessId = null;
+      let parsedState = null;
       try {
-        businessId = JSON.parse(Buffer.from(state, 'base64url').toString()).b;
+        parsedState = JSON.parse(Buffer.from(state, 'base64url').toString());
       } catch (e) { return back('bad_state'); }
-      if (!businessId) return back('bad_state');
+
+      if (parsedState.b) {
+        // Came from the in-app Connect button — business_id was in state.
+        businessId = parsedState.b;
+      } else if (parsedState.m) {
+        // Came from the App Market launch — only merchant_id was known. Find the
+        // business already linked to this merchant_id; if none exists yet, fall
+        // back to a holding record keyed by merchant_id so the token isn't lost.
+        const lookupRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/clover_connections?merchant_id=eq.${parsedState.m}&select=business_id`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [existing] = await lookupRes.json();
+        if (existing?.business_id) businessId = existing.business_id;
+      }
+      if (!businessId && !parsedState.m) return back('bad_state');
 
       const tokenRes = await fetch(`${CLOVER_BASE}/oauth/v2/token`, {
         method: 'POST',
@@ -140,6 +184,18 @@ export default async function handler(req, res) {
       const expiresAt = tok.access_token_expiration
         ? new Date(tok.access_token_expiration * 1000).toISOString() : null;
 
+      // Build the row. If launch flow couldn't resolve a business_id (no prior
+      // link for this merchant), write keyed on merchant_id only — the in-app
+      // link step can attach business_id later.
+      const row = {
+        merchant_id: String(merchant_id),
+        access_token: tok.access_token,
+        refresh_token: tok.refresh_token || null,
+        token_expires_at: expiresAt,
+        updated_at: new Date().toISOString()
+      };
+      if (businessId) row.business_id = businessId;
+
       const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/clover_connections`, {
         method: 'POST',
         headers: {
@@ -148,14 +204,7 @@ export default async function handler(req, res) {
           'apikey': SERVICE_KEY,
           'Prefer': 'resolution=merge-duplicates,return=minimal'
         },
-        body: JSON.stringify({
-          business_id: businessId,
-          merchant_id: String(merchant_id),
-          access_token: tok.access_token,
-          refresh_token: tok.refresh_token || null,
-          token_expires_at: expiresAt,
-          updated_at: new Date().toISOString()
-        })
+        body: JSON.stringify(row)
       });
       if (!upsertRes.ok) {
         const errText = await upsertRes.text();
