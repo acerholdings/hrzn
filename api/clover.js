@@ -116,30 +116,113 @@ export default async function handler(req, res) {
       const BASE = `${API_BASE}/v3/merchants/${MID}`;
       const HEADERS = { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' };
       const now = Date.now();
-      const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
+      // Configurable window: ?days=N (default 7). Clamp to a sane range so a
+      // bad value can't ask Clover for everything-ever.
+      let days = parseInt(req.query.days, 10);
+      if (!Number.isFinite(days) || days < 1) days = 7;
+      if (days > 365) days = 365;
+      const windowStart = now - (days * 24 * 60 * 60 * 1000);
       const what = req.query.what || 'summary';
 
       if (what === 'summary') {
-        // Built on orders (not payments) so it works with the Orders permission
-        // alone. Order.total is in cents. Only count orders with a real total.
-        const r = await fetch(`${BASE}/orders?filter=createdTime>=${weekAgo}&filter=createdTime<${now}&limit=500`, { headers: HEADERS });
+        // Revenue = PAID orders only (true revenue, per product decision).
+        // Built on orders + lineItems so it works with the Orders permission
+        // alone (no Payments scope needed). All money fields are in cents.
+        const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
-        const orders = (data.elements || []).filter(o => typeof o.total === 'number');
-        const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0) / 100;
-        const count = orders.length;
+
+        // Keep only orders Clover marks as paid.
+        const paid = (data.elements || []).filter(o => o.paymentState === 'PAID');
+
+        // Sum revenue from order.total (cents). order.total already reflects the
+        // paid amount; line items are summarized separately for item-level use.
+        const totalCents = paid.reduce((s, o) => s + (typeof o.total === 'number' ? o.total : 0), 0);
+        const count = paid.length;
+
+        // avgCheck computed in cents first, then converted once — so it can't
+        // disagree with totalRevenue the way the old whole-dollar rounding did.
+        const totalRevenue = totalCents / 100;
+        const avgCheck = count > 0 ? Math.round((totalCents / count)) / 100 : 0;
+
         return res.status(200).json({
-          totalRevenue: Math.round(totalRevenue),
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
           totalTransactions: count,
-          avgCheck: count > 0 ? Math.round((totalRevenue / count) * 100) / 100 : 0,
+          avgCheck,
+          windowDays: days,
+          paymentState: 'PAID',
           merchant_id: MID
         });
       }
-      if (what === 'orders')   { const r = await fetch(`${BASE}/orders?filter=createdTime>=${weekAgo}&limit=500&expand=lineItems`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
-      if (what === 'payments') { const r = await fetch(`${BASE}/payments?filter=createdTime>=${weekAgo}&limit=500`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
+      if (what === 'orders')   { const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&limit=500&expand=lineItems`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
+      if (what === 'payments') { const r = await fetch(`${BASE}/payments?filter=createdTime>=${windowStart}&limit=500`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
       if (what === 'items')    { const r = await fetch(`${BASE}/items?limit=200`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
       if (what === 'merchant') { const r = await fetch(`${BASE}`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
-      return res.status(400).json({ error: 'Invalid what. Use: summary, orders, payments, items, merchant' });
+
+      // ── PILLARS: map Clover orders → HRZN's universal pillar shape ──
+      // This is the live-data equivalent of a parsed CSV. It produces the same
+      // revenue-pillar fields HRZN already consumes, so connected businesses use
+      // live data first (CSV is the fallback when no Clover connection exists).
+      // Only the revenue pillar is derivable from Clover orders/items; COGS,
+      // labor, rent, marketing, recurring are not in POS data and stay sourced
+      // from settings/CSV until those integrations exist.
+      if (what === 'pillars') {
+        const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
+        if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
+        const data = await r.json();
+        const paid = (data.elements || []).filter(o => o.paymentState === 'PAID');
+
+        // Revenue pillar (cents → dollars).
+        const revenueCents = paid.reduce((s, o) => s + (typeof o.total === 'number' ? o.total : 0), 0);
+
+        // Per-day revenue, keyed YYYY-MM-DD, for week/period comparisons.
+        const byDay = {};
+        for (const o of paid) {
+          const d = new Date(o.createdTime).toISOString().slice(0, 10);
+          byDay[d] = (byDay[d] || 0) + (typeof o.total === 'number' ? o.total : 0);
+        }
+        const dailyRevenue = Object.entries(byDay)
+          .map(([date, cents]) => ({ date, revenue: Math.round(cents) / 100 }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+
+        // Per-item rollup. Clover unitQty is fixed-point: 1000 = 1 unit, so the
+        // real quantity is unitQty/1000. Only count line items flagged isRevenue.
+        const itemMap = {};
+        for (const o of paid) {
+          for (const li of (o.lineItems?.elements || [])) {
+            if (li.isRevenue === false || li.isOrderFee === true) continue;
+            const name = li.name || 'Unknown';
+            const qty = (typeof li.unitQty === 'number' && li.unitQty > 0) ? li.unitQty / 1000 : 1;
+            const priceCents = typeof li.price === 'number' ? li.price : 0;
+            if (!itemMap[name]) itemMap[name] = { name, qtySold: 0, revenue: 0 };
+            itemMap[name].qtySold += qty;
+            itemMap[name].revenue += priceCents;
+          }
+        }
+        const items = Object.values(itemMap)
+          .map(it => ({ name: it.name, qtySold: Math.round(it.qtySold * 1000) / 1000, revenue: Math.round(it.revenue) / 100 }))
+          .sort((a, b) => b.revenue - a.revenue);
+
+        const orderCount = paid.length;
+        return res.status(200).json({
+          source: 'clover',           // lets HRZN flag live vs CSV vs demo
+          windowDays: days,
+          pillars: {
+            revenue: Math.round(revenueCents) / 100
+            // cogs / labor / rent / marketing / recurring: not available from POS;
+            // HRZN keeps sourcing these from settings/CSV.
+          },
+          metrics: {
+            orderCount,
+            avgCheck: orderCount > 0 ? Math.round(revenueCents / orderCount) / 100 : 0
+          },
+          dailyRevenue,
+          items,
+          merchant_id: MID
+        });
+      }
+
+      return res.status(400).json({ error: 'Invalid what. Use: summary, pillars, orders, payments, items, merchant' });
     }
 
     // ── CALLBACK: exchange code for tokens, store, redirect back ───
