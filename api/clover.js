@@ -124,16 +124,29 @@ export default async function handler(req, res) {
       const windowStart = now - (days * 24 * 60 * 60 * 1000);
       const what = req.query.what || 'summary';
 
+      // Whether an order should count toward revenue.
+      // Production: real completed sales arrive as paymentState PAID.
+      // Sandbox: the Virtual Terminal creates OPEN orders that never flip to
+      //   PAID, so we also accept an order that carries genuine revenue line
+      //   items (isRevenue, not a fee) and hasn't been refunded/voided.
+      // Either way, refunded/voided orders and zero-revenue orders are excluded.
+      const countsAsRevenue = (o) => {
+        if (o.state === 'voided' || o.refunded === true) return false;
+        if (o.paymentState === 'PAID') return true;
+        const lis = o.lineItems?.elements || [];
+        return lis.some(li => li.isRevenue !== false && li.isOrderFee !== true && !li.refunded);
+      };
+
       if (what === 'summary') {
-        // Revenue = PAID orders only (true revenue, per product decision).
-        // Built on orders + lineItems so it works with the Orders permission
-        // alone (no Payments scope needed). All money fields are in cents.
+        // Revenue counts PAID orders plus sandbox revenue-bearing OPEN orders
+        // (see countsAsRevenue). Built on orders + lineItems so it needs only
+        // the Orders permission. All money fields are in cents.
         const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
 
-        // Keep only orders Clover marks as paid.
-        const paid = (data.elements || []).filter(o => o.paymentState === 'PAID');
+        // Keep only orders that count as revenue.
+        const paid = (data.elements || []).filter(countsAsRevenue);
 
         // Sum revenue from order.total (cents). order.total already reflects the
         // paid amount; line items are summarized separately for item-level use.
@@ -150,7 +163,7 @@ export default async function handler(req, res) {
           totalTransactions: count,
           avgCheck,
           windowDays: days,
-          paymentState: 'PAID',
+          revenueRule: 'paid_or_revenue_lineitems',
           merchant_id: MID
         });
       }
@@ -170,7 +183,7 @@ export default async function handler(req, res) {
         const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
-        const paid = (data.elements || []).filter(o => o.paymentState === 'PAID');
+        const paid = (data.elements || []).filter(countsAsRevenue);
 
         // Revenue pillar (cents → dollars).
         const revenueCents = paid.reduce((s, o) => s + (typeof o.total === 'number' ? o.total : 0), 0);
