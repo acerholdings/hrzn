@@ -103,7 +103,7 @@ export default async function handler(req, res) {
       const b = await getBusinessId();
       if (b.error) return res.status(b.code).json({ error: b.error });
       const connRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}&select=merchant_id,access_token`,
+        `${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}&select=merchant_id,access_token,refresh_token,token_expires_at`,
         { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
       );
       const [conn] = await connRes.json();
@@ -114,7 +114,66 @@ export default async function handler(req, res) {
       const API_BASE = process.env.CLOVER_API_BASE || 'https://api.clover.com';
       const MID = conn.merchant_id;
       const BASE = `${API_BASE}/v3/merchants/${MID}`;
-      const HEADERS = { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' };
+
+      // Access token is mutable: Clover tokens expire in ~30 min, so we refresh
+      // when stale or on a 401, then persist the new pair (refresh tokens are
+      // single-use, so saving the new one is mandatory or the next refresh fails).
+      let accessToken = conn.access_token;
+
+      // Refresh the token pair via Clover's /oauth/v2/refresh and save it back.
+      // Returns true on success, false if refresh isn't possible (caller decides).
+      async function refreshToken() {
+        if (!conn.refresh_token || !CLOVER_APP_ID) return false;
+        const rr = await fetch(`${CLOVER_BASE}/oauth/v2/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_id: CLOVER_APP_ID, refresh_token: conn.refresh_token })
+        });
+        if (!rr.ok) { console.error('Clover refresh failed:', rr.status, await rr.text()); return false; }
+        const t = await rr.json();
+        if (!t.access_token) return false;
+        accessToken = t.access_token;
+        const newExpiry = t.access_token_expiration
+          ? new Date(t.access_token_expiration * 1000).toISOString() : null;
+        // Persist the new pair (and the new single-use refresh token).
+        await fetch(`${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            access_token: t.access_token,
+            refresh_token: t.refresh_token || conn.refresh_token,
+            token_expires_at: newExpiry,
+            updated_at: new Date().toISOString()
+          })
+        });
+        conn.refresh_token = t.refresh_token || conn.refresh_token;
+        return true;
+      }
+
+      // Proactive refresh: if we know the token is expired (or expires within
+      // 60s), refresh before making any call.
+      if (conn.token_expires_at) {
+        const expMs = new Date(conn.token_expires_at).getTime();
+        if (Number.isFinite(expMs) && expMs - Date.now() < 60 * 1000) {
+          await refreshToken();
+        }
+      }
+
+      // Wrapper around fetch that retries once after a refresh on a 401.
+      async function cloverFetch(url) {
+        let r = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });
+        if (r.status === 401) {
+          const ok = await refreshToken();
+          if (ok) r = await fetch(url, { headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' } });
+        }
+        return r;
+      }
+
       const now = Date.now();
       // Configurable window: ?days=N (default 7). Clamp to a sane range so a
       // bad value can't ask Clover for everything-ever.
@@ -141,7 +200,7 @@ export default async function handler(req, res) {
         // Revenue counts PAID orders plus sandbox revenue-bearing OPEN orders
         // (see countsAsRevenue). Built on orders + lineItems so it needs only
         // the Orders permission. All money fields are in cents.
-        const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
+        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`);
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
 
@@ -167,10 +226,10 @@ export default async function handler(req, res) {
           merchant_id: MID
         });
       }
-      if (what === 'orders')   { const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&limit=500&expand=lineItems`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
-      if (what === 'payments') { const r = await fetch(`${BASE}/payments?filter=createdTime>=${windowStart}&limit=500`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
-      if (what === 'items')    { const r = await fetch(`${BASE}/items?limit=200`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
-      if (what === 'merchant') { const r = await fetch(`${BASE}`, { headers: HEADERS }); return res.status(r.status).json(await r.json()); }
+      if (what === 'orders')   { const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&limit=500&expand=lineItems`); return res.status(r.status).json(await r.json()); }
+      if (what === 'payments') { const r = await cloverFetch(`${BASE}/payments?filter=createdTime>=${windowStart}&limit=500`); return res.status(r.status).json(await r.json()); }
+      if (what === 'items')    { const r = await cloverFetch(`${BASE}/items?limit=200`); return res.status(r.status).json(await r.json()); }
+      if (what === 'merchant') { const r = await cloverFetch(`${BASE}`); return res.status(r.status).json(await r.json()); }
 
       // ── PILLARS: map Clover orders → HRZN's universal pillar shape ──
       // This is the live-data equivalent of a parsed CSV. It produces the same
@@ -180,7 +239,7 @@ export default async function handler(req, res) {
       // labor, rent, marketing, recurring are not in POS data and stay sourced
       // from settings/CSV until those integrations exist.
       if (what === 'pillars') {
-        const r = await fetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`, { headers: HEADERS });
+        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`);
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
         const paid = (data.elements || []).filter(countsAsRevenue);
