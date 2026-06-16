@@ -171,8 +171,10 @@ export default async function handler(req, res) {
           location_ids: [LOCATION],
           query: {
             filter: {
-              date_time_filter: { created_at: { start_at: windowStartISO, end_at: nowISO } },
-              state_filter: { states: ['COMPLETED'] }
+              date_time_filter: { created_at: { start_at: windowStartISO, end_at: nowISO } }
+              // No state_filter: we want OPEN + COMPLETED. Production sales are
+              // COMPLETED; the Sandbox/API-created test orders are OPEN. The
+              // countsAsRevenue() check below decides what actually counts.
             },
             sort: { sort_field: 'CREATED_AT', sort_order: 'DESC' }
           },
@@ -181,11 +183,14 @@ export default async function handler(req, res) {
         return sqFetch(`${SQUARE_BASE}/v2/orders/search`, { method: 'POST', body: JSON.stringify(body) });
       }
 
+      // Revenue counts an order unless it's canceled. Production: real sales are
+      // COMPLETED. Sandbox/API-created orders are OPEN but carry a real total, so
+      // we count any non-canceled order with a positive total_money.
       const countsAsRevenue = (o) => {
         if (!o) return false;
         if (o.state === 'CANCELED') return false;
         const amt = o.total_money && typeof o.total_money.amount === 'number' ? o.total_money.amount : 0;
-        return o.state === 'COMPLETED' || amt > 0;
+        return amt > 0;
       };
 
       if (what === 'summary') {
