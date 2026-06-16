@@ -225,8 +225,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Alternative POS — sales, items, employees</div>
             <div class="int-replaces">Alternative to: <span>Clover integration</span></div>
           </div>
-          <span class="int-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn">Connect →</button>
+          <span class="int-status" id="square-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
+          <button class="int-btn" id="square-btn" onclick="connectSquare()">Connect →</button>
         </div>
       </div>
     </div>
@@ -465,6 +465,7 @@ async function refreshCloverStatus(){
 (function handleCloverRedirect(){
   const p = new URLSearchParams(window.location.search).get('clover');
   if (!p) return;
+  try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
   const msgs = {
     connected: ['✓ Clover connected successfully', false],
     denied: ['Clover connection was cancelled', true],
@@ -480,6 +481,65 @@ async function refreshCloverStatus(){
   window.history.replaceState({}, '', '/data.html');
 })();
 
+// ── Square live integration ──────────────────────────────────────
+async function connectSquare(){
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) { showToast('Sign in to connect Square', true); return; }
+  const btn = document.getElementById('square-btn');
+  if (btn) { btn.textContent = 'Opening…'; btn.disabled = true; }
+  try {
+    const r = await fetch('/api/square?action=connect', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const j = await r.json();
+    if (j.url) { window.location.href = j.url; return; }   // hand off to Square's authorize screen
+    showToast(j.error || 'Could not start Square connection', true);
+  } catch(e) {
+    showToast('Connection error: ' + e.message, true);
+  }
+  if (btn) { btn.textContent = 'Connect →'; btn.disabled = false; }
+}
+
+async function refreshSquareStatus(){
+  const token = hrznGetToken();
+  if (!token || hrznIsDemo()) return;
+  try {
+    const r = await fetch('/api/square?action=status', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const j = await r.json();
+    const status = document.getElementById('square-status');
+    const btn = document.getElementById('square-btn');
+    if (j.connected && status) {
+      status.textContent = 'Connected';
+      status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
+      status.style.color = 'var(--green, #2e7d52)';
+      if (btn) { btn.textContent = 'Reconnect →'; }
+    }
+  } catch(e) { /* leave default Not Connected badge */ }
+}
+
+// Handle the ?square=... flag the callback redirects back with
+(function handleSquareRedirect(){
+  const p = new URLSearchParams(window.location.search).get('square');
+  if (!p) return;
+  // A connection state just changed — clear cached detection + sync guards so
+  // the new connection is picked up immediately.
+  try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
+  const msgs = {
+    connected: ['✓ Square connected successfully', false],
+    denied: ['Square connection was cancelled', true],
+    token_failed: ['Square authorization failed — please try again', true],
+    store_failed: ['Connected, but saving the connection failed — contact support', true],
+    bad_state: ['Connection expired — please try again', true],
+    config_error: ['Square is not configured yet', true],
+    error: ['Something went wrong connecting Square', true],
+  };
+  const m = msgs[p] || ['Square: ' + p, true];
+  setTimeout(() => { try { showToast(m[0], m[1]); } catch(e){} }, 400);
+  window.history.replaceState({}, '', '/data.html');
+})();
+
 document.addEventListener('DOMContentLoaded',()=>{
   
   // Update sidebar with logged-in user info
@@ -487,6 +547,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   // Reflect live Clover connection status on the integration row
   refreshCloverStatus();
+
+  // Reflect live Square connection status on the integration row
+  refreshSquareStatus();
 
 
   // Trial countdown banner - only show if on trial plan

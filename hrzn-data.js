@@ -1346,17 +1346,30 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   // Returns { ok: true, data } on success, or { ok: false, reason } otherwise.
   // Pass a days window to override the default (7).
   async syncClover(days) {
+    return this._syncIntegration('clover', days);
+  },
+
+  // ── SYNC LIVE DATA FROM SQUARE ───────────────
+  // Identical flow to Clover (same pillars output shape). See _syncIntegration.
+  async syncSquare(days) {
+    return this._syncIntegration('square', days);
+  },
+
+  // Shared sync for any POS integration whose /api/<name>?action=sync&what=pillars
+  // returns the standard pillars payload. Stores result as API-source data so
+  // getData() (api → csv → demo) makes every page use it automatically.
+  async _syncIntegration(name, days) {
     const token = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
     if (!token) return { ok: false, reason: 'not_logged_in' };
     try {
       const qs = days ? ('&days=' + encodeURIComponent(days)) : '';
-      const r = await fetch('/api/clover?action=sync&what=pillars' + qs, {
+      const r = await fetch('/api/' + name + '?action=sync&what=pillars' + qs, {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const p = await r.json();
       if (!r.ok || p.error) return { ok: false, reason: p.error || ('http_' + r.status) };
 
-      const mapped = this._mapCloverPillars(p);
+      const mapped = this._mapPillars(p, name);
       this.saveAPI(mapped);
       return { ok: true, data: mapped };
     } catch (e) {
@@ -1364,12 +1377,15 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     }
   },
 
-  // Map the Clover pillars payload → HRZN's canonical data shape (same fields as
-  // DEMO_DATA so every page renders identically). Clover POS data only supplies
-  // the revenue pillar and item/quantity info; fields it can't provide (taxes,
-  // tips, tender breakdown, COGS/labor/etc.) are left at 0 and stay sourced from
-  // Settings/CSV elsewhere. This is intentional, not a gap.
-  _mapCloverPillars(p) {
+  // Back-compat alias (older callers).
+  _mapCloverPillars(p) { return this._mapPillars(p, 'clover'); },
+
+  // Map a pillars payload → HRZN's canonical data shape (same fields as
+  // DEMO_DATA so every page renders identically). POS data supplies the revenue
+  // pillar and item/quantity info; fields it can't provide (taxes, tips, tender
+  // breakdown, COGS/labor) are left at 0 and stay sourced from Settings/CSV.
+  _mapPillars(p, integration) {
+    const labels = { clover: 'Clover (live)', square: 'Square (live)' };
     const revenue = (p && p.pillars && typeof p.pillars.revenue === 'number') ? p.pillars.revenue : 0;
     const items = Array.isArray(p && p.items) ? p.items : [];
     const itemsSold = items.reduce((s, it) => s + (Number(it.qtySold) || 0), 0);
@@ -1379,7 +1395,6 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       : (orderCount > 0 ? revenue / orderCount : 0);
     const days = (p && p.windowDays) ? p.windowDays : 7;
 
-    // Period label from the daily breakdown if present.
     const daily = Array.isArray(p && p.dailyRevenue) ? p.dailyRevenue : [];
     const periodStart = daily.length ? daily[0].date : '';
     const periodEnd = daily.length ? daily[daily.length - 1].date : '';
@@ -1387,9 +1402,9 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 
     return {
       _source: 'api',
-      _filename: 'Clover (live)',
-      _integration: 'clover',
-      _merchantId: p && p.merchant_id || null,
+      _filename: labels[integration] || 'Live integration',
+      _integration: integration,
+      _merchantId: (p && (p.merchant_id || p.location_id)) || null,
       _syncedAt: new Date().toISOString(),
       period,
       periodDays: days,
@@ -1405,20 +1420,19 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       itemsSold,
       avgCheck: Math.round(avgCheck * 100) / 100,
       tenders: { creditCard: 0, debitCard: 0, doorDash: 0, cash: 0, doorDashPct: 0, giftCard: 0 },
-      // Keep the raw item rollup available for the products page.
       _items: items,
       _dailyRevenue: daily
     };
   },
 
-  // Revert to CSV/demo source (e.g. user disconnects Clover). Clears the stored
-  // API data so getData() falls through to CSV, then demo/empty.
+  // Revert to CSV/demo source (e.g. user disconnects a live integration). Clears
+  // the stored API data so getData() falls through to CSV, then demo/empty.
   cloverDisconnect() {
     try { localStorage.removeItem(this.KEYS.API); } catch (e) {}
-    // Fall back to csv if a CSV exists, else let getSource resolve to empty/demo.
     const hasCsv = !!(localStorage.getItem(this.KEYS.CSV) || localStorage.getItem('hrzn-sales-data'));
     this.setSource(hasCsv ? 'csv' : 'demo');
   },
+  squareDisconnect() { return this.cloverDisconnect(); },
 
   // ── GET MONTHS FROM PERIOD ───────────────────
   getMonths(data) {
@@ -1579,14 +1593,14 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     anchor.parentNode.insertBefore(sel, anchor.nextSibling);
   },
 
-  // Re-sync Clover with the chosen window, then reload so every page picks up
-  // the new data via getData(). Shared by all pages' selectors.
+  // Re-sync the active integration with the chosen window, then reload so every
+  // page picks up the new data via getData(). Shared by all pages' selectors.
   async changePeriod(days) {
     try {
       localStorage.setItem('hrzn-clover-days', String(days));
       const sel = document.getElementById('clover-period-select');
       if (sel) sel.disabled = true;
-      const result = await this.syncClover(parseInt(days, 10));
+      const result = await this.detectAndSync(parseInt(days, 10));
       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrzn-clover-synced', '1');
       if (result.ok) location.reload();
       else { if (sel) sel.disabled = false; alert('Could not refresh live data: ' + (result.reason || 'unknown')); }
@@ -1594,6 +1608,37 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       const sel = document.getElementById('clover-period-select');
       if (sel) sel.disabled = false;
     }
+  },
+
+  // Returns 'clover' | 'square' | null — which POS this business has connected.
+  // Checks each integration's status endpoint. Remembers the result for the
+  // session to avoid repeat lookups.
+  async detectActiveIntegration() {
+    const token = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
+    if (!token) return null;
+    const cached = (typeof sessionStorage !== 'undefined') ? sessionStorage.getItem('hrzn-active-integration') : null;
+    if (cached) return cached === 'none' ? null : cached;
+    for (const name of ['clover', 'square']) {
+      try {
+        const r = await fetch('/api/' + name + '?action=status', { headers: { 'Authorization': 'Bearer ' + token } });
+        const s = await r.json();
+        if (s && s.connected) {
+          if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrzn-active-integration', name);
+          return name;
+        }
+      } catch (e) {}
+    }
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrzn-active-integration', 'none');
+    return null;
+  },
+
+  // Detect the connected POS and sync it. Returns the same {ok,...} shape as the
+  // per-integration sync functions; {ok:false, reason:'no_integration'} if none.
+  async detectAndSync(days) {
+    const active = await this.detectActiveIntegration();
+    if (active === 'clover') return this.syncClover(days);
+    if (active === 'square') return this.syncSquare(days);
+    return { ok: false, reason: 'no_integration' };
   }
 };
 

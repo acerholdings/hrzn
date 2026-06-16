@@ -364,12 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     try {
-      const token = hrznGetToken();
-      const sres = await fetch('/api/clover?action=status', { headers: { 'Authorization': 'Bearer ' + token } });
-      const status = await sres.json();
-      if (!status.connected) { sessionStorage.setItem('hrzn-clover-synced', '1'); return; }
       const days = parseInt(localStorage.getItem('hrzn-clover-days') || '7', 10);
-      const result = await HRZN.syncClover(days);
+      const result = await HRZN.detectAndSync(days);  // tries Clover, then Square
       sessionStorage.setItem('hrzn-clover-synced', '1');
       if (result.ok) location.reload();  // re-render with live data via existing flow
     } catch (e) {
