@@ -387,15 +387,19 @@ function updateProductMoreBtn() {
 function loadData() {
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
   try {
-    const raw = localStorage.getItem(ITEMS_KEY);
-    if (!raw) {
+    // Use the shared accessor so live integration items supersede a stale CSV
+    // (and we don't show CSV items that contradict live revenue).
+    const itemsResult = (HRZN.getItems ? HRZN.getItems() : null);
+    const liveActive = itemsResult && itemsResult._source === 'api';
+    const raw = liveActive ? null : localStorage.getItem(ITEMS_KEY);
+    if (!liveActive && !raw) {
       const nudge = document.getElementById('items-nudge');
       if (nudge) nudge.style.display = 'flex';
       document.getElementById('no-data').style.display = 'block';
       document.getElementById('main-content').style.display = 'none';
       return;
     }
-    const d = JSON.parse(raw);
+    const d = liveActive ? { allItems: itemsResult.allItems } : JSON.parse(raw);
     allItems = (d.allItems || d.items || []).map(i => ({
       ...i,
       sold: i.sold || i.qty || 0,  // handle both field names

@@ -394,23 +394,66 @@ const months = HRZN.getMonths(d);
   set('rev-avg-check-kpi', '$'+(d.avgCheck||0));
   set('rev-weekly-label', Math.round(weekly).toLocaleString());
 
-  // Day weights - industry standard
+  // Day weights — used ONLY as a last-resort estimate, and only for categories
+  // where a day-of-week revenue shape is meaningful (restaurants). For retail/
+  // online, or when we have real per-day data, we don't fabricate these.
   const dayWeights = {mon:0.85,tue:0.70,wed:0.95,thu:1.05,fri:1.45,sat:1.35,sun:1.10};
   const dayNames = {mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
   const dayOrder = ['fri','sat','sun','thu','wed','mon','tue'];
   const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
 
-  // Empty state: day estimates are weekly-avg math — meaningless at $0.
+  // Decide what we can honestly show:
+  //  - realDaily: actual per-day revenue from a live integration (Clover pillars)
+  //  - canEstimate: only restaurants get the weekly-avg×day-weight estimate
+  const revBmTop = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const revConceptsTop = revBmTop.concepts || { dayparts: true };
+  const realDaily = Array.isArray(d._dailyRevenue) ? d._dailyRevenue : null;
+  const hasRealDaily = !!(realDaily && realDaily.length >= 2);  // need ≥2 days to be a "breakdown"
+  const canEstimate = revConceptsTop.dayparts !== false;        // restaurant-style only
   const revEmpty = d._source === 'empty';
-  // Best day estimate
-  set('rev-best-day', revEmpty ? '—' : fmt(Math.round(weekly * dayWeights.fri / 7)));
 
-  // Revenue by Day bars
+  // Best day: real if we have it, else estimate only for restaurants, else dash.
+  if (revEmpty) {
+    set('rev-best-day', '—');
+  } else if (hasRealDaily) {
+    const best = realDaily.reduce((a,b) => (b.revenue > a.revenue ? b : a), realDaily[0]);
+    set('rev-best-day', fmt(Math.round(best.revenue)));
+  } else if (canEstimate) {
+    set('rev-best-day', fmt(Math.round(weekly * dayWeights.fri / 7)));
+  } else {
+    set('rev-best-day', '—');
+  }
+
+  // Revenue by Day list
   const revByDay = document.getElementById('rev-by-day-list');
-  if(revByDay && revEmpty) {
+  const revFootnote = document.getElementById('rev-day-footnote');
+  const needMsg = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Day-by-day revenue needs at least a few days of live data. ' +
+                  'Sync a wider period (e.g. last 30 days) from a connected POS to see this.</div>';
+  if (revByDay && revEmpty) {
     revByDay.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to see revenue by day.</div>';
-    const fn = document.getElementById('rev-day-footnote'); if(fn) fn.style.display = 'none';
-  } else if(revByDay) {
+    if (revFootnote) revFootnote.style.display = 'none';
+  } else if (revByDay && hasRealDaily) {
+    // REAL per-day data from the live integration.
+    const vals = realDaily.map(x => x.revenue);
+    const maxVal = Math.max(...vals, 1);
+    const avg = vals.reduce((s,v)=>s+v,0) / vals.length;
+    revByDay.innerHTML = realDaily.slice().sort((a,b)=>b.revenue-a.revenue).map(rd => {
+      const val = Math.round(rd.revenue);
+      const barW = Math.round(val/maxVal*100);
+      const color = val > avg ? 'var(--gold)' : 'rgba(201,168,76,0.45)';
+      const vsLabel = val > avg*1.1 ? '<span style="color:var(--green);font-size:10px;width:55px;text-align:right;">above avg</span>' :
+                      val < avg*0.85 ? '<span style="color:var(--red);font-size:10px;width:55px;text-align:right;">below avg</span>' :
+                      '<span style="color:var(--text-dim);font-size:10px;width:55px;text-align:right;">near avg</span>';
+      return '<div class="breakdown-row">' +
+        '<div style="font-size:12px;color:var(--text);width:90px;flex-shrink:0;">' + rd.date + '</div>' +
+        '<div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">' +
+          '<div style="width:' + barW + '%;height:100%;background:' + color + ';border-radius:3px;transition:width 0.8s;"></div></div>' +
+        '<div style="font-size:12px;font-family:DM Mono,monospace;width:65px;text-align:right;">' + fmt(val) + '</div>' +
+        vsLabel + '</div>';
+    }).join('');
+    if (revFootnote) { revFootnote.textContent = 'Real daily revenue from your connected POS.'; revFootnote.style.display = ''; }
+  } else if (revByDay && canEstimate) {
+    // Restaurant estimate from weekly avg × industry day weights (clearly labeled).
     const maxVal = weekly * dayWeights.fri / 7;
     revByDay.innerHTML = dayOrder.map(day => {
       const val = Math.round(weekly * dayWeights[day] / 7);
@@ -427,6 +470,11 @@ const months = HRZN.getMonths(d);
         '<div style="font-size:12px;font-family:DM Mono,monospace;width:65px;text-align:right;">' + fmt(val) + '</div>' +
         vsLabel + '</div>';
     }).join('');
+    if (revFootnote) revFootnote.style.display = '';
+  } else if (revByDay) {
+    // Non-restaurant with no real daily data: don't fabricate a day shape.
+    revByDay.innerHTML = needMsg;
+    if (revFootnote) revFootnote.style.display = 'none';
   }
 
   // Revenue Insights — real AI via central engine (replaces old hardcoded array)
