@@ -423,6 +423,18 @@ function updateSourceButtons(){
   });
 }
 
+// ── Live integration connect helpers ─────────────────────────────
+// Translate backend connect errors into friendly, actionable messages.
+// The most important one: a new user who hasn't finished setting up their
+// business has no business_id yet, so the backend returns "No business found".
+function hrznConnectErrorMessage(err, posName) {
+  const e = String(err || '').toLowerCase();
+  if (e.includes('no business')) return 'Finish setting up your business in Settings before connecting ' + posName + '.';
+  if (e.includes('no token') || e.includes('invalid token')) return 'Your session expired — please sign in again, then reconnect ' + posName + '.';
+  if (e.includes('not configured')) return posName + ' isn’t configured yet — contact support.';
+  return 'Could not start ' + posName + ' connection. Please try again.';
+}
+
 // ── Clover live integration ──────────────────────────────────────
 async function connectClover(){
   const token = hrznGetToken();
@@ -435,7 +447,7 @@ async function connectClover(){
     });
     const j = await r.json();
     if (j.url) { window.location.href = j.url; return; }   // hand off to Clover's authorize screen
-    showToast(j.error || 'Could not start Clover connection', true);
+    showToast(hrznConnectErrorMessage(j.error, 'Clover'), true);
   } catch(e) {
     showToast('Connection error: ' + e.message, true);
   }
@@ -493,7 +505,7 @@ async function connectSquare(){
     });
     const j = await r.json();
     if (j.url) { window.location.href = j.url; return; }   // hand off to Square's authorize screen
-    showToast(j.error || 'Could not start Square connection', true);
+    showToast(hrznConnectErrorMessage(j.error, 'Square'), true);
   } catch(e) {
     showToast('Connection error: ' + e.message, true);
   }
