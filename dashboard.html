@@ -110,6 +110,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <div class="topbar-right">
       <div id="page-data-sources" style="display:flex;align-items:center;gap:4px;"></div>
       <div id="hrzn-source-badge"></div>
+      <select id="clover-period-select" onchange="hrznChangeClovrPeriod(this.value)" style="display:none;background:var(--card,#1a1a1a);color:var(--text,#fff);border:1px solid rgba(201,168,76,0.3);border-radius:4px;padding:5px 8px;font-size:11px;cursor:pointer;" title="Live data period">
+        <option value="1">Today</option>
+        <option value="7" selected>Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="90">Last 90 days</option>
+      </select>
       <div class="date-selector" id="dashboard-period-btn" onclick="HRZN.openSourceSwitcher()" title="Click to change data source" style="cursor:pointer;" id="dashboard-period-btn">📅 <span id="dash-period-label">Jan 1 – May 28, 2026</span> ⌄</div>
     </div>
   </div>
@@ -310,6 +316,23 @@ function navigate(p){ hrznNavigate(p); }
 function fmt(n){return '$'+Math.round(n).toLocaleString();}
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
+// Live-data period change: remember the window, re-sync Clover, re-render.
+async function hrznChangeClovrPeriod(days) {
+  try {
+    localStorage.setItem('hrzn-clover-days', String(days));
+    const sel = document.getElementById('clover-period-select');
+    if (sel) { sel.disabled = true; }
+    const result = await HRZN.syncClover(parseInt(days, 10));
+    // Allow this session's auto-sync guard to stay; we already have fresh data.
+    sessionStorage.setItem('hrzn-clover-synced', '1');
+    if (result.ok) location.reload();
+    else { if (sel) sel.disabled = false; alert('Could not refresh live data: ' + (result.reason || 'unknown')); }
+  } catch (e) {
+    const sel = document.getElementById('clover-period-select');
+    if (sel) sel.disabled = false;
+  }
+}
+
 function renderDataBadges(sources){
   const c=document.getElementById('page-data-sources');if(!c)return;
   c.innerHTML=sources.map(s=>{
@@ -358,19 +381,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // to avoid loops. Silent on failure — falls back to CSV/demo as before.
   (async () => {
     if (hrznIsDemo() || !hrznIsLoggedIn()) return;
-    if (sessionStorage.getItem('hrzn-clover-synced') === '1') return;
+    if (sessionStorage.getItem('hrzn-clover-synced') === '1') {
+      // Already synced this session — just make sure the selector reflects state.
+      hrznRevealPeriodSelector();
+      return;
+    }
     try {
       const token = hrznGetToken();
       const sres = await fetch('/api/clover?action=status', { headers: { 'Authorization': 'Bearer ' + token } });
       const status = await sres.json();
       if (!status.connected) { sessionStorage.setItem('hrzn-clover-synced', '1'); return; }
-      const result = await HRZN.syncClover();
+      const days = parseInt(localStorage.getItem('hrzn-clover-days') || '7', 10);
+      const result = await HRZN.syncClover(days);
       sessionStorage.setItem('hrzn-clover-synced', '1');
       if (result.ok) location.reload();  // re-render with live data via existing flow
     } catch (e) {
       sessionStorage.setItem('hrzn-clover-synced', '1');  // don't retry-loop on error
     }
   })();
+
+  // Reveal + sync the period selector to the live source.
+  function hrznRevealPeriodSelector() {
+    try {
+      const sel = document.getElementById('clover-period-select');
+      if (!sel) return;
+      if (HRZN.getSource && HRZN.getSource() === 'api') {
+        sel.value = localStorage.getItem('hrzn-clover-days') || '7';
+        sel.style.display = '';
+      } else {
+        sel.style.display = 'none';
+      }
+    } catch (e) {}
+  }
+  hrznRevealPeriodSelector();
 
   // Update sidebar with logged-in user info
   hrznSetupSidebar();

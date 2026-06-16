@@ -143,7 +143,16 @@ function hrznNoDataBannerHTML(){
 }
 
 function hrznHasItems() {
-  return !!localStorage.getItem('hrzn-data-items');
+  if (localStorage.getItem('hrzn-data-items')) return true;
+  // Also true when a live integration carries item detail.
+  try {
+    if (HRZN.getSource && HRZN.getSource() === 'api') {
+      const api = JSON.parse(localStorage.getItem(HRZN.KEYS.API) || '{}');
+      const live = api._items || api.items;
+      return Array.isArray(live) && live.length > 0;
+    }
+  } catch (e) {}
+  return false;
 }
 
 function hrznHasEmployees() {
@@ -1258,6 +1267,45 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   },
 
   // ── GET ACTIVE DATA ──────────────────────────
+  // ── GET ITEM-LEVEL DATA (live supersedes CSV) ────────────────
+  // Returns { allItems: [...], _source } using the same priority as getData():
+  // when a live integration (api) is active and carries items, those win over a
+  // stale Item Sales CSV — fixing the case where live revenue and CSV items
+  // disagree. Falls back to the uploaded CSV, then empty. Normalizes Clover's
+  // pillar item shape ({name, qtySold, revenue}) into the CSV item shape
+  // ({name, sold, netSales}) so downstream readers don't need to change.
+  getItems() {
+    try {
+      if (this.getSource() === 'api') {
+        const apiRaw = localStorage.getItem(this.KEYS.API);
+        if (apiRaw) {
+          const api = JSON.parse(apiRaw);
+          const live = api._items || api.items;
+          if (Array.isArray(live) && live.length) {
+            const allItems = live.map(it => ({
+              name: it.name,
+              sold: Number(it.qtySold != null ? it.qtySold : it.sold) || 0,
+              netSales: Number(it.revenue != null ? it.revenue : it.netSales) || 0,
+              category: it.category || 'Uncategorized'
+            }));
+            return { allItems, _source: 'api' };
+          }
+          // Live active but no item detail (e.g. summary-only sync): don't fall
+          // back to a stale CSV that would contradict the live totals.
+          return { allItems: [], _source: 'api' };
+        }
+      }
+    } catch (e) {}
+    try {
+      const csvRaw = localStorage.getItem('hrzn-data-items');
+      if (csvRaw) {
+        const c = JSON.parse(csvRaw);
+        return { allItems: c.allItems || c.items || [], _source: 'csv' };
+      }
+    } catch (e) {}
+    return { allItems: [], _source: 'empty' };
+  },
+
   getData() {
     // If demo mode via URL param, always return demo data
     if (new URLSearchParams(window.location.search).get('demo') === 'true') {
@@ -1394,17 +1442,16 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     // Use master system prompt for consistency
     const d = data || this.getData();
     let ctx = this.getSystemPrompt(d) + this.getBenchmarkContext();
-    // Inject dynamic item names from uploaded Item Sales CSV
+    // Inject dynamic item names from live integration or uploaded Item Sales CSV
     try {
-      const itemsRaw = typeof localStorage !== 'undefined' ? localStorage.getItem('hrzn-data-items') : null;
-      if (itemsRaw) {
-        const itemsData = JSON.parse(itemsRaw);
-        const top10 = (itemsData.allItems || itemsData.items || [])
+      const itemsData = this.getItems();
+      if (itemsData && itemsData.allItems && itemsData.allItems.length) {
+        const top10 = itemsData.allItems
           .slice(0, 10)
           .map((i, idx) => (idx+1) + '. ' + i.name + ' (' + (i.category||'uncategorized') + '): ' + (i.sold||0).toLocaleString() + ' sold, $' + Math.round(i.netSales||0).toLocaleString() + ' revenue')
           .join('\n');
         if (top10) {
-          ctx += '\n\nTOP PRODUCTS/ITEMS (from uploaded Item Sales CSV):\n' + top10;
+          ctx += '\n\nTOP PRODUCTS/ITEMS (from ' + (itemsData._source === 'api' ? 'live integration' : 'uploaded Item Sales CSV') + '):\n' + top10;
         }
       }
     } catch(e) {}
