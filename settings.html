@@ -224,7 +224,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
               </div>
               <div class="field-row">
                 <div><div class="field-label">Business Type</div><div class="field-desc">Your industry category</div></div>
-                <select class="field-select" id="biz-type" onchange="markDirty();applyCategoryFieldVisibility();">
+                <select class="field-select" id="biz-type" onchange="handleCategoryChange();">
                   <option value="restaurant" selected>Restaurant</option>
                   <option value="retail">Retail</option>
                   <option value="online">E-Commerce</option>
@@ -541,6 +541,39 @@ function saveAll(){
   },2000);
   // Refresh sidebar
   hrznSetupSidebar();
+}
+
+// Called when the user changes Business Type. Category-specific targets and the
+// estimated labor rate are tied to the OLD category, so when the category truly
+// changes we clear those fields → they revert to the NEW category's benchmark
+// placeholders, and the omit-empty save logic lets the engine use the new
+// defaults. This fixes carrying e.g. restaurant labor 28% / food 30% onto a
+// retail business. Business GOALS that aren't category defaults (revenue,
+// monthly) are preserved. Also clears any saved manual labor rate.
+function handleCategoryChange(){
+  try {
+    const typeEl = document.getElementById('biz-type');
+    const newCat = typeEl ? String(typeEl.value).toLowerCase() : '';
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+    const oldCat = String(s.businessType || s.bizType || '').toLowerCase();
+    if (newCat && oldCat && newCat !== oldCat) {
+      // Clear category-specific target fields (keep revenue + monthly goals).
+      ['labor','food','margin','check','doordash','discount'].forEach(k=>{
+        const el = document.getElementById('target-'+k);
+        if (el) el.value = '';
+      });
+      // Clear the estimated labor-rate field and any saved manual rate so it
+      // falls back to the new category's benchmark.
+      const laborRateEl = document.getElementById('labor-rate');
+      if (laborRateEl) laborRateEl.value = '';
+      try {
+        const s2 = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
+        if (s2.laborRate) { delete s2.laborRate; localStorage.setItem(SETTINGS_KEY, JSON.stringify(s2)); }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  markDirty();
+  applyCategoryFieldVisibility();
 }
 
 // Show/hide and relabel target fields based on the selected business category.
