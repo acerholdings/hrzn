@@ -142,13 +142,13 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <div class="two-col fade-2">
 
       <!-- Labor % by Day -->
-      <div class="card">
+      <div class="card" id="labor-by-day-card">
         <div class="card-header">
           <div class="card-title">Labor Cost % by Day <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
           <div style="font-size:10px;color:var(--text-dim);" id="labor-day-target">Target: 28%</div>
         </div>
         <div id="labor-by-day-list" style="padding:4px 0;"></div>
-        <div style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">Estimated using revenue day weights + 32% avg labor rate · real data needs Gusto API</div>
+        <div id="labor-by-day-footnote" style="padding:8px 16px;font-size:10px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">Estimated from your weekly average · connect Gusto for real per-shift labor data</div>
       </div>
 
       <!-- Labor Insights -->
@@ -437,10 +437,20 @@ const months = HRZN.getMonths(d);
   const dayNames = {mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun'};
   const allDays = ['mon','tue','wed','thu','fri','sat','sun'];
 
-  // Labor pct by day - lower revenue days have higher labor % (fixed costs)
-  // Use inverse of day weight to estimate labor pct (fixed staff costs on slow days = higher %)
+  // Labor pct by day — this is an ESTIMATE derived from revenue day-weights, so
+  // it only makes sense for categories with a real day-of-week labor pattern
+  // (restaurants). For retail/online/etc., or with no real per-shift data, we
+  // don't fabricate a daily labor shape — hide the card until Gusto provides it.
+  const labBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const labConcepts = labBm.concepts || { dayparts: true };
+  const labCard = document.getElementById('labor-by-day-card');
+  const canEstimateLaborDays = labConcepts.dayparts !== false;  // restaurants only
   const laborByDay = document.getElementById('labor-by-day-list');
-  if(laborByDay && labEmpty) {
+  if (labCard && (!canEstimateLaborDays && !labEmpty)) {
+    // Non-restaurant: don't show a fabricated daily breakdown.
+    if (laborByDay) laborByDay.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Day-by-day labor needs real per-shift data. Connect Gusto to see this.</div>';
+    const fn = document.getElementById('labor-by-day-footnote'); if (fn) fn.style.display = 'none';
+  } else if(laborByDay && labEmpty) {
     laborByDay.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to see estimated labor cost by day.</div>';
   } else if(laborByDay) {
     const avgWeight = allDays.reduce((s,d) => s+dayWeights[d],0)/7;
@@ -511,11 +521,15 @@ function buildLaborContext() {
   const rate = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: m.laborPct, source: 'fallback' };
   const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
   const bizName = s.businessName || s.bizName || 'this business';
-  const tgtLabor = (s.targets && s.targets.labor) || 28;
+  const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const category = bm._category || s.businessType || s.bizType || 'business';
+  // Target falls back to the CATEGORY benchmark, not a hardcoded restaurant 28.
+  const tgtLabor = (s.targets && s.targets.labor) || (bm.laborPct != null ? bm.laborPct : 28);
   const weekly = Math.round(m.weekly || 0);
-  return `Analyze the labor data for ${bizName}. Use ONLY the figures below — do not invent per-shift, per-employee, or per-day numbers (those require payroll integration we don't have yet).
+  return `Analyze the labor data for ${bizName}, a ${category} business. Use ONLY the figures below — do not invent per-shift, per-employee, or per-day numbers (those require payroll integration we don't have yet). Use benchmarks appropriate to a ${category} business — do NOT cite restaurant benchmarks unless this is a restaurant.
 
 EXACT DATA — USE THESE NUMBERS ONLY:
+Business type: ${category}
 Labor rate: ${rate.value}% of revenue (source: ${rate.source}${rate.source !== 'api' ? ' — ESTIMATE, not from live payroll' : ' — live'})
 Labor cost target: ${tgtLabor}%
 Weekly revenue: $${weekly.toLocaleString()}
