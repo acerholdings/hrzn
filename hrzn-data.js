@@ -1476,8 +1476,14 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   getSourceBadge() {
     const source = this.getSource();
     const d = this.getData();
+    // Live badge names whichever POS is actually connected (from _integration
+    // stored by _mapPillars), so it doesn't always say "Clover".
+    const integ = (d && d._integration) || '';
+    const liveDetail = integ === 'square' ? 'Square · Real-time'
+                     : integ === 'clover' ? 'Clover · Real-time'
+                     : 'Live · Real-time';
     const configs = {
-      api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  type: 'Live API', detail: 'Clover · Real-time' },
+      api:  { color: 'var(--green)',  bg: 'rgba(76,175,125,0.1)',  border: 'rgba(76,175,125,0.2)',  dot: 'var(--green)',  type: 'Live API', detail: liveDetail },
       csv:  { color: 'var(--gold)',   bg: 'rgba(201,168,76,0.08)', border: 'rgba(201,168,76,0.2)',  dot: 'var(--gold)',   type: 'Sales Overview', detail: 'CSV Upload' },
       demo: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'Demo Data', detail: 'Sample data' },
       empty: { color: 'var(--text-dim)', bg: 'rgba(128,128,128,0.08)', border: 'rgba(128,128,128,0.15)', dot: 'var(--text-dim)', type: 'No Data', detail: 'Upload CSV' },
