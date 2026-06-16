@@ -438,13 +438,15 @@ function loadData() {
     : (d.period||'')).replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
     set('menu-period', period || '');
     set('kpi-period', period);
-    // Calculate from items array if top-level totals are 0
     const totalSold = d.totalItemsSold || allItems.reduce((s,i) => s+(i.sold||0), 0);
     const uniqueCount = d.uniqueItems || allItems.length;
+    // Margin requires COGS data. Live POS (Clover) doesn't provide it, so when
+    // there's no real margin figure show "—" rather than a misleading 0.0%.
+    const hasMargin = (d.grossProfitMargin != null) || (d.grossProfit && d.grossSales);
     const margin = d.grossProfitMargin || (d.grossProfit && d.grossSales ? (d.grossProfit/d.grossSales*100) : 0);
     set('kpi-sold', totalSold.toLocaleString());
     set('kpi-unique', uniqueCount.toString());
-    set('kpi-margin', margin.toFixed(1) + '%');
+    set('kpi-margin', hasMargin ? (margin.toFixed(1) + '%') : '—');
 
     const top = allItems[0];
     if (top) { set('kpi-top', top.name); set('kpi-top-rev', fmt(top.netSales) + ' net sales'); }

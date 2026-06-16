@@ -503,13 +503,16 @@ document.addEventListener('DOMContentLoaded',()=>{
     const fmt = n => '$'+Math.round(n).toLocaleString();
     const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
     const tipsPct = d.netSales>0 ? ((d.tips||0)/d.netSales*100).toFixed(1) : '—';
-    // Gross margin - only show if Item Sales CSV uploaded
+    // Gross margin - only from Item Sales CSV, and only when NOT on live data
+    // (live POS has no COGS, so a stale CSV margin would misrepresent it).
     let grossMarginPct = '—';
     try {
-      const itemsRaw = localStorage.getItem('hrzn-data-items');
-      if(itemsRaw) {
-        const items = JSON.parse(itemsRaw);
-        if(items.grossProfitMargin) grossMarginPct = items.grossProfitMargin.toFixed(1) + '%';
+      if (!(HRZN.getSource && HRZN.getSource() === 'api')) {
+        const itemsRaw = localStorage.getItem('hrzn-data-items');
+        if(itemsRaw) {
+          const items = JSON.parse(itemsRaw);
+          if(items.grossProfitMargin) grossMarginPct = items.grossProfitMargin.toFixed(1) + '%';
+        }
       }
     } catch(e) {}
 
