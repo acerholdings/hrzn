@@ -349,7 +349,29 @@ async function hrznAskWidget(prompt) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  
+
+  // ── Clover live-data auto-sync ───────────────────────────────
+  // If this business has a Clover connection, pull fresh live data before
+  // rendering. getData() reads 'api' source first, so once synced the whole
+  // page uses live data. We sync at most once per page load (sessionStorage
+  // guard) and only re-render via a single reload when new data actually lands,
+  // to avoid loops. Silent on failure — falls back to CSV/demo as before.
+  (async () => {
+    if (hrznIsDemo() || !hrznIsLoggedIn()) return;
+    if (sessionStorage.getItem('hrzn-clover-synced') === '1') return;
+    try {
+      const token = hrznGetToken();
+      const sres = await fetch('/api/clover?action=status', { headers: { 'Authorization': 'Bearer ' + token } });
+      const status = await sres.json();
+      if (!status.connected) { sessionStorage.setItem('hrzn-clover-synced', '1'); return; }
+      const result = await HRZN.syncClover();
+      sessionStorage.setItem('hrzn-clover-synced', '1');
+      if (result.ok) location.reload();  // re-render with live data via existing flow
+    } catch (e) {
+      sessionStorage.setItem('hrzn-clover-synced', '1');  // don't retry-loop on error
+    }
+  })();
+
   // Update sidebar with logged-in user info
   hrznSetupSidebar();
 

@@ -1291,6 +1291,87 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     this.setSource('api');
   },
 
+  // ── SYNC LIVE DATA FROM CLOVER ───────────────
+  // Fetches the pillar-mapped data from the Clover integration and stores it as
+  // API-source data. Because getData() reads 'api' before 'csv', calling this
+  // makes every page use live data automatically — no per-page changes needed.
+  // Returns { ok: true, data } on success, or { ok: false, reason } otherwise.
+  // Pass a days window to override the default (7).
+  async syncClover(days) {
+    const token = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
+    if (!token) return { ok: false, reason: 'not_logged_in' };
+    try {
+      const qs = days ? ('&days=' + encodeURIComponent(days)) : '';
+      const r = await fetch('/api/clover?action=sync&what=pillars' + qs, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const p = await r.json();
+      if (!r.ok || p.error) return { ok: false, reason: p.error || ('http_' + r.status) };
+
+      const mapped = this._mapCloverPillars(p);
+      this.saveAPI(mapped);
+      return { ok: true, data: mapped };
+    } catch (e) {
+      return { ok: false, reason: e.message || 'fetch_failed' };
+    }
+  },
+
+  // Map the Clover pillars payload → HRZN's canonical data shape (same fields as
+  // DEMO_DATA so every page renders identically). Clover POS data only supplies
+  // the revenue pillar and item/quantity info; fields it can't provide (taxes,
+  // tips, tender breakdown, COGS/labor/etc.) are left at 0 and stay sourced from
+  // Settings/CSV elsewhere. This is intentional, not a gap.
+  _mapCloverPillars(p) {
+    const revenue = (p && p.pillars && typeof p.pillars.revenue === 'number') ? p.pillars.revenue : 0;
+    const items = Array.isArray(p && p.items) ? p.items : [];
+    const itemsSold = items.reduce((s, it) => s + (Number(it.qtySold) || 0), 0);
+    const orderCount = (p && p.metrics && p.metrics.orderCount) ? p.metrics.orderCount : 0;
+    const avgCheck = (p && p.metrics && typeof p.metrics.avgCheck === 'number')
+      ? p.metrics.avgCheck
+      : (orderCount > 0 ? revenue / orderCount : 0);
+    const days = (p && p.windowDays) ? p.windowDays : 7;
+
+    // Period label from the daily breakdown if present.
+    const daily = Array.isArray(p && p.dailyRevenue) ? p.dailyRevenue : [];
+    const periodStart = daily.length ? daily[0].date : '';
+    const periodEnd = daily.length ? daily[daily.length - 1].date : '';
+    const period = (periodStart && periodEnd) ? (periodStart + ' – ' + periodEnd) : ('Last ' + days + ' days');
+
+    return {
+      _source: 'api',
+      _filename: 'Clover (live)',
+      _integration: 'clover',
+      _merchantId: p && p.merchant_id || null,
+      _syncedAt: new Date().toISOString(),
+      period,
+      periodDays: days,
+      periodStart,
+      periodEnd,
+      grossSales: Math.round(revenue * 100) / 100,
+      discounts: 0,
+      discountPct: 0,
+      netSales: Math.round(revenue * 100) / 100,
+      taxes: 0,
+      tips: 0,
+      amountCollected: Math.round(revenue * 100) / 100,
+      itemsSold,
+      avgCheck: Math.round(avgCheck * 100) / 100,
+      tenders: { creditCard: 0, debitCard: 0, doorDash: 0, cash: 0, doorDashPct: 0, giftCard: 0 },
+      // Keep the raw item rollup available for the products page.
+      _items: items,
+      _dailyRevenue: daily
+    };
+  },
+
+  // Revert to CSV/demo source (e.g. user disconnects Clover). Clears the stored
+  // API data so getData() falls through to CSV, then demo/empty.
+  cloverDisconnect() {
+    try { localStorage.removeItem(this.KEYS.API); } catch (e) {}
+    // Fall back to csv if a CSV exists, else let getSource resolve to empty/demo.
+    const hasCsv = !!(localStorage.getItem(this.KEYS.CSV) || localStorage.getItem('hrzn-sales-data'));
+    this.setSource(hasCsv ? 'csv' : 'demo');
+  },
+
   // ── GET MONTHS FROM PERIOD ───────────────────
   getMonths(data) {
     const d = data || this.getData();
