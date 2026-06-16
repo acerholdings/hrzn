@@ -958,6 +958,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"}]);
   HRZN.injectBadge('hrzn-source-badge');
+  HRZN.mountPeriodSelector('hrzn-source-badge');
   HRZN.injectBadge('hrzn-source-badge');
   applyTheme(getTheme());
   loadSavedInputs();

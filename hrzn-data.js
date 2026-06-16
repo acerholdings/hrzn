@@ -1550,6 +1550,50 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   injectBadge(containerId) {
     const el = document.getElementById(containerId);
     if (el) el.innerHTML = this.getSourceBadge();
+  },
+
+  // ── LIVE-DATA PERIOD SELECTOR (shared across all pages) ──────
+  // Mounts a Today/7d/30d/90d dropdown right after the given element (defaults
+  // to the source badge). Only visible when a live integration (api) is active —
+  // CSV/demo periods are fixed by their upload so the control hides itself.
+  // The chosen window persists in localStorage ('hrzn-clover-days') and is shared
+  // by every page, so the data stays consistent no matter where it's changed.
+  mountPeriodSelector(afterElementId) {
+    if (typeof document === 'undefined') return;
+    const anchor = document.getElementById(afterElementId || 'hrzn-source-badge');
+    if (!anchor) return;
+    if (document.getElementById('clover-period-select')) return; // already mounted
+    const isLive = (this.getSource && this.getSource() === 'api');
+    const days = localStorage.getItem('hrzn-clover-days') || '7';
+    const sel = document.createElement('select');
+    sel.id = 'clover-period-select';
+    sel.title = 'Live data period';
+    sel.style.cssText = 'display:' + (isLive ? '' : 'none') +
+      ';background:var(--card,#1a1a1a);color:var(--text,#fff);border:1px solid rgba(201,168,76,0.3);border-radius:4px;padding:5px 8px;font-size:11px;cursor:pointer;margin-left:4px;';
+    [['1','Today'],['7','Last 7 days'],['30','Last 30 days'],['90','Last 90 days']].forEach(([v,label]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = label; if (v === days) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => this.changePeriod(sel.value));
+    anchor.parentNode.insertBefore(sel, anchor.nextSibling);
+  },
+
+  // Re-sync Clover with the chosen window, then reload so every page picks up
+  // the new data via getData(). Shared by all pages' selectors.
+  async changePeriod(days) {
+    try {
+      localStorage.setItem('hrzn-clover-days', String(days));
+      const sel = document.getElementById('clover-period-select');
+      if (sel) sel.disabled = true;
+      const result = await this.syncClover(parseInt(days, 10));
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('hrzn-clover-synced', '1');
+      if (result.ok) location.reload();
+      else { if (sel) sel.disabled = false; alert('Could not refresh live data: ' + (result.reason || 'unknown')); }
+    } catch (e) {
+      const sel = document.getElementById('clover-period-select');
+      if (sel) sel.disabled = false;
+    }
   }
 };
 
@@ -1558,6 +1602,9 @@ window.addEventListener('hrzn-source-changed', () => {
   // Re-render badge if it exists
   const badge = document.getElementById('hrzn-source-badge');
   if (badge) badge.innerHTML = HRZN.getSourceBadge();
+  // Show/hide the period selector to match the (possibly new) source.
+  const sel = document.getElementById('clover-period-select');
+  if (sel) sel.style.display = (HRZN.getSource && HRZN.getSource() === 'api') ? '' : 'none';
 });
 
 

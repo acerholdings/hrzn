@@ -571,6 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderDataBadges([{label:"Sales Overview",key:"hrzn-data-csv",oldKey:"hrzn-sales-data"},{label:"Item Sales",key:"hrzn-data-items",oldKey:""}]);
   HRZN.injectBadge('hrzn-source-badge');
+  HRZN.mountPeriodSelector('hrzn-source-badge');
   applyTheme(getTheme());
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
