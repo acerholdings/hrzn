@@ -473,8 +473,11 @@ const months = HRZN.getMonths(d);
   const monthly = Math.round((d.netSales||0) / months);
   const weekly = Math.round((d.netSales||0) / weeks);
   const daily = Math.round(weekly / 7);
-  // weeklyItems: prefer Items CSV total (more accurate) over Sales Overview
-  const csvItemsTotal = (() => {
+  // weeklyItems: when live (api) data is active, use its itemsSold — the live
+  // source is authoritative and a stale Items CSV must not override it. Only for
+  // CSV source do we prefer the (more granular) Items CSV total.
+  const liveSrc = (HRZN.getSource && HRZN.getSource() === 'api');
+  const csvItemsTotal = liveSrc ? 0 : (() => {
     try {
       const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
       if (items.totalItemsSold) return items.totalItemsSold;
@@ -514,22 +517,26 @@ const months = HRZN.getMonths(d);
 
   let grossMargin = '—';
   let itemsLoaded = false;
-  try {
-    const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
-    if(items.grossProfitMargin) {
-      grossMargin = items.grossProfitMargin.toFixed(1)+'%';
-      itemsLoaded = true;
-    }
-  } catch(e) {}
-  // Fallback: use cached metrics from hrzn-settings if Items CSV was cleared by Safari
-  if (!itemsLoaded) {
+  // Only read the Items CSV margin when NOT on live data (live POS has no COGS,
+  // so a stale CSV margin would misrepresent the live business).
+  if (!liveSrc) {
     try {
-      const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
-      if (cached._cachedGrossMargin) {
-        grossMargin = cached._cachedGrossMargin.toFixed(1)+'%';
+      const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
+      if(items.grossProfitMargin) {
+        grossMargin = items.grossProfitMargin.toFixed(1)+'%';
         itemsLoaded = true;
       }
     } catch(e) {}
+    // Fallback: use cached metrics from hrzn-settings if Items CSV was cleared by Safari
+    if (!itemsLoaded) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+        if (cached._cachedGrossMargin) {
+          grossMargin = cached._cachedGrossMargin.toFixed(1)+'%';
+          itemsLoaded = true;
+        }
+      } catch(e) {}
+    }
   }
 
   set('vs-rev-this', fmt(weekly));

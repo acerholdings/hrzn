@@ -254,15 +254,16 @@ function filterItems(q) {
 }
 
 function renderFullList(items) {
+  const totalNet = items.reduce((s, it) => s + (it.netSales || 0), 0) || 1;
   document.getElementById('full-list').innerHTML = items.map((item, i) => {
-    const avgP = item.sold > 0 ? (item.netSales/item.sold).toFixed(2) : '—';
+    const pct = (item.pctOfNet != null) ? item.pctOfNet : Math.round((item.netSales || 0) / totalNet * 1000) / 10;
     return '<div class="item-row">' +
       '<div class="item-rank">' + (i+1) + '</div>' +
       '<div style="flex:1;"><div class="item-name">' + item.name + '</div><div class="item-cat">' + item.category + '</div></div>' +
       '<div style="font-size:11px;font-family:DM Mono,monospace;color:var(--text-dim);width:55px;text-align:right;">' + item.sold.toLocaleString() + '</div>' +
       '<div style="font-size:12px;font-family:DM Mono,monospace;font-weight:500;width:80px;text-align:right;">' + fmt(item.netSales) + '</div>' +
       '<div style="font-size:11px;font-family:DM Mono,monospace;color:var(--text-dim);width:70px;text-align:right;">$' + (item.sold>0?(item.netSales/item.sold).toFixed(2):'—') + '</div>' +
-      '<div style="font-size:11px;color:var(--text-dim);width:45px;text-align:right;">' + item.pctOfNet + '%</div>' +
+      '<div style="font-size:11px;color:var(--text-dim);width:45px;text-align:right;">' + pct + '%</div>' +
     '</div>';
   }).join('');
 }
@@ -281,15 +282,28 @@ function renderCats(cats) {
 let _productInsights = [];  // shown insights, for exclusion + ceiling
 
 function buildProductContext() {
-  const raw = localStorage.getItem(ITEMS_KEY);
-  if (!raw) return null;
-  const d = JSON.parse(raw);
-  const top10 = (d.allItems||[]).slice(0,10).map(i => i.name + ' (' + i.category + '): ' + i.sold + ' sold, ' + fmt(i.netSales)).join('; ');
-  const cats = (d.categories||[]).slice(0,8).map(c => c.name + ': ' + fmt(c.netSales) + ' (' + c.pctOfNet + '%)').join('; ');
+  // Use the shared accessor so insights reflect the SAME items the page shows
+  // (live integration supersedes a stale CSV). Previously this read the raw CSV
+  // key directly, which made insights cite old CSV products while the table
+  // showed live data.
+  const itemsResult = (HRZN.getItems ? HRZN.getItems() : null);
+  const liveActive = itemsResult && itemsResult._source === 'api';
+  let items, cats = '';
+  if (liveActive) {
+    items = itemsResult.allItems || [];
+  } else {
+    const raw = localStorage.getItem(ITEMS_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    items = d.allItems || [];
+    cats = (d.categories||[]).slice(0,8).map(c => c.name + ': ' + fmt(c.netSales) + ' (' + c.pctOfNet + '%)').join('; ');
+  }
+  if (!items.length) return null;
+  const top10 = items.slice(0,10).map(i => i.name + ' (' + (i.category||'Uncategorized') + '): ' + (i.sold||0) + ' sold, ' + fmt(i.netSales||0)).join('; ');
   return `Analyze this product/item data and reference exact item names. Use ONLY the figures below — do not invent items, sales counts, or numbers not present here.
 
-TOP ITEMS: ${top10}
-CATEGORIES: ${cats}`;
+TOP ITEMS: ${top10}` + (cats ? `
+CATEGORIES: ${cats}` : '');
 }
 
 async function callProductInsights(opts) {
