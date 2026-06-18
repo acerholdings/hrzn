@@ -131,7 +131,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="kpi-sub">7-day average</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Avg Item Price</div>
+        <div class="kpi-label" id="rev-avg-check-label">Avg Item Price</div>
         <div class="kpi-value" id="rev-avg-check-kpi">—</div>
         <div class="kpi-sub" id="rev-check-change">Per item sold</div>
       </div>
@@ -392,6 +392,7 @@ const months = HRZN.getMonths(d);
   set('rev-weekly-kpi', fmt(weekly));
   set('rev-daily', fmt(daily));
   set('rev-avg-check-kpi', '$'+(d.avgCheck||0));
+  try { const _rbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _rl = document.getElementById('rev-avg-check-label'); if(_rl && _rbm.avgTicketLabel) _rl.textContent = _rbm.avgTicketLabel; } catch(e){}
   set('rev-weekly-label', Math.round(weekly).toLocaleString());
 
   // Day weights — used ONLY as a last-resort estimate, and only for categories

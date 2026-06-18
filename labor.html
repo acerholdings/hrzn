@@ -406,31 +406,46 @@ const months = HRZN.getMonths(d);
   // Targets
   let tgt = {labor:28};
   try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt.labor = +(t.labor != null ? t.labor : 28); } catch(e) {}
-  // Sync the static "28%" texts to the category-aware target.
+  const _laborApplies = tgt.labor > 0;
+  // Sync the static "28%" texts to the category-aware target (or N/A when labor isn't a concept).
   const savingsSub = document.getElementById('labor-savings-sub');
-  if(savingsSub) savingsSub.textContent = 'If labor hits '+tgt.labor+'% target';
+  if(savingsSub) savingsSub.textContent = _laborApplies ? ('If labor hits '+tgt.labor+'% target') : 'Not applicable for this business type';
   const dayTgt = document.getElementById('labor-day-target');
-  if(dayTgt) dayTgt.textContent = 'Target: '+tgt.labor+'%';
+  if(dayTgt) dayTgt.textContent = _laborApplies ? ('Target: '+tgt.labor+'%') : 'Labor not tracked for this business type';
   const tgtLine = document.getElementById('labor-target-line-note');
-  if(tgtLine) tgtLine.textContent = '--- Target line at '+tgt.labor+'%';
+  if(tgtLine) tgtLine.textContent = _laborApplies ? ('--- Target line at '+tgt.labor+'%') : '';
 
   const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const weeklyLaborCost = Math.round(weekly * laborPct/100);
   const targetLaborCost = Math.round(weekly * tgt.labor/100);
   const savings = weeklyLaborCost - targetLaborCost;
-  const revRatio = (1/(laborPct/100)).toFixed(1);
+  const revRatio = laborPct > 0 ? (1/(laborPct/100)).toFixed(1) : null;
 
+  // Labor isn't a meaningful cost for every category (e.g. e-commerce, target 0).
+  // Show an N/A state instead of 0% / $Infinity / "savings if labor hits 0%".
+  const laborApplies = tgt.labor > 0;
+  const labEmpty = d._source === 'empty';
+  if (!laborApplies) {
+    set('labor-pct', '—');
+    set('labor-weekly-cost', '—');
+    set('labor-savings', '—');
+    set('labor-rev-ratio', '—');
+    set('labor-pct-sub', 'Labor is not a primary cost for this business type');
+    const sv = document.getElementById('labor-savings-sub'); if (sv) sv.textContent = 'Not applicable';
+    const rr = document.getElementById('labor-rev-ratio-sub'); if (rr) rr.textContent = 'Not applicable';
+    const wl = document.getElementById('labor-weekly-cost-sub'); if (wl) wl.textContent = 'Not applicable';
+  } else {
   // Empty state: dollar figures and the revenue/labor ratio are pure math on the
   // estimated rate — fabricated noise without revenue. Show dashes instead.
-  const labEmpty = d._source === 'empty';
   set('labor-weekly-cost', labEmpty ? '—' : fmt(weeklyLaborCost));
   set('labor-savings', labEmpty ? '—' : fmt(savings));
-  set('labor-rev-ratio', labEmpty ? '—' : '$'+revRatio);
+  set('labor-rev-ratio', labEmpty || revRatio == null ? '—' : '$'+revRatio);
   set('labor-pct', laborPct + '%');
   const _lm = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : {source:'fallback'});
   set('labor-pct-sub', labEmpty ? 'Estimated rate · upload data'
     : (_lm.source === 'fallback' ? 'Assumed at your business-type benchmark · set your real rate in Settings'
     : (laborPct > tgt.labor ? (laborPct-tgt.labor).toFixed(1)+'pts above '+tgt.labor+'% target' : 'On target')));
+  }
 
   // Day weights
   const dayWeights = {mon:0.85,tue:0.70,wed:0.95,thu:1.05,fri:1.45,sat:1.35,sun:1.10};
