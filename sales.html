@@ -494,6 +494,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
       if(zone){ zone.style.borderColor='var(--green)'; }
     } else {
+      updateDashboard(d);
       generateInsights(d);
     }
   } catch(e) { console.error('Error loading data:', e); }
