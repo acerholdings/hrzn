@@ -364,6 +364,57 @@ const HRZN = {
     _targets: { revenue: 9500, monthly: 41000, check: 15, labor: 28, food: 30, margin: 15, doordash: 10, discount: 5 }
   },
 
+  // Category-specific demo datasets so a non-restaurant visitor sees representative
+  // numbers (not restaurant figures wearing another label). Restaurant keeps DEMO_DATA.
+  DEMO_BY_CATEGORY: {
+    retail: {
+      _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+      periodDays:365, periodStart:'Jan 1, 2025', periodEnd:'Dec 31, 2025',
+      grossSales:642000, discounts:32100, discountPct:5.0, netSales:610000, taxes:54900,
+      tips:0, amountCollected:664900, itemsSold:18500, avgCheck:32.97,
+      tenders:{ creditCard:470000, debitCard:150000, doorDash:0, cash:44900, doorDashPct:0, giftCard:0 },
+      _targets:{ revenue:11700, monthly:50800, check:33, labor:18, food:60, margin:5, doordash:0, discount:10 }
+    },
+    online: {
+      _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+      periodDays:365, periodStart:'Jan 1, 2025', periodEnd:'Dec 31, 2025',
+      grossSales:920000, discounts:46000, discountPct:5.0, netSales:874000, taxes:0,
+      tips:0, amountCollected:874000, itemsSold:11200, avgCheck:78.04,
+      tenders:{ creditCard:700000, debitCard:174000, doorDash:0, cash:0, doorDashPct:0, giftCard:0 },
+      _targets:{ revenue:16800, monthly:72800, check:78, labor:0, food:55, margin:10, doordash:0, discount:10 }
+    },
+    service: {
+      _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+      periodDays:365, periodStart:'Jan 1, 2025', periodEnd:'Dec 31, 2025',
+      grossSales:430000, discounts:8600, discountPct:2.0, netSales:421400, taxes:0,
+      tips:0, amountCollected:421400, itemsSold:3100, avgCheck:135.94,
+      tenders:{ creditCard:320000, debitCard:80000, doorDash:0, cash:21400, doorDashPct:0, giftCard:0 },
+      _targets:{ revenue:8100, monthly:35100, check:136, labor:30, food:20, margin:15, doordash:0, discount:10 }
+    },
+    other: {
+      _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
+      periodDays:365, periodStart:'Jan 1, 2025', periodEnd:'Dec 31, 2025',
+      grossSales:520000, discounts:15600, discountPct:3.0, netSales:504400, taxes:0,
+      tips:0, amountCollected:504400, itemsSold:9000, avgCheck:56.04,
+      tenders:{ creditCard:390000, debitCard:95000, doorDash:0, cash:19400, doorDashPct:0, giftCard:0 },
+      _targets:{ revenue:9700, monthly:42000, check:56, labor:25, food:35, margin:10, doordash:0, discount:10 }
+    }
+  },
+
+  // Returns the demo dataset matching the account's current category (restaurant → DEMO_DATA).
+  getDemoData() {
+    let cat = 'restaurant';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const bt = String(s.businessType || s.bizType || 'restaurant').toLowerCase();
+        if (this.DEMO_BY_CATEGORY[bt]) cat = bt;
+      }
+    } catch (e) {}
+    const base = (cat === 'restaurant') ? this.DEMO_DATA : this.DEMO_BY_CATEGORY[cat];
+    return { ...base, _source: 'demo' };
+  },
+
   // ── EMPTY DATASET (logged-in, no upload, demo NOT opted in) ──
   // Same shape as DEMO_DATA so every page renders safely — all zeros, honest source tag.
   EMPTY_DATA: {
@@ -459,7 +510,7 @@ const HRZN = {
       // missing — uses the 'other' profile, never restaurant-flavored constants.
       const g = (this.BENCHMARKS && this.BENCHMARKS.other) || {};
       // Demo dataset carries its own targets so the logged-out preview analyzes honestly.
-      const dt = (this.isDemoModeOn && this.isDemoModeOn() && this.DEMO_DATA && this.DEMO_DATA._targets) ? this.DEMO_DATA._targets : {};
+      const dt = (this.isDemoModeOn && this.isDemoModeOn()) ? (this.getDemoData()._targets || {}) : {};
       const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
       return {
         labor: num(tg.labor, b.laborPct != null ? b.laborPct : (g.laborPct != null ? g.laborPct : 25)),
@@ -1270,7 +1321,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   },
   _noDataFallback() {
     const loggedIn = (typeof hrznIsLoggedIn === 'function') ? hrznIsLoggedIn() : false;
-    if (!loggedIn || this.isDemoModeOn()) return { ...this.DEMO_DATA, _source: 'demo' };
+    if (!loggedIn || this.isDemoModeOn()) return this.getDemoData();
     return { ...this.EMPTY_DATA, _source: 'empty' };
   },
 
@@ -1317,7 +1368,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   getData() {
     // If demo mode via URL param, always return demo data
     if (new URLSearchParams(window.location.search).get('demo') === 'true') {
-      return { ...this.DEMO_DATA, _source: 'demo' };
+      return this.getDemoData();
     }
     const source = this.getSource();
     try {
