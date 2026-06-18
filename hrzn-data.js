@@ -971,7 +971,7 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const settings = typeof localStorage !== 'undefined'
       ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}')
       : {};
-    const bizName = settings.businessName || 'this restaurant';
+    const bizName = settings.businessName || 'this business';
     const bizType = settings.businessType || 'restaurant';
     const isDemo = d._source === 'demo';
 
@@ -1004,15 +1004,14 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
       : cashPct > 8 ? 'moderate cash use'
       : '✅ low cash — good digital adoption';
 
-    // Targets from settings
+    // Targets — resolved via the central getTargets() so DEMO mode uses the demo
+    // dataset's own targets (a stale saved value must not feed a false gap to the AI).
     const targets = settings.targets || {};
-    // Category-aware fallback: an unset labor target must fall back to the CATEGORY benchmark
-    // (retail 18%, etc.), not a hardcoded restaurant 28 — otherwise the AI cites the wrong target.
     const ctTargets = this.getTargets ? this.getTargets() : {};
-    const laborTarget = targets.labor || ctTargets.labor || (this.getBenchmarks ? this.getBenchmarks().laborPct : 25) || 25;
-    const revenueTarget = targets.revenue || 0;
-    const checkTarget = targets.check || 0;
-    const ddTarget = targets.doordash || 10;
+    const laborTarget = ctTargets.labor || (this.getBenchmarks ? this.getBenchmarks().laborPct : 25) || 25;
+    const revenueTarget = ctTargets.weeklyRevenue || 0;
+    const checkTarget = ctTargets.avgCheck || 0;
+    const ddTarget = ctTargets.doordash || 10;
 
     // Category concepts: never push restaurant-only concepts (tips, delivery) into the AI's
     // context for categories that don't have them — even if a target was saved in settings.
