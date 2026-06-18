@@ -469,6 +469,7 @@ async function refreshCloverStatus(){
       status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
       status.style.color = 'var(--green, #2e7d52)';
       if (btn) { btn.textContent = 'Reconnect →'; }
+      hrznAddDisconnectButton('clover');
     }
   } catch(e) { /* leave default CSV Mode badge */ }
 }
@@ -527,8 +528,63 @@ async function refreshSquareStatus(){
       status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
       status.style.color = 'var(--green, #2e7d52)';
       if (btn) { btn.textContent = 'Reconnect →'; }
+      hrznAddDisconnectButton('square');
     }
   } catch(e) { /* leave default Not Connected badge */ }
+}
+
+// Inject a small "Disconnect" button next to a connected integration's main
+// button (idempotent — won't add twice). Wired to hrznDisconnect(name).
+function hrznAddDisconnectButton(name){
+  const btn = document.getElementById(name + '-btn');
+  if (!btn) return;
+  if (document.getElementById(name + '-disconnect-btn')) return;
+  const dc = document.createElement('button');
+  dc.id = name + '-disconnect-btn';
+  dc.className = 'int-btn';
+  dc.textContent = 'Disconnect';
+  dc.style.cssText = 'margin-left:8px;background:transparent;border:1px solid var(--red,#e05555);color:var(--red,#e05555);';
+  dc.onclick = function(){ hrznDisconnect(name); };
+  btn.parentNode.insertBefore(dc, btn.nextSibling);
+}
+
+// Disconnect a POS: delete the stored connection (server), revert the local
+// data source to CSV/demo, clear detection caches, and reset the UI row.
+async function hrznDisconnect(name){
+  const token = hrznGetToken();
+  if (!token) { showToast('Sign in first', true); return; }
+  const label = name.charAt(0).toUpperCase() + name.slice(1);
+  if (!confirm('Disconnect ' + label + '? Your dashboard will revert to CSV or demo data until you reconnect or upload a CSV.')) return;
+  const dc = document.getElementById(name + '-disconnect-btn');
+  if (dc) { dc.textContent = 'Disconnecting…'; dc.disabled = true; }
+  try {
+    const r = await fetch('/api/' + name + '?action=disconnect', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const j = await r.json();
+    if (!r.ok || j.error) { showToast('Could not disconnect: ' + (j.error || ('error ' + r.status)), true); if (dc){ dc.textContent='Disconnect'; dc.disabled=false; } return; }
+
+    // Revert local data source (api → csv/demo) and clear session caches so the
+    // app stops treating this POS as active.
+    try { if (name === 'square' && HRZN.squareDisconnect) HRZN.squareDisconnect(); else if (HRZN.cloverDisconnect) HRZN.cloverDisconnect(); } catch(e){}
+    try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
+
+    showToast('✓ ' + label + ' disconnected', false);
+    // Reset the row UI
+    const status = document.getElementById(name + '-status');
+    const btn = document.getElementById(name + '-btn');
+    if (status) {
+      status.textContent = (name === 'clover') ? 'CSV Mode' : 'Not Connected';
+      status.style.background = (name === 'clover') ? 'var(--orange-dim)' : 'rgba(128,128,128,0.1)';
+      status.style.color = (name === 'clover') ? 'var(--orange)' : 'var(--text-dim)';
+    }
+    if (btn) btn.textContent = 'Connect →';
+    if (dc) dc.remove();
+  } catch(e) {
+    showToast('Disconnect error: ' + e.message, true);
+    if (dc) { dc.textContent = 'Disconnect'; dc.disabled = false; }
+  }
 }
 
 // Handle the ?square=... flag the callback redirects back with
