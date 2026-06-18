@@ -1031,15 +1031,20 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       ? 'These are ADDITIONAL insights beyond an earlier batch. Focus on different angles: operational improvements, growth opportunities, and second-order patterns rather than the headline figures already covered. '
       : '';
 
+    // Category-aware terminology so non-restaurant businesses don't get
+    // "average check" / "menu" framing. Falls back to neutral wording.
+    const _bm = this.getBenchmarks ? this.getBenchmarks() : {};
+    const ticketTerm = (_bm.avgTicketLabel || 'average transaction value').toLowerCase();
+
     const prompts = {
       sales:   `Analyze the sales and payment data. Identify what is performing well and what needs attention. ${mixRule}`,
       pl:      `Analyze the profit & loss data. Focus on cost structure vs industry benchmarks, margin health, and the single highest-impact action to improve profitability. ${mixRule}`,
       labor:   `Analyze the labor data — labor cost as a % of revenue vs the target and industry benchmarks, and where labor efficiency is strong or weak. Use ONLY figures present in the data; the labor rate may be an estimate, so frame accordingly and do not fabricate per-shift or per-employee specifics that require payroll integration. ${mixRule}`,
-      revenue: `Analyze the revenue data — trends, day-of-week and period patterns, average check, and the highest-impact lever to grow revenue. Use exact figures from the data. ${mixRule}`,
+      revenue: `Analyze the revenue data — trends, day-of-week and period patterns, ${ticketTerm}, and the highest-impact lever to grow revenue. Use exact figures from the data. ${mixRule}`,
       operator:'You are a real-time AI business advisor. Answer the user question directly using the business data provided. Be concise, specific, and actionable. Use exact numbers from the data.',
       reports: 'Generate a comprehensive business analysis using the data provided. Use exact numbers, compare against industry benchmarks, and provide prioritized recommendations.',
       alerts:  `Identify the most critical issues and strongest wins from the business data. Be specific with dollar amounts. ${mixRule}`,
-      menu:    `Analyze menu performance and item mix. Identify top performers to promote, underperformers to cut or reprice, and pricing opportunities. ${mixRule}`,
+      menu:    `Analyze product and item-mix performance. Identify top performers to promote, underperformers to cut or reprice, and pricing opportunities. ${mixRule}`,
     };
 
     const basePrompt = prompts[type] || prompts.sales;
