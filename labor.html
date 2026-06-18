@@ -405,7 +405,7 @@ const months = HRZN.getMonths(d);
 
   // Targets
   let tgt = {labor:28};
-  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt.labor = +(t.labor || 28); } catch(e) {}
+  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt.labor = +(t.labor != null ? t.labor : 28); } catch(e) {}
   // Sync the static "28%" texts to the category-aware target.
   const savingsSub = document.getElementById('labor-savings-sub');
   if(savingsSub) savingsSub.textContent = 'If labor hits '+tgt.labor+'% target';

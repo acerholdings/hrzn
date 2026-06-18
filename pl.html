@@ -553,7 +553,7 @@ async function generatePLInsights(){
 
   // Pre-calculate insight numbers so AI uses real figures
   const laborPct = revenue>0 ? (labor/revenue*100).toFixed(1) : 0;
-  const laborTarget = (HRZN.getTargets ? HRZN.getTargets().labor : null) || (HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : 25) || 25;
+  const _plgt = HRZN.getTargets ? HRZN.getTargets().labor : null; const _plbm = HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : null; const laborTarget = (_plgt != null ? _plgt : (_plbm != null ? _plbm : 25));
   const laborOverageMo = revenue>0 ? Math.round((labor/revenue - laborTarget/100)*revenue/months) : 0;
   const laborOverageAnn = laborOverageMo * 12;
   const debtPct = revenue>0 ? (debt/revenue*100).toFixed(1) : 0;

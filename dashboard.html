@@ -133,7 +133,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="kpi-change" id="kpi-items-change">Total period</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Avg Item Price</div>
+        <div class="kpi-label" id="kpi-avg-check-label">Avg Item Price</div>
         <div class="kpi-value" id="kpi-avg-check">—</div>
         <div class="kpi-change" id="kpi-check-change">Per item sold</div>
       </div>
@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const coll = d.amountCollected || 0;
     const weekly = net / weeks;
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const tgt = (HRZN.getTargets ? (function(){const t=HRZN.getTargets(); return { revenue:+(t.weeklyRevenue||12000), check:+(t.avgCheck||15), labor:+(t.labor||28), doordash:+(t.doordash||10), discount:+(t.discount||5) };})() : { revenue:12000, check:15, labor:28, doordash:10, discount:5 });
+    const tgt = (HRZN.getTargets ? (function(){const t=HRZN.getTargets(); return { revenue:+(t.weeklyRevenue||12000), check:+(t.avgCheck||0), labor:+(t.labor!=null?t.labor:28), doordash:+(t.doordash||0), discount:+(t.discount||10) };})() : { revenue:12000, check:15, labor:28, doordash:10, discount:5 });
     const ddGapWeekly = Math.max(0, (net * tgt.doordash/100 - (t.doorDash||0)) / weeks);
     return {
       weeks, months, weekly, monthly: net/months, daily: weekly/7,
@@ -615,6 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
   set('kpi-items', (d.itemsSold||0).toLocaleString());
   set('kpi-items-change', months.toFixed(1) + ' month period');
   set('kpi-avg-check', '$'+parseFloat(d.avgCheck||0).toFixed(2));
+  try { const _dbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _lbl = document.getElementById('kpi-avg-check-label'); if(_lbl && _dbm.avgTicketLabel) _lbl.textContent = _dbm.avgTicketLabel; } catch(e){}
   set('kpi-check-change', (d.itemsSold||0).toLocaleString() + ' items sold');
   set('kpi-collected', fmt(d.amountCollected||0));
 
@@ -638,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Targets from settings
   // Category-aware targets (user-saved wins, else category benchmark) — was hardcoded restaurant values.
   let tgt = {labor:28,doordash:10,discount:5,check:15,revenue:12000};
-  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt = { labor:+(t.labor||28), doordash:+(t.doordash||10), discount:+(t.discount||5), check:+(t.avgCheck||15), revenue:+(t.weeklyRevenue||12000) }; } catch(e){}
+  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt = { labor:+(t.labor!=null?t.labor:28), doordash:+(t.doordash||0), discount:+(t.discount||10), check:+(t.avgCheck||0), revenue:+(t.weeklyRevenue||12000) }; } catch(e){}
 
   const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const doorDashPct = d.amountCollected > 0 

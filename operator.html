@@ -157,7 +157,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="stat-row"><span class="stat-label">Weekly Avg</span><span class="stat-val" id="op-weekly">—</span></div>
         <div class="stat-row"><span class="stat-label">Labor Cost %</span><span class="stat-val" id="op-labor" style="color:var(--orange);">—</span></div>
         <div class="stat-row"><span class="stat-label">Gross Margin</span><span class="stat-val" id="op-margin" style="color:var(--green);">—</span></div>
-        <div class="stat-row"><span class="stat-label">Avg Item Price</span><span class="stat-val" id="op-avg-check">—</span></div>
+        <div class="stat-row"><span class="stat-label" id="op-avg-check-label">Avg Item Price</span><span class="stat-val" id="op-avg-check">—</span></div>
         <div class="stat-row"><span class="stat-label">Items Sold</span><span class="stat-val" id="op-items">—</span></div>
         <div class="stat-row"><span class="stat-label">Tips Rate</span><span class="stat-val" id="op-tips" style="color:var(--green);">—</span></div>
         <div class="stat-row"><span class="stat-label">Health Score</span><span class="stat-val" id="op-health" style="color:var(--gold);">—</span></div>
@@ -532,6 +532,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(welcomeRev) welcomeRev.textContent = fmt(Math.round((d.netSales||0)/opWeeks));
     set('op-weekly', fmt(weekly));
     set('op-avg-check', '$'+parseFloat(d.avgCheck||0).toFixed(2));
+    try { const _obm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _ol = document.getElementById('op-avg-check-label'); if(_ol && _obm.avgTicketLabel) _ol.textContent = _obm.avgTicketLabel; } catch(e){}
     set('op-items', (d.itemsSold||0).toLocaleString());
     set('op-tips', tipsPct+'%');
     set('op-margin', grossMarginPct);

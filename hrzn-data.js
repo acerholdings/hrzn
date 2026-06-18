@@ -1008,7 +1008,7 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     // dataset's own targets (a stale saved value must not feed a false gap to the AI).
     const targets = settings.targets || {};
     const ctTargets = this.getTargets ? this.getTargets() : {};
-    const laborTarget = ctTargets.labor || (this.getBenchmarks ? this.getBenchmarks().laborPct : 25) || 25;
+    const laborTarget = (ctTargets.labor != null ? ctTargets.labor : (this.getBenchmarks && this.getBenchmarks().laborPct != null ? this.getBenchmarks().laborPct : 25));
     const revenueTarget = ctTargets.weeklyRevenue || 0;
     const checkTarget = ctTargets.avgCheck || 0;
     const ddTarget = ctTargets.doordash || 10;

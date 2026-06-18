@@ -255,7 +255,7 @@ function buildAlertsContext(d) {
   // so the model never confuses the ACTUAL rate with the target.
   const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
   const laborRate = laborMeta.value;
-  const laborTgt = m.targetLabor || (settings.targets && settings.targets.labor) || t.labor || 25;
+  const laborTgt = (m.targetLabor != null ? m.targetLabor : ((settings.targets && settings.targets.labor != null) ? settings.targets.labor : (t.labor != null ? t.labor : 25)));
   // Real weekly revenue target (matches the value getMetrics uses for the gap math).
   const weeklyRevTgt = parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue) || 12000);
 

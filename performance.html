@@ -207,7 +207,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="trend-card"><div class="kpi-label">Gross Margin</div><div class="kpi-value" id="perf-gross-margin">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Overall margin</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,30 15,28 30,25 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Labor Cost</div><div class="kpi-value" id="perf-labor-cost">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;" id="perf-labor-cost-note">vs target</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,22 30,18 45,25 60,24 75,28 90,26 100,30" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.4"/></svg></div>
       <div class="trend-card"><div class="kpi-label">Items / Week</div><div class="kpi-value" id="perf-covers">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Total period</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,32 15,28 30,26 45,22 60,20 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
-      <div class="trend-card"><div class="kpi-label">Avg Item Price</div><div class="kpi-value" id="perf-avg-check">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">→ Flat vs last week</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,21 30,19 45,20 60,21 75,19 90,20 100,20" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.8"/></svg></div>
+      <div class="trend-card"><div class="kpi-label" id="perf-avg-check-label">Avg Item Price</div><div class="kpi-value" id="perf-avg-check">—</div><div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">→ Flat vs last week</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,20 15,21 30,19 45,20 60,21 75,19 90,20 100,20" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.8"/></svg></div>
       <div class="trend-card" id="perf-turn-card"><div class="kpi-label">Table Turn Rate</div><div class="kpi-value" id="perf-turn-rate">—</div><div style="font-size:11px;color:var(--green);margin-bottom:12px;">Needs orders API</div><svg height="40" width="100%" viewBox="0 0 100 40"><polyline points="0,28 15,26 30,24 45,22 60,18 75,16 90,14 100,12" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0.8"/></svg></div>
     </div>
     <div class="comp-grid fade-3">
@@ -216,7 +216,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div class="card-body">
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Revenue</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-rev-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-rev-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-rev-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;" id="vs-covers-label">Covers</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-covers-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-covers-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);">—</div></div>
-          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
+          <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;" id="vs-check-label">Avg Item Price</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-check-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-check-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--text-dim);" id="vs-check-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Labor Cost %</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-labor-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-labor-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--red);" id="vs-labor-change">—</div></div>
           <div class="vs-row"><div style="font-size:12px;color:var(--text);flex:1;">Gross Margin</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text);width:70px;text-align:right;" id="vs-margin-this">—</div><div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-dim);width:70px;text-align:right;" id="vs-margin-last">—</div><div style="font-size:11px;width:50px;text-align:right;color:var(--green);" id="vs-margin-change">—</div></div>
         </div>
@@ -502,6 +502,7 @@ const months = HRZN.getMonths(d);
   set('perf-date-label', _period || 'Jan 1 – May 28, 2026');
   set('perf-weekly-revenue', fmt(weekly));
   set('perf-avg-check', '$' + parseFloat(d.avgCheck||0).toFixed(2));
+  try { const _pbm2 = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; if(_pbm2.avgTicketLabel){ const a=document.getElementById('perf-avg-check-label'); if(a)a.textContent=_pbm2.avgTicketLabel; const b=document.getElementById('vs-check-label'); if(b)b.textContent=_pbm2.avgTicketLabel; } } catch(e){}
   set('perf-monthly-revenue', fmt(monthly));
   set('perf-total-revenue', fmt(d.netSales||0));
   set('perf-covers', weeklyItems.toLocaleString());
@@ -514,7 +515,12 @@ const months = HRZN.getMonths(d);
   const lastWeekly = hasPriorPeriod ? Math.round(weekly * 0.95) : null;
   const lastItems = hasPriorPeriod ? Math.round(weeklyItems * 0.95) : null;
   const perfSettings = JSON.parse(localStorage.getItem('hrzn-settings')||'{}')
-  const laborTarget = +((HRZN.getTargets ? HRZN.getTargets().labor : null) || (HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : 25) || 25);
+  const _gt = HRZN.getTargets ? HRZN.getTargets() : {};
+  const _pbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {};
+  // Use explicit null-checks (not ||) so a legitimate 0 (online has no labor) isn't replaced by 25.
+  const laborTarget = Number(_gt.labor != null ? _gt.labor : (_pbm.laborPct != null ? _pbm.laborPct : 25));
+  // Labor isn't a meaningful lever for every category (e.g. e-commerce, labor target 0).
+  const laborApplies = laborTarget > 0;
   // Labor rate from the central chain (API → manual → fallback). See getLaborRateMeta in hrzn-data.js.
   let laborMeta = { value: (HRZN.getBenchmarks && HRZN.getBenchmarks().laborPct != null ? HRZN.getBenchmarks().laborPct : 28), source: 'fallback', isEstimate: true };
   try { if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(); } catch(e) {}
@@ -551,20 +557,25 @@ const months = HRZN.getMonths(d);
   set('vs-covers-last', lastItems == null ? '—' : lastItems.toLocaleString());
   set('vs-check-this', '$'+parseFloat(d.avgCheck||0).toFixed(2));
   set('vs-check-last', '—');
-  set('vs-labor-this', laborPct + '%' + (laborIsEst ? ' (est.)' : ''));
+  set('vs-labor-this', laborApplies ? (laborPct + '%' + (laborIsEst ? ' (est.)' : '')) : '—');
   // Keep the top Labor Cost KPI tile consistent with this same rate (was blank + fake "+3.1%").
-  set('perf-labor-cost', laborPct + '%' + (laborIsEst ? ' (est.)' : ''));
+  set('perf-labor-cost', laborApplies ? (laborPct + '%' + (laborIsEst ? ' (est.)' : '')) : '—');
   const perfLaborNote = document.getElementById('perf-labor-cost-note');
   if (perfLaborNote) {
-    const over = laborPct > laborTarget;
-    perfLaborNote.textContent = (over ? 'Above ' : 'At/below ') + laborTarget + '% target';
-    perfLaborNote.style.color = over ? 'var(--red)' : 'var(--green)';
+    if (!laborApplies) {
+      perfLaborNote.textContent = 'Not a primary cost for this business type';
+      perfLaborNote.style.color = 'var(--text-dim)';
+    } else {
+      const over = laborPct > laborTarget;
+      perfLaborNote.textContent = (over ? 'Above ' : 'At/below ') + laborTarget + '% target';
+      perfLaborNote.style.color = over ? 'var(--red)' : 'var(--green)';
+    }
   }
   set('vs-labor-last', '—');
   // Labor: show target status, no WoW arrow since last week data is estimated
-  set('vs-labor-change', laborPct > laborTarget ? 'above target' : 'on target');
+  set('vs-labor-change', !laborApplies ? '—' : (laborPct > laborTarget ? 'above target' : 'on target'));
   const laborChangeEl = document.getElementById('vs-labor-change');
-  if(laborChangeEl) laborChangeEl.style.color = laborPct > laborTarget ? 'var(--red)' : 'var(--green)';
+  if(laborChangeEl) laborChangeEl.style.color = !laborApplies ? 'var(--text-dim)' : (laborPct > laborTarget ? 'var(--red)' : 'var(--green)');
   set('vs-margin-this', grossMargin);
   // Top Gross Margin KPI tile — real value (was a hardcoded 68%); honest "—" when no item data.
   set('perf-gross-margin', grossMargin);
