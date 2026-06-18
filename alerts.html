@@ -243,6 +243,7 @@ function buildAlertsContext(d) {
   const t = (typeof getTargets === 'function') ? getTargets() : { avgCheck: 15, doordash: 10 };
   const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
   const deliveryApplies = !!concepts.delivery;
+  const tipsApplies = !!concepts.tips;
 
   const priceGapPeriod = ticketApplies ? Math.round((t.avgCheck - avgPrice) * items) : 0;
   const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
@@ -265,8 +266,8 @@ function buildAlertsContext(d) {
     'EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:',
     'Period: ' + (d.periodStart||'Jan 1') + ' – ' + (d.periodEnd||'May 28, 2026') + ' (' + Math.round(weeks) + ' weeks, ' + months.toFixed(1) + ' months)',
     'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $' + weeklyRevTgt.toLocaleString() + ' target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
-    'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross — EXCELLENT WIN (below 3%)',
-    'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average'),
+    'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross (assess against this business type\'s benchmark)',
+    (tipsApplies ? 'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average') : null),
     'Labor cost: ' + laborRate + '% of revenue (ACTUAL' + (laborMeta.isEstimate ? ', estimated' : '') + ') vs ' + laborTgt + '% target — ' + (laborRate > laborTgt ? (laborRate-laborTgt).toFixed(0)+' points ABOVE target' : 'at or below target') + '. Use ' + laborRate + '% as the actual labor rate; do NOT use the ' + laborTgt + '% target as if it were the actual.',
     'Digital payments (credit+debit+DoorDash): $' + Math.round(digitalTotal).toLocaleString() + ' = ' + digitalPct + '% of collected — cash only ' + cashPct + '%',
     (deliveryApplies ? 'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to ' + t.doordash + '% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)' : null),
@@ -608,7 +609,7 @@ function generateAlerts(){
   }
 
   // Strong tips
-  if(tipsPct >= 12){
+  if(!!concepts.tips && tipsPct >= 12){
     wins.push({
       type:'win', category:'Service',
       title:`Tips at ${tipsPct.toFixed(1)}% — strong guest satisfaction signal`,

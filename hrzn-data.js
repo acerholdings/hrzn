@@ -386,8 +386,8 @@ const HRZN = {
       tips:0, amountCollected:874000, itemsSold:11200, avgCheck:78.04,
       tenders:{ creditCard:700000, debitCard:174000, doorDash:0, cash:0, doorDashPct:0, giftCard:0 },
       _targets:{ revenue:16800, monthly:72800, check:78, labor:0, food:55, margin:10, doordash:0, discount:10 },
-      // Monthly $ — profitable (~12%); shipping + returns are the watch areas for e-commerce.
-      _expenses:{ cogs:38600, labor:0, shipping:7280, fees:1820, returns:3640, marketing:14560, software:1090, other:730, debt:2180 }
+      // Monthly $ — profitable (~10%); marketing/CAC is the watch area for e-commerce.
+      _expenses:{ cogs:38600, labor:0, shipping:7280, fees:1820, returns:3640, marketing:10200, software:1090, other:730, debt:2180 }
     },
     service: {
       _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
