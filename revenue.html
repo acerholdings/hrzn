@@ -533,8 +533,8 @@ function buildRevenueContext() {
   const weekly = Math.round((d.netSales||0) / weeks);
   const daily = Math.round(weekly / 7);
   const weeklyItems = Math.round((d.itemsSold||0) / weeks);
-  const targetRev = (s.targets && s.targets.revenue) || m.targetRevenue || 12000;
-  const targetCheck = (s.targets && s.targets.check) || m.targetCheck || 15;
+  const targetRev = m.targetRevenue || (s.targets && s.targets.revenue) || 12000;
+  const targetCheck = m.targetCheck || (s.targets && s.targets.check) || 0;
   // Category gating for prompt lines (avg-check + delivery mentions)
   const pBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const pConcepts = pBm.concepts || { delivery:true };

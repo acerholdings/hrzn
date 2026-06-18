@@ -524,7 +524,7 @@ function buildLaborContext() {
   const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const category = bm._category || s.businessType || s.bizType || 'business';
   // Target falls back to the CATEGORY benchmark, not a hardcoded restaurant 28.
-  const tgtLabor = (s.targets && s.targets.labor) || (bm.laborPct != null ? bm.laborPct : 28);
+  const tgtLabor = (HRZN.getTargets ? HRZN.getTargets().labor : null) || (s.targets && s.targets.labor) || (bm.laborPct != null ? bm.laborPct : 25);
   const weekly = Math.round(m.weekly || 0);
   return `Analyze the labor data for ${bizName}, a ${category} business. Use ONLY the figures below — do not invent per-shift, per-employee, or per-day numbers (those require payroll integration we don't have yet). Use benchmarks appropriate to a ${category} business — do NOT cite restaurant benchmarks unless this is a restaurant.
 

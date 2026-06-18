@@ -1218,16 +1218,21 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 
     // ── TARGETS (from settings, with defaults) ──
     const settings       = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('hrzn-settings') || '{}') : {};
-    // Category-aware targets: user-saved wins, otherwise this business type's benchmark
-    // (was hardcoded restaurant fallbacks — caused 28%-vs-18% conflicts across pages).
+    // Category-aware targets resolved by getTargets() (user-saved wins; in DEMO mode the
+    // demo dataset's own targets win so a stale saved value can't invent a false gap).
     const _ct = this.getTargets ? this.getTargets() : {};
     const _bm = this.getBenchmarks ? this.getBenchmarks() : {};
-    const targetRevenue  = +(settings.targets?.revenue  || _ct.weeklyRevenue || 12000);
-    const targetCheck    = +(settings.targets?.check    || _ct.avgCheck || _bm.avgTicket || 0);
-    const targetLabor    = +(settings.targets?.labor    || _ct.labor || _bm.laborPct || 25);
-    const targetFood     = +(settings.targets?.food     || _ct.food || _bm.cogsPct || 35);
-    const targetDoorDash = +(settings.targets?.doordash || _ct.doordash || _bm.deliveryTargetPct || 0);
-    const targetDiscount = +(settings.targets?.discount || _ct.discount || 5);
+    const _demoOn = !!(this.isDemoModeOn && this.isDemoModeOn());
+    // In demo mode trust getTargets() outright (it already applied demo precedence);
+    // otherwise the user's saved target wins, then the resolved category target.
+    const tgt = (savedKey, ctVal, fb) => _demoOn ? (ctVal != null ? +ctVal : fb)
+      : +(settings.targets?.[savedKey] || ctVal || fb);
+    const targetRevenue  = tgt('revenue',  _ct.weeklyRevenue, 12000);
+    const targetCheck    = tgt('check',    _ct.avgCheck, _bm.avgTicket || 0);
+    const targetLabor    = tgt('labor',    _ct.labor, _bm.laborPct || 25);
+    const targetFood     = tgt('food',     _ct.food, _bm.cogsPct || 35);
+    const targetDoorDash = tgt('doordash', _ct.doordash, _bm.deliveryTargetPct || 0);
+    const targetDiscount = tgt('discount', _ct.discount, 5);
 
     // ── PERCENTAGES ──
     const discPct      = grossSales > 0 ? (discounts / grossSales * 100) : 0;

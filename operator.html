@@ -295,21 +295,28 @@ async function sendMessage(){
 
 function getTargets(){
   try{
+    // Use the central target resolver (category-aware; in demo mode the demo dataset's
+    // own targets win, so a stale saved value can't invent a false "below target").
+    if (typeof HRZN !== 'undefined' && HRZN.getTargets) {
+      const ct = HRZN.getTargets();
+      return {
+        labor: ct.labor, food: ct.food, weeklyRevenue: ct.weeklyRevenue,
+        avgCheck: ct.avgCheck, doordash: ct.doordash, discount: ct.discount
+      };
+    }
     const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
-    // Category-aware fallbacks: user's saved targets always win; when a target
-    // isn't set, fall back to the business category's benchmark (not hardcoded restaurant).
     const b = (typeof HRZN!=='undefined' && HRZN.getBenchmarks) ? HRZN.getBenchmarks() : {};
     const t = s.targets || {};
     const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
     return {
-      labor:        num(t.labor,    b.laborPct != null ? b.laborPct : 28),
-      food:         num(t.food,     b.cogsPct  != null ? b.cogsPct  : 30),
-      weeklyRevenue:num(t.revenue,  12000),                                  // no benchmark equivalent
-      avgCheck:     num(t.check,    b.avgTicket ? b.avgTicket : 15),
-      doordash:     num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
-      discount:     num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 5)
+      labor:        num(t.labor,    b.laborPct != null ? b.laborPct : 25),
+      food:         num(t.food,     b.cogsPct  != null ? b.cogsPct  : 35),
+      weeklyRevenue:num(t.revenue,  12000),
+      avgCheck:     num(t.check,    b.avgTicket ? b.avgTicket : 0),
+      doordash:     num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+      discount:     num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 10)
     };
-  }catch(e){return {labor:28,food:30,weeklyRevenue:12000,avgCheck:15,doordash:10,discount:5};}
+  }catch(e){return {labor:25,food:35,weeklyRevenue:12000,avgCheck:0,doordash:0,discount:10};}
 }
 
 

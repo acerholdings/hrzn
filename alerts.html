@@ -255,9 +255,9 @@ function buildAlertsContext(d) {
   // so the model never confuses the ACTUAL rate with the target.
   const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
   const laborRate = laborMeta.value;
-  const laborTgt = (settings.targets && settings.targets.labor) || t.labor || 28;
+  const laborTgt = m.targetLabor || (settings.targets && settings.targets.labor) || t.labor || 25;
   // Real weekly revenue target (matches the value getMetrics uses for the gap math).
-  const weeklyRevTgt = parseFloat((settings.targets && settings.targets.revenue) || 12000);
+  const weeklyRevTgt = parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue) || 12000);
 
   const lines = [
     'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
@@ -426,23 +426,23 @@ function pct(n,t){return t>0?(n/t*100).toFixed(1):'0';}
 // Get targets from settings
 function getTargets(){
   try{
+    // Defer to the central resolver (category-aware; demo dataset targets win in demo mode).
+    if (typeof HRZN !== 'undefined' && HRZN.getTargets) return HRZN.getTargets();
     const s=JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
-    // Category-aware fallbacks: user's saved targets win; otherwise fall back to the
-    // business category's benchmark (not hardcoded restaurant numbers).
     const b = (typeof HRZN!=='undefined' && HRZN.getBenchmarks) ? HRZN.getBenchmarks() : {};
     const t = s.targets || {};
     const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
     return {
-      labor: num(t.labor, b.laborPct != null ? b.laborPct : 28),
-      food: num(t.food, b.cogsPct != null ? b.cogsPct : 30),
-      margin: num(t.margin, b.netMarginTarget != null ? b.netMarginTarget : 15),
+      labor: num(t.labor, b.laborPct != null ? b.laborPct : 25),
+      food: num(t.food, b.cogsPct != null ? b.cogsPct : 35),
+      margin: num(t.margin, b.netMarginTarget != null ? b.netMarginTarget : 10),
       weeklyRevenue: num(t.revenue, 12000),
       monthlyRevenue: num(t.monthly, 50000),
-      avgCheck: num(t.check, b.avgTicket ? b.avgTicket : 15),
-      doordash: num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
-      discount: num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 5),
+      avgCheck: num(t.check, b.avgTicket ? b.avgTicket : 0),
+      doordash: num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+      discount: num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 10),
     };
-  }catch(e){return {labor:28,food:30,margin:15,weeklyRevenue:12000,monthlyRevenue:50000,avgCheck:15,doordash:10,discount:5};}
+  }catch(e){return {labor:25,food:35,margin:10,weeklyRevenue:12000,monthlyRevenue:50000,avgCheck:0,doordash:0,discount:10};}
 }
 
 function makeAlertCard(alert){
