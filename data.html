@@ -400,6 +400,19 @@ function clearCSV(key, oldKey){
   if(!confirm('Clear this uploaded data?')) return;
   localStorage.removeItem(key);
   if(oldKey) localStorage.removeItem(oldKey);
+  // When clearing the Item Sales CSV, also drop the cached fallback values it
+  // wrote into settings (_cachedGrossMargin / _cachedTotalItemsSold). Otherwise
+  // pages that fall back to those caches keep showing ghost numbers after the
+  // source is gone.
+  if (key === 'hrzn-data-items') {
+    try {
+      const s = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+      let changed = false;
+      if ('_cachedGrossMargin' in s) { delete s._cachedGrossMargin; changed = true; }
+      if ('_cachedTotalItemsSold' in s) { delete s._cachedTotalItemsSold; changed = true; }
+      if (changed) localStorage.setItem('hrzn-settings', JSON.stringify(s));
+    } catch(e) {}
+  }
   renderCSVGrid();
   showToast('Data cleared');
 }

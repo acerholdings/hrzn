@@ -476,17 +476,23 @@ const months = HRZN.getMonths(d);
   // weeklyItems: when live (api) data is active, use its itemsSold — the live
   // source is authoritative and a stale Items CSV must not override it. Only for
   // CSV source do we prefer the (more granular) Items CSV total.
-  const liveSrc = (HRZN.getSource && HRZN.getSource() === 'api');
+  const perfSource = (HRZN.getSource && HRZN.getSource()) || 'demo';
+  const liveSrc = perfSource === 'api';
+  const csvSrc = perfSource === 'csv';
   const csvItemsTotal = liveSrc ? 0 : (() => {
     try {
       const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
       if (items.totalItemsSold) return items.totalItemsSold;
     } catch(e) {}
-    // Fallback to cached value in settings
-    try {
-      const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
-      if (cached._cachedTotalItemsSold) return cached._cachedTotalItemsSold;
-    } catch(e) {}
+    // Cached fallback ONLY when the source is genuinely CSV (Safari may clear the
+    // items key but a real CSV is still the active source). When the source is
+    // empty/demo, there is no real data — don't resurrect a stale cache.
+    if (csvSrc) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');
+        if (cached._cachedTotalItemsSold) return cached._cachedTotalItemsSold;
+      } catch(e) {}
+    }
     return 0;
   })();
   const weeklyItems = Math.round((csvItemsTotal || d.itemsSold || 0) / weeks);
@@ -517,9 +523,9 @@ const months = HRZN.getMonths(d);
 
   let grossMargin = '—';
   let itemsLoaded = false;
-  // Only read the Items CSV margin when NOT on live data (live POS has no COGS,
-  // so a stale CSV margin would misrepresent the live business).
-  if (!liveSrc) {
+  // Only read the Items CSV margin when on CSV data (live POS has no COGS, and
+  // empty/demo has no real data — so a cached margin would be a ghost).
+  if (csvSrc) {
     try {
       const items = JSON.parse(localStorage.getItem('hrzn-data-items')||'{}');
       if(items.grossProfitMargin) {
@@ -527,7 +533,7 @@ const months = HRZN.getMonths(d);
         itemsLoaded = true;
       }
     } catch(e) {}
-    // Fallback: use cached metrics from hrzn-settings if Items CSV was cleared by Safari
+    // Cached fallback only when CSV is the active source (Safari may clear the key).
     if (!itemsLoaded) {
       try {
         const cached = JSON.parse(localStorage.getItem('hrzn-settings')||'{}');

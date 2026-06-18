@@ -511,9 +511,12 @@ const HRZN = {
       // 2) PROFITABILITY (gross margin) — read the SAME real source the pages use:
       //    item-sales data (hrzn-data-items.grossProfitMargin), with the cached fallback
       //    (hrzn-settings._cachedGrossMargin) for when Safari ITP clears the Items CSV.
+      //    Only when the source is genuinely CSV — on empty/demo there is no real
+      //    margin, and a leftover cache must not produce a ghost profitability score.
       let margin = null;
+      const scoreSrc = (this.getSource ? this.getSource() : 'demo');
       try {
-        if (typeof localStorage !== 'undefined') {
+        if (typeof localStorage !== 'undefined' && scoreSrc === 'csv') {
           const its = JSON.parse(localStorage.getItem('hrzn-data-items') || '{}');
           if (its.grossProfitMargin != null) margin = parseFloat(its.grossProfitMargin);
           if (margin == null) {
@@ -522,7 +525,7 @@ const HRZN = {
           }
         }
       } catch (e) {}
-      // Last-resort: a margin carried on the data object itself.
+      // Last-resort: a margin carried on the data object itself (e.g. live/demo data).
       if (margin == null && d.grossProfitMargin != null) margin = parseFloat(d.grossProfitMargin);
       if (margin != null && !isNaN(margin)) {
         const bm = this.getBenchmarks ? this.getBenchmarks() : {};
