@@ -495,10 +495,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   try { expenses = JSON.parse(localStorage.getItem('hrzn-pl-data')||'{}'); } catch(e){}
   const isReal = (k) => expenses[k] != null && expenses[k] !== '' && !isNaN(parseFloat(expenses[k]));
   // Labor fallback uses the CENTRAL rate chain (API → manual → fallback), not a stray hardcoded 32%.
-  const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
-  // COGS fallback uses the CATEGORY benchmark (restaurant ~32%, retail ~60%, online ~55%), not a fixed 32%.
   const cfBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
-  const cogsRatePct = cfBm.cogsPct || 32;
+  const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : (cfBm.laborPct != null ? cfBm.laborPct : 25));
+  // COGS fallback uses the CATEGORY benchmark (restaurant ~30%, retail ~60%, online ~55%), not a fixed 32%.
+  const cogsRatePct = cfBm.cogsPct != null ? cfBm.cogsPct : 35;
   const cfCogsLbl = document.getElementById('cf-cogs-label');
   if(cfCogsLbl && cfBm.cogsLabel) cfCogsLbl.textContent = cfBm.cogsLabel + ' (COGS)';
   // Per-category expense structure — mirrors the P&L: retail adds payment fees;

@@ -390,20 +390,16 @@ const HRZN = {
   // Single source of truth for all AI insights across every page.
   // Every page must use HRZN.getSystemPrompt(d) instead of writing its own.
 
-  BENCHMARKS: {
-    food:      { excellent: 28, healthy: [28, 35], warning: 35 },
-    labor:     { excellent: 25, healthy: [25, 35], warning: 35 },
-    discounts: { excellent: 3,  healthy: [3, 6],   warning: 6  },
-    tips_net:  { strong: 15,    avg: [12, 15],      low: 12     },
-    doordash:  { opportunity: 5, good: [5, 15],     high: 20    },
-    rent:      { healthy: 8,    monitor: [8, 12],   problem: 12 },
-    net_margin:{ healthy: [3, 9] }
-  },
+  // NOTE: the category-aware benchmark profiles live in BENCHMARKS below
+  // (restaurant/retail/online/service/other). An older restaurant-only
+  // threshold object used to sit here but was dead code (silently overwritten
+  // by the profiles object and referenced nowhere) — removed for clarity.
 
   // ── LABOR RATE (central source of truth) ─────────────────────────────────
   // live API data → manual settings value → labeled hardcoded fallback.
   LABOR: {
-    FALLBACK_PCT: 32,
+    FALLBACK_PCT: 25,   // generic cross-industry last-resort; getLaborRateMeta()
+                        // overrides this with the active category's benchmark.
     SCORE: { excellent: 28, good: 30, ok: 32 },
     SCORE_VALS: { excellent: 95, good: 80, ok: 70, poor: 55 },
   },
@@ -459,18 +455,21 @@ const HRZN = {
       // Category-aware fallbacks: user's saved targets win; otherwise fall back to the
       // business category's benchmark (not hardcoded restaurant numbers).
       const b = this.getBenchmarks ? this.getBenchmarks() : {};
+      // Cross-industry generic baseline for the rare case a benchmark key is
+      // missing — uses the 'other' profile, never restaurant-flavored constants.
+      const g = (this.BENCHMARKS && this.BENCHMARKS.other) || {};
       // Demo dataset carries its own targets so the logged-out preview analyzes honestly.
       const dt = (this.isDemoModeOn && this.isDemoModeOn() && this.DEMO_DATA && this.DEMO_DATA._targets) ? this.DEMO_DATA._targets : {};
       const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
       return {
-        labor: num(tg.labor, b.laborPct != null ? b.laborPct : 28),
-        food: num(tg.food, b.cogsPct != null ? b.cogsPct : 30),
-        margin: num(tg.margin, b.netMarginTarget != null ? b.netMarginTarget : 15),
+        labor: num(tg.labor, b.laborPct != null ? b.laborPct : (g.laborPct != null ? g.laborPct : 25)),
+        food: num(tg.food, b.cogsPct != null ? b.cogsPct : (g.cogsPct != null ? g.cogsPct : 35)),
+        margin: num(tg.margin, b.netMarginTarget != null ? b.netMarginTarget : (g.netMarginTarget != null ? g.netMarginTarget : 10)),
         weeklyRevenue: num(tg.revenue, dt.revenue || 12000),   // demo target, else generic
         monthlyRevenue: num(tg.monthly, dt.monthly || 50000),  // demo target, else generic
-        avgCheck: num(tg.check, b.avgTicket ? b.avgTicket : 15),
-        doordash: num(tg.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 10),
-        discount: num(tg.discount, b.discountMaxPct != null ? b.discountMaxPct : 5),
+        avgCheck: num(tg.check, b.avgTicket ? b.avgTicket : 0),
+        doordash: num(tg.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+        discount: num(tg.discount, b.discountMaxPct != null ? b.discountMaxPct : (g.discountMaxPct != null ? g.discountMaxPct : 10)),
       };
     } catch (e) {
       return { labor:28, food:30, margin:15, weeklyRevenue:12000, monthlyRevenue:50000, avgCheck:15, doordash:10, discount:5 };
@@ -589,8 +588,8 @@ const HRZN = {
       const tenders = d.tenders || {};
       const discountPct = d.grossSales > 0 ? parseFloat(((d.discounts || 0) / d.grossSales * 100).toFixed(1)) : 0;
       const avgCheck = parseFloat(d.avgCheck || 0);
-      const laborPct = this.getLaborRate ? this.getLaborRate() : 32;
       const bm = this.getBenchmarks ? this.getBenchmarks() : {};
+      const laborPct = this.getLaborRate ? this.getLaborRate() : (bm.laborPct != null ? bm.laborPct : 25);
       // Avg-ticket only counts when the category actually defines a ticket target (restaurants).
       const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
 
@@ -940,7 +939,7 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     // Category-aware fallback: an unset labor target must fall back to the CATEGORY benchmark
     // (retail 18%, etc.), not a hardcoded restaurant 28 — otherwise the AI cites the wrong target.
     const ctTargets = this.getTargets ? this.getTargets() : {};
-    const laborTarget = targets.labor || ctTargets.labor || 28;
+    const laborTarget = targets.labor || ctTargets.labor || (this.getBenchmarks ? this.getBenchmarks().laborPct : 25) || 25;
     const revenueTarget = targets.revenue || 0;
     const checkTarget = targets.check || 0;
     const ddTarget = targets.doordash || 10;
@@ -1147,11 +1146,12 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     // Category-aware targets: user-saved wins, otherwise this business type's benchmark
     // (was hardcoded restaurant fallbacks — caused 28%-vs-18% conflicts across pages).
     const _ct = this.getTargets ? this.getTargets() : {};
+    const _bm = this.getBenchmarks ? this.getBenchmarks() : {};
     const targetRevenue  = +(settings.targets?.revenue  || _ct.weeklyRevenue || 12000);
-    const targetCheck    = +(settings.targets?.check    || _ct.avgCheck || 15);
-    const targetLabor    = +(settings.targets?.labor    || _ct.labor || 28);
-    const targetFood     = +(settings.targets?.food     || _ct.food || 25);
-    const targetDoorDash = +(settings.targets?.doordash || _ct.doordash || 10);
+    const targetCheck    = +(settings.targets?.check    || _ct.avgCheck || _bm.avgTicket || 0);
+    const targetLabor    = +(settings.targets?.labor    || _ct.labor || _bm.laborPct || 25);
+    const targetFood     = +(settings.targets?.food     || _ct.food || _bm.cogsPct || 35);
+    const targetDoorDash = +(settings.targets?.doordash || _ct.doordash || _bm.deliveryTargetPct || 0);
     const targetDiscount = +(settings.targets?.discount || _ct.discount || 5);
 
     // ── PERCENTAGES ──

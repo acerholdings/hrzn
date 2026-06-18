@@ -365,7 +365,7 @@ function getPLInsightValues(months, revenue){
   const bm=(HRZN.getBenchmarks?HRZN.getBenchmarks():{})||{};
   const concepts=bm.concepts||{delivery:true,tips:true};
   const monthlyRev = months>0 ? revenue/months : 0;
-  const laborRate = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
+  const laborRate = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : (bm.laborPct != null ? bm.laborPct : 25));
   const lines = plCategoryLines(bm);
   const EST = plEstimates(bm, monthlyRev, laborRate);
   const isEst={}; const v={};
@@ -426,8 +426,8 @@ function calcAndRender(){
   // Per-field: user's entry if filled, else an industry-typical estimate (displayed with
   // an (est.) tag, never saved). Same estimate constants as cashflow.html.
   const monthlyRev = months > 0 ? revenue / months : 0;
-  const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : 32);
   const calcBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const laborRatePct = (HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta().value : (calcBm.laborPct != null ? calcBm.laborPct : 25));
   // Per-category expense structure: show only this business type's lines.
   const plLines = plCategoryLines(calcBm);
   applyPLLineVisibility(plLines);
@@ -536,7 +536,7 @@ async function generatePLInsights(){
 
   // Pre-calculate insight numbers so AI uses real figures
   const laborPct = revenue>0 ? (labor/revenue*100).toFixed(1) : 0;
-  const laborTarget = (HRZN.getTargets ? HRZN.getTargets().labor : 28) || 28;
+  const laborTarget = (HRZN.getTargets ? HRZN.getTargets().labor : null) || (HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : 25) || 25;
   const laborOverageMo = revenue>0 ? Math.round((labor/revenue - laborTarget/100)*revenue/months) : 0;
   const laborOverageAnn = laborOverageMo * 12;
   const debtPct = revenue>0 ? (debt/revenue*100).toFixed(1) : 0;
@@ -563,7 +563,7 @@ async function generatePLInsights(){
   const moProfitFinal = Math.round(netProfit/months);
 
   const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl', null, _plInsights.length ? { exclude: _plInsights.map(i=>i.title) } : {});
-  const cogsTargetPct = plBm.cogsPct || 32;
+  const cogsTargetPct = plBm.cogsPct != null ? plBm.cogsPct : 35;
   const cogsLbl = plBm.cogsLabel || 'Food Cost';
   const estNote = anyInsEst ? `\nIMPORTANT: Lines marked [ESTIMATE] are industry-typical placeholder figures — the owner has NOT entered these costs yet. Do NOT treat them as the owner's actual spending and do NOT claim data is missing or corrupted. Where relevant, encourage entering real expenses on this page for accurate analysis.\n` : '';
   const tipsLinePL = plConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)` : '';
@@ -688,7 +688,7 @@ async function generateMorePLInsights(){
 EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:
 Period: ${months.toFixed(1)} months
 Net Sales: $${Math.round(revenue).toLocaleString()}
-${plBm.cogsLabel||'Cost of Goods'}: $${Math.round(cogs).toLocaleString()} (${cogsPct}%) vs ${plBm.cogsPct||30}% benchmark for this business type
+${plBm.cogsLabel||'Cost of Goods'}: $${Math.round(cogs).toLocaleString()} (${cogsPct}%) vs ${plBm.cogsPct!=null?plBm.cogsPct:35}% benchmark for this business type
 Gross Profit: $${Math.round(revenue-cogs).toLocaleString()} (${grossPct2}% margin)
 Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%) — overage = $${laborOverageMo2.toLocaleString()}/mo ($${laborOverageAnn.toLocaleString()}/yr)
 ${expenseLinesPrompt}
