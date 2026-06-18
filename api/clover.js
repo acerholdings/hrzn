@@ -96,6 +96,29 @@ export default async function handler(req, res) {
       return res.status(200).json({ connected: true, merchant_id: conn.merchant_id, token_expires_at: conn.token_expires_at || null });
     }
 
+    // ── DISCONNECT: delete this business's stored Clover connection ─
+    if (action === 'disconnect') {
+      const b = await getBusinessId();
+      if (b.error) return res.status(b.code).json({ error: b.error });
+      const delRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY,
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
+      if (!delRes.ok && delRes.status !== 404) {
+        const t = await delRes.text();
+        console.error('clover disconnect delete failed:', delRes.status, t);
+        return res.status(502).json({ error: 'Could not disconnect', detail: t });
+      }
+      return res.status(200).json({ ok: true, disconnected: true });
+    }
+
     // ── SYNC: pull live data using this business's stored token ────
     // (Adapted from the original single-merchant clover.js — now multi-tenant:
     //  the token + merchant_id come from clover_connections, not env vars.)

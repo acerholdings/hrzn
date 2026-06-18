@@ -80,6 +80,31 @@ export default async function handler(req, res) {
       return res.status(200).json({ connected: true, location_id: conn.location_id, token_expires_at: conn.token_expires_at || null });
     }
 
+    // ── DISCONNECT: delete this business's stored Square connection ─
+    // Removes the row so status reports disconnected and sync stops. The
+    // frontend separately reverts the local data source to CSV/demo.
+    if (action === 'disconnect') {
+      const b = await getBusinessId();
+      if (b.error) return res.status(b.code).json({ error: b.error });
+      const delRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/square_connections?business_id=eq.${b.businessId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_KEY}`,
+            'apikey': SERVICE_KEY,
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
+      if (!delRes.ok && delRes.status !== 404) {
+        const t = await delRes.text();
+        console.error('square disconnect delete failed:', delRes.status, t);
+        return res.status(502).json({ error: 'Could not disconnect', detail: t });
+      }
+      return res.status(200).json({ ok: true, disconnected: true });
+    }
+
     // ── SYNC: pull live data using this business's stored token ────
     if (action === 'sync') {
       const b = await getBusinessId();
