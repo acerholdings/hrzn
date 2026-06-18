@@ -580,12 +580,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   set('cf-tips-pct', pct((d.tips||0)/months, monthly));
   set('cf-doordash-in', fmt((d.tenders?.doorDash||0)/months));
   set('cf-doordash-pct', pct((d.tenders?.doorDash||0)/months, monthly));
-  // Tips/DoorDash inflow rows are restaurant concepts — hide for other categories unless dollars exist.
+  // Tips/DoorDash inflow rows are restaurant concepts — hide for other categories.
+  // Normally we still show a row if REAL dollars exist (a retail/cafe hybrid may
+  // have genuine tips). But in demo mode the sample dataset is restaurant-shaped,
+  // so its tips/DoorDash dollars must NOT override a non-restaurant category —
+  // otherwise a retail prospect viewing the demo sees "DoorDash Revenue".
   const cfInConcepts = cfBm.concepts || { delivery:true, tips:true };
+  const cfDemo = (HRZN.getSource && HRZN.getSource() === 'demo');
   const tipsRow = document.getElementById('cfrow-tips-in');
-  if (tipsRow) tipsRow.style.display = (cfInConcepts.tips || (d.tips||0) > 0) ? '' : 'none';
+  if (tipsRow) tipsRow.style.display = (cfInConcepts.tips || (!cfDemo && (d.tips||0) > 0)) ? '' : 'none';
   const ddRow = document.getElementById('cfrow-dd-in');
-  if (ddRow) ddRow.style.display = (cfInConcepts.delivery || (d.tenders?.doorDash||0) > 0) ? '' : 'none';
+  if (ddRow) ddRow.style.display = (cfInConcepts.delivery || (!cfDemo && (d.tenders?.doorDash||0) > 0)) ? '' : 'none';
 
   // Outflow breakdown — each line marked (est.) when it's a fallback, with bars sized by real share.
   const setExp = (id, barId, val, real) => {
