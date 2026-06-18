@@ -166,7 +166,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="report-card" onclick="generateSpecificReport('weekly')">
         <div class="report-icon">📊</div>
         <div class="report-title">Weekly Business Summary</div>
-        <div class="report-desc">Full overview of the past 7 days — revenue, labor, menu performance, top alerts, and AI recommendations. Perfect for your Monday morning review.</div>
+        <div class="report-desc">Full overview of the past 7 days — revenue, labor, product performance, top alerts, and AI recommendations. Perfect for your Monday morning review.</div>
         <div class="report-meta">
           <span class="report-tag" style="background:var(--green-dim);color:var(--green);">Most Popular</span>
           <span class="report-arrow">→</span>
@@ -186,7 +186,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="report-card" onclick="generateSpecificReport('labor')">
         <div class="report-icon">👥</div>
         <div class="report-title">Labor Efficiency Report</div>
-        <div class="report-desc">Deep dive into staffing costs, labor percentages by day, efficiency metrics, and scheduling recommendations to hit your 28% target.</div>
+        <div class="report-desc">Deep dive into staffing costs, labor percentages by day, efficiency metrics, and scheduling recommendations to hit your labor target.</div>
         <div class="report-meta">
           <span class="report-tag" style="background:var(--orange-dim);color:var(--orange);">Labor</span>
           <span class="report-arrow">→</span>
@@ -195,10 +195,10 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 
       <div class="report-card" onclick="generateSpecificReport('menu')">
         <div class="report-icon">◫</div>
-        <div class="report-title">Menu Profitability Report</div>
-        <div class="report-desc">Full margin analysis for every menu item, menu engineering matrix, top performers, and specific pricing recommendations to maximize profit.</div>
+        <div class="report-title">Product Profitability Report</div>
+        <div class="report-desc">Full margin analysis for every product, performance matrix, top performers, and specific pricing recommendations to maximize profit.</div>
         <div class="report-meta">
-          <span class="report-tag" style="background:var(--blue-dim);color:var(--blue);">Menu</span>
+          <span class="report-tag" style="background:var(--blue-dim);color:var(--blue);">Products</span>
           <span class="report-arrow">→</span>
         </div>
       </div>
@@ -216,7 +216,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="report-card" onclick="generateSpecificReport('custom')">
         <div class="report-icon">✏️</div>
         <div class="report-title">Custom AI Report</div>
-        <div class="report-desc">Tell HRZN exactly what you want analyzed and it generates a fully custom report. Ask about anything — a specific day, a menu item, a cost category.</div>
+        <div class="report-desc">Tell HRZN exactly what you want analyzed and it generates a fully custom report. Ask about anything — a specific day, a product, a cost category.</div>
         <div class="report-meta">
           <span class="report-tag" style="background:var(--green-dim);color:var(--green);">AI Powered</span>
           <span class="report-arrow">→</span>
@@ -365,12 +365,24 @@ async function generateSpecificReport(type) {
   const period = d.period || 'Jan–May 2026';
   const shortPeriod = period.replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   const settings2 = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const bizName = settings2.businessName || 'this restaurant';
+  const bizName = settings2.businessName || 'this business';
+  // Category context so reports adapt to the business type instead of assuming
+  // a restaurant (menu / avg check / tips / DoorDash / 28% labor / $15 ticket).
+  const rbm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
+  const rConcepts = rbm.concepts || { delivery:true, tips:true };
+  const rTargets = (HRZN.getTargets ? HRZN.getTargets() : {}) || {};
+  const ticketLabel = rbm.avgTicketLabel || 'Avg Transaction';
+  const itemLabel = (rbm._category === 'restaurant') ? 'menu item' : 'product';
+  const itemLabelPlural = (rbm._category === 'restaurant') ? 'menu items' : 'products';
+  const cogsLabel = rbm.cogsLabel || 'Cost of Goods';
+  const laborTargetPct = (rTargets.labor != null) ? rTargets.labor : (rbm.laborPct != null ? rbm.laborPct : 25);
+  // Avg-ticket target only applies where the category defines one (restaurants).
+  const ticketTarget = (rbm.avgTicket && rbm.avgTicket > 0) ? rbm.avgTicket : null;
   const titles = {
     weekly: 'Weekly Business Summary — ' + shortPeriod,
     monthly: 'Monthly P&L Summary — ' + shortPeriod,
     labor: 'Labor Efficiency Report — ' + shortPeriod,
-    menu: 'Menu Profitability Report — ' + shortPeriod,
+    menu: ((rbm._category === 'restaurant') ? 'Menu' : 'Product') + ' Profitability Report — ' + shortPeriod,
     executive: 'Executive Summary — ' + bizName
   };
   const card = document.getElementById('reportOutputCard');
@@ -393,7 +405,7 @@ async function generateSpecificReport(type) {
   const discPct = d.grossSales > 0 ? ((d.discounts||0)/d.grossSales*100).toFixed(2) : 0;
   const digitalTotal = (t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0);
   const digitalPct = d.amountCollected > 0 ? (digitalTotal/d.amountCollected*100).toFixed(1) : 0;
-  const priceGap = Math.round((15.00-(d.avgCheck||0))*(d.itemsSold||0));
+  const priceGap = ticketTarget ? Math.round((ticketTarget-(d.avgCheck||0))*(d.itemsSold||0)) : 0;
   const ddGapAnn = Math.round(((d.netSales||0)*0.10-(t.doorDash||0))/monthsReal*12);
 
   // Labor rate from the central labor-rate chain (Item 2.5), not a hardcoded 32%.
@@ -402,46 +414,46 @@ async function generateSpecificReport(type) {
   const laborRate = laborMeta && laborMeta.rate != null ? Number(laborMeta.rate) : null;
   const laborIsEstimate = !laborMeta || laborMeta.estimate !== false;
   const laborLine = laborRate != null
-    ? ('Labor: ' + laborRate.toFixed(1) + '% of revenue' + (laborIsEstimate ? ' (estimated — no live payroll connected)' : '') + ' vs 28% target')
+    ? ('Labor: ' + laborRate.toFixed(1) + '% of revenue' + (laborIsEstimate ? ' (estimated — no live payroll connected)' : '') + ' vs ' + laborTargetPct + '% target')
     : 'Labor: not enough data to state a labor percentage; do not invent one';
 
+  // Concept-gated, non-editorialized data fragments (no prejudging "excellent"/"strong" —
+  // let the AI assess against benchmarks; don't feed restaurant concepts to other categories).
+  const tipsLine = rConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)` : '';
+  const ddLineW = rConcepts.delivery ? `\n- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — gap to 10% target = $${ddGapAnn.toLocaleString()}/yr)` : '';
+  const ticketLineW = ticketTarget ? `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)} vs $${ticketTarget} target (gap = $${priceGap.toLocaleString()} this period)` : `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)}`;
+  const ddGrowthLine = rConcepts.delivery ? `\n- Growth opportunity: $${ddGapAnn.toLocaleString()}/yr from delivery expansion` : '';
+
   const reportPrompts = {
-    weekly: `Write a comprehensive weekly business summary report for ${bizName}. Use this EXACT real data:
+    weekly: `Write a comprehensive weekly business summary report for ${bizName}, a ${rbm.label || 'business'}. Use this EXACT real data and assess it against benchmarks yourself — do not assume any figure is good or bad without comparing it:
 - Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'} (${Math.round(weeksReal)} weeks)
 - Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Weekly avg: $${weeklyReal.toLocaleString()}
-- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% — excellent, below 3%)
-- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — strong)
-- Items Sold: ${(d.itemsSold||0).toLocaleString()} (${Math.round((d.itemsSold||0)/weeksReal)}/week)
-- Avg Item Price: $${(d.avgCheck||0).toFixed(2)} vs $15 target (gap = $${priceGap.toLocaleString()} this period)
-- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — gap to 10% target = $${ddGapAnn.toLocaleString()}/yr)
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}%)
+- Items Sold: ${(d.itemsSold||0).toLocaleString()} (${Math.round((d.itemsSold||0)/weeksReal)}/week)${ticketLineW}${tipsLine}${ddLineW}
 - Digital payments: ${digitalPct}% of collected | Cash: ${d.amountCollected>0?((t.cash||0)/d.amountCollected*100).toFixed(1):0}%
 Format as a professional report with sections: Revenue Overview, Key Wins, Areas to Watch, Top 3 Actions This Week.`,
-    monthly: `Write a comprehensive monthly P&L summary for ${bizName}. Use this EXACT real data:
+    monthly: `Write a comprehensive monthly P&L summary for ${bizName}, a ${rbm.label || 'business'}. Use this EXACT real data:
 - Period: ${monthsReal.toFixed(1)} months | Monthly avg revenue: $${monthlyReal.toLocaleString()}
 - Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Gross: $${Math.round(d.grossSales||0).toLocaleString()}
-- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}% — excellent)
-- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net)
-- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}
-- Avg Item Price: $${(d.avgCheck||0).toFixed(2)}
+- Discounts: $${Math.round(d.discounts||0).toLocaleString()} (${discPct}%)${tipsLine}
+- Total Collected: $${Math.round(d.amountCollected||0).toLocaleString()}${ticketLineW}
 Format as P&L report with Revenue, Cost Analysis, Profitability, and Recommendations sections.`,
-    labor: `Write a detailed labor efficiency report for ${bizName}. Use this EXACT real data:
+    labor: `Write a detailed labor efficiency report for ${bizName}, a ${rbm.label || 'business'}. Use this EXACT real data:
 - Revenue: $${Math.round(d.netSales||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
 - ${laborLine}
 - Weekly revenue: $${weeklyReal.toLocaleString()} | Items/week: ${Math.round((d.itemsSold||0)/weeksReal)}
 Do not fabricate day-by-day labor percentages or single out a specific weekday unless that data is provided above. If day-level data is not available, say so and give general staffing guidance instead.
 Format with: Labor Overview, Staffing Recommendations, Savings Opportunity.`,
-    menu: `Write a menu profitability report for ${bizName}. Use this EXACT real data:
-- Items sold: ${(d.itemsSold||0).toLocaleString()} over ${monthsReal.toFixed(1)} months
-- Avg item price: $${(d.avgCheck||0).toFixed(2)} vs $15 target
+    menu: `Write a ${itemLabel} profitability report for ${bizName}, a ${rbm.label || 'business'}. Use this EXACT real data:
+- Items sold: ${(d.itemsSold||0).toLocaleString()} over ${monthsReal.toFixed(1)} months${ticketLineW}
 - Revenue gap from pricing: $${priceGap.toLocaleString()} this period
 - Net sales: $${Math.round(d.netSales||0).toLocaleString()}
-Format with: Pricing Analysis, Menu Engineering Recommendations, Top Items to Promote, Price Increase Strategy.`,
-    executive: `Write an executive summary for ${bizName} suitable for investors or lenders. Use this EXACT real data:
+Format with: Pricing Analysis, ${itemLabelPlural.charAt(0).toUpperCase()+itemLabelPlural.slice(1)} to Promote, Top Performers, Price Strategy.`,
+    executive: `Write an executive summary for ${bizName}, a ${rbm.label || 'business'}, suitable for investors or lenders. Use this EXACT real data and assess it objectively:
 - Period: ${d.periodStart||'Jan 1'} – ${d.periodEnd||'May 28, 2026'}
 - Net Sales: $${Math.round(d.netSales||0).toLocaleString()} | Weekly avg: $${weeklyReal.toLocaleString()}
-- Digital payments: ${digitalPct}% | Tips: ${tipsPct}% of net (above industry avg)
-- Discounts: ${discPct}% (excellent pricing discipline)
-- Growth opportunity: $${ddGapAnn.toLocaleString()}/yr from DoorDash expansion
+- Digital payments: ${digitalPct}%${tipsLine}
+- Discounts: ${discPct}%${ddGrowthLine}
 Format as professional executive summary with: Business Overview, Financial Performance, Operational Strengths, Growth Strategy, Outlook.`
   };
   try {
