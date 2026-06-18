@@ -514,19 +514,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   const cfLines = CF_SETS[cfCat] || CF_SETS.restaurant;
   const has = (f) => cfLines.indexOf(f) !== -1;
   const mVal = (f, est) => has(f) ? (isReal(f) ? parseFloat(expenses[f]) : est) : 0;
-  const mCogs = mVal('cogs', Math.round(monthly*(cogsRatePct/100)));
-  const mLabor = mVal('labor', Math.round(monthly*(laborRatePct/100)));
-  const mRent = mVal('rent', 8500);
-  const mUtils = mVal('utilities', 1200);
-  const mInsurance = mVal('insurance', 800);
-  const mSupplies = mVal('supplies', 600);
-  const mMarketing = mVal('marketing', cfCat==='online' ? Math.round(monthly*((cfBm.cacPct||20)/100)) : 500);
-  const mFees = mVal('fees', Math.round(monthly*0.03));
-  const mShipping = mVal('shipping', Math.round(monthly*((cfBm.shippingPct||12)/100)));
-  const mReturns = mVal('returns', Math.round(monthly*((cfBm.returnsPct||8)/100)));
-  const mSoftware = mVal('software', 300);
-  const mOther = mVal('other', 800);
-  const mDebt = mVal('debt', 7000);
+  // In demo mode, use the demo dataset's own monthly expense profile so the sample
+  // cash flow is realistic for the category (matches the P&L demo numbers).
+  let demoExp = null;
+  try { if (HRZN.isDemoModeOn && HRZN.isDemoModeOn() && HRZN.getDemoData) demoExp = HRZN.getDemoData()._expenses || null; } catch(e) {}
+  const dEst = (f, fallback) => (demoExp && demoExp[f] != null) ? demoExp[f] : fallback;
+  const mCogs = mVal('cogs', dEst('cogs', Math.round(monthly*(cogsRatePct/100))));
+  const mLabor = mVal('labor', dEst('labor', Math.round(monthly*(laborRatePct/100))));
+  const mRent = mVal('rent', dEst('rent', 8500));
+  const mUtils = mVal('utilities', dEst('utilities', 1200));
+  const mInsurance = mVal('insurance', dEst('insurance', 800));
+  const mSupplies = mVal('supplies', dEst('supplies', 600));
+  const mMarketing = mVal('marketing', dEst('marketing', cfCat==='online' ? Math.round(monthly*((cfBm.cacPct||20)/100)) : 500));
+  const mFees = mVal('fees', dEst('fees', Math.round(monthly*0.03)));
+  const mShipping = mVal('shipping', dEst('shipping', Math.round(monthly*((cfBm.shippingPct||12)/100))));
+  const mReturns = mVal('returns', dEst('returns', Math.round(monthly*((cfBm.returnsPct||8)/100))));
+  const mSoftware = mVal('software', dEst('software', 300));
+  const mOther = mVal('other', dEst('other', 800));
+  const mDebt = mVal('debt', dEst('debt', 7000));
   const anyEstimated = cfLines.some(f => !isReal(f));
   const mAll = { cogs:mCogs, labor:mLabor, rent:mRent, utilities:mUtils, insurance:mInsurance, supplies:mSupplies,
                  marketing:mMarketing, fees:mFees, shipping:mShipping, returns:mReturns, software:mSoftware, other:mOther, debt:mDebt };

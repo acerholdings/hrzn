@@ -514,7 +514,7 @@ const months = HRZN.getMonths(d);
   const lastWeekly = hasPriorPeriod ? Math.round(weekly * 0.95) : null;
   const lastItems = hasPriorPeriod ? Math.round(weeklyItems * 0.95) : null;
   const perfSettings = JSON.parse(localStorage.getItem('hrzn-settings')||'{}')
-  const laborTarget = +(perfSettings.targets?.labor || 28);
+  const laborTarget = +((HRZN.getTargets ? HRZN.getTargets().labor : null) || (HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : 25) || 25);
   // Labor rate from the central chain (API → manual → fallback). See getLaborRateMeta in hrzn-data.js.
   let laborMeta = { value: (HRZN.getBenchmarks && HRZN.getBenchmarks().laborPct != null ? HRZN.getBenchmarks().laborPct : 28), source: 'fallback', isEstimate: true };
   try { if (HRZN.getLaborRateMeta) laborMeta = HRZN.getLaborRateMeta(); } catch(e) {}

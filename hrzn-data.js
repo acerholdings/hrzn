@@ -361,7 +361,9 @@ const HRZN = {
     // Built-in targets so the demo always analyzes against real benchmarks
     // (a logged-out visitor has no saved Settings). $9,500/wk sits just above the
     // $9,115 actual, so the AI leads with an on-target read, not "set a target".
-    _targets: { revenue: 9500, monthly: 41000, check: 15, labor: 28, food: 30, margin: 15, doordash: 10, discount: 5 }
+    _targets: { revenue: 9500, monthly: 41000, check: 15, labor: 28, food: 30, margin: 15, doordash: 10, discount: 5 },
+    // Monthly $ — profitable (~9%); labor slightly above the 28% target (an AI talking point).
+    _expenses: { cogs: 11883, labor: 11700, rent: 2970, utilities: 990, insurance: 660, supplies: 790, marketing: 660, fees: 1188, other: 660, debt: 2310 }
   },
 
   // Category-specific demo datasets so a non-restaurant visitor sees representative
@@ -373,7 +375,9 @@ const HRZN = {
       grossSales:642000, discounts:32100, discountPct:5.0, netSales:610000, taxes:54900,
       tips:0, amountCollected:664900, itemsSold:18500, avgCheck:32.97,
       tenders:{ creditCard:470000, debitCard:150000, doorDash:0, cash:44900, doorDashPct:0, giftCard:0 },
-      _targets:{ revenue:11700, monthly:50800, check:33, labor:18, food:60, margin:5, doordash:0, discount:10 }
+      _targets:{ revenue:11700, monthly:50800, check:33, labor:18, food:60, margin:5, doordash:0, discount:10 },
+      // Monthly $ — profitable (~7% net) with marketing slightly light (an AI talking point).
+      _expenses:{ cogs:29500, labor:8600, rent:3050, utilities:760, insurance:510, supplies:510, marketing:760, fees:1270, other:510, debt:1525 }
     },
     online: {
       _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
@@ -381,7 +385,9 @@ const HRZN = {
       grossSales:920000, discounts:46000, discountPct:5.0, netSales:874000, taxes:0,
       tips:0, amountCollected:874000, itemsSold:11200, avgCheck:78.04,
       tenders:{ creditCard:700000, debitCard:174000, doorDash:0, cash:0, doorDashPct:0, giftCard:0 },
-      _targets:{ revenue:16800, monthly:72800, check:78, labor:0, food:55, margin:10, doordash:0, discount:10 }
+      _targets:{ revenue:16800, monthly:72800, check:78, labor:0, food:55, margin:10, doordash:0, discount:10 },
+      // Monthly $ — profitable (~12%); shipping + returns are the watch areas for e-commerce.
+      _expenses:{ cogs:38600, labor:0, shipping:7280, fees:1820, returns:3640, marketing:14560, software:1090, other:730, debt:2180 }
     },
     service: {
       _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
@@ -389,7 +395,9 @@ const HRZN = {
       grossSales:430000, discounts:8600, discountPct:2.0, netSales:421400, taxes:0,
       tips:0, amountCollected:421400, itemsSold:3100, avgCheck:135.94,
       tenders:{ creditCard:320000, debitCard:80000, doorDash:0, cash:21400, doorDashPct:0, giftCard:0 },
-      _targets:{ revenue:8100, monthly:35100, check:136, labor:30, food:20, margin:15, doordash:0, discount:10 }
+      _targets:{ revenue:8100, monthly:35100, check:136, labor:30, food:20, margin:15, doordash:0, discount:10 },
+      // Monthly $ — high-margin (~30%); labor is the dominant lever for a service business.
+      _expenses:{ cogs:6320, labor:10535, rent:2110, utilities:530, insurance:700, supplies:530, marketing:700, fees:880, other:350, debt:1050 }
     },
     other: {
       _source:'demo', _filename:'Demo Data', period:'Jan 1, 2025 12:00 AM - Dec 31, 2025 11:59 PM',
@@ -397,7 +405,9 @@ const HRZN = {
       grossSales:520000, discounts:15600, discountPct:3.0, netSales:504400, taxes:0,
       tips:0, amountCollected:504400, itemsSold:9000, avgCheck:56.04,
       tenders:{ creditCard:390000, debitCard:95000, doorDash:0, cash:19400, doorDashPct:0, giftCard:0 },
-      _targets:{ revenue:9700, monthly:42000, check:56, labor:25, food:35, margin:10, doordash:0, discount:10 }
+      _targets:{ revenue:9700, monthly:42000, check:56, labor:25, food:35, margin:10, doordash:0, discount:10 },
+      // Monthly $ — healthy (~22%); balanced cost structure.
+      _expenses:{ cogs:14300, labor:10090, rent:2520, utilities:630, insurance:420, supplies:420, marketing:840, fees:1050, other:420, debt:1260 }
     }
   },
 
@@ -509,18 +519,27 @@ const HRZN = {
       // Cross-industry generic baseline for the rare case a benchmark key is
       // missing — uses the 'other' profile, never restaurant-flavored constants.
       const g = (this.BENCHMARKS && this.BENCHMARKS.other) || {};
-      // Demo dataset carries its own targets so the logged-out preview analyzes honestly.
-      const dt = (this.isDemoModeOn && this.isDemoModeOn()) ? (this.getDemoData()._targets || {}) : {};
+      // Demo dataset carries its own targets so the logged-out/demo preview analyzes
+      // the SAMPLE numbers honestly. In demo mode the demo's own targets take
+      // precedence — a stale saved Settings target (e.g. an old onboarding value)
+      // must not override the self-contained demo dataset and invent a false gap.
+      const demoOn = !!(this.isDemoModeOn && this.isDemoModeOn());
+      const dt = demoOn ? (this.getDemoData()._targets || {}) : {};
       const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
+      // In demo mode, prefer the demo target; otherwise the user's saved target wins.
+      const pick = (savedKey, demoVal, fb) => {
+        if (demoOn && demoVal != null) return num(demoVal, fb);
+        return num(tg[savedKey], (demoVal != null ? demoVal : fb));
+      };
       return {
-        labor: num(tg.labor, b.laborPct != null ? b.laborPct : (g.laborPct != null ? g.laborPct : 25)),
-        food: num(tg.food, b.cogsPct != null ? b.cogsPct : (g.cogsPct != null ? g.cogsPct : 35)),
-        margin: num(tg.margin, b.netMarginTarget != null ? b.netMarginTarget : (g.netMarginTarget != null ? g.netMarginTarget : 10)),
-        weeklyRevenue: num(tg.revenue, dt.revenue || 12000),   // demo target, else generic
-        monthlyRevenue: num(tg.monthly, dt.monthly || 50000),  // demo target, else generic
-        avgCheck: num(tg.check, b.avgTicket ? b.avgTicket : 0),
-        doordash: num(tg.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
-        discount: num(tg.discount, b.discountMaxPct != null ? b.discountMaxPct : (g.discountMaxPct != null ? g.discountMaxPct : 10)),
+        labor: pick('labor', dt.labor, b.laborPct != null ? b.laborPct : (g.laborPct != null ? g.laborPct : 25)),
+        food: pick('food', dt.food, b.cogsPct != null ? b.cogsPct : (g.cogsPct != null ? g.cogsPct : 35)),
+        margin: pick('margin', dt.margin, b.netMarginTarget != null ? b.netMarginTarget : (g.netMarginTarget != null ? g.netMarginTarget : 10)),
+        weeklyRevenue: pick('revenue', dt.revenue, 12000),
+        monthlyRevenue: pick('monthly', dt.monthly, 50000),
+        avgCheck: pick('check', dt.check, b.avgTicket ? b.avgTicket : 0),
+        doordash: pick('doordash', dt.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+        discount: pick('discount', dt.discount, b.discountMaxPct != null ? b.discountMaxPct : (g.discountMaxPct != null ? g.discountMaxPct : 10)),
       };
     } catch (e) {
       return { labor:28, food:30, margin:15, weeklyRevenue:12000, monthlyRevenue:50000, avgCheck:15, doordash:10, discount:5 };

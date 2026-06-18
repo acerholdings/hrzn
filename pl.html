@@ -196,6 +196,11 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div onclick="suggestLaborFromCSV()" style="font-size:10px;color:var(--gold);cursor:pointer;padding:4px 10px;border:1px solid var(--border-gold);border-radius:4px;" id="labor-suggest">⚡ Estimate labor from revenue</div></div>
           <div class="card-body">
             <div style="font-size:10px;color:var(--text-dim);margin-bottom:12px;">Enter <strong style="color:var(--text);">monthly</strong> amounts. HRZN scales to your CSV period (<span id="period-months">1.0</span> months).</div>
+            <div style="font-size:10px;line-height:1.5;color:var(--text-dim);background:rgba(201,168,76,0.06);border:1px solid var(--border-gold);border-radius:6px;padding:10px 12px;margin-bottom:14px;">
+              <strong style="color:var(--text);">What HRZN fills automatically vs. what only you know:</strong><br>
+              <span style="color:var(--green);">Auto-filled from your connected accounts</span> — sales &amp; revenue, cost of goods, and labor (from your POS and payroll integrations).<br>
+              <span style="color:var(--gold);">You enter these</span> — rent, debt, insurance, utilities, supplies, marketing, fees and other overhead. No integration can see these, so any field left blank uses an industry-typical estimate (marked <em>est.</em>) until you enter your real number.
+            </div>
             <div class="input-row" id="inrow-cogs"><div class="input-label" id="input-cogs-label">Cost of Goods (COGS)</div><input class="input-field" id="input-cogs" type="number" placeholder="e.g. 8,000 / mo" oninput="calcAndRender()"/></div>
             <div class="input-row" id="inrow-labor"><div class="input-label">Labor</div><input class="input-field" id="input-labor" type="number" placeholder="e.g. 10,000 / mo" oninput="calcAndRender()"/></div>
             <div class="input-row" id="inrow-rent"><div class="input-label">Rent</div><input class="input-field" id="input-rent" type="number" placeholder="e.g. 8,500 / mo" oninput="calcAndRender()"/></div>
@@ -336,6 +341,18 @@ function plCategoryLines(bm){
 }
 function plEstimates(bm, monthlyRev, laborRate){
   const cat = bm._category || 'restaurant';
+  // In demo mode, use the demo dataset's own monthly expense profile so the
+  // sample P&L is realistic (and profitable) for the category — not generic
+  // flat fallbacks that distort a non-restaurant demo.
+  try {
+    if (HRZN.isDemoModeOn && HRZN.isDemoModeOn() && HRZN.getDemoData) {
+      const dx = HRZN.getDemoData()._expenses;
+      if (dx) return Object.assign({
+        cogs:0, labor:0, rent:0, utilities:0, insurance:0, supplies:0,
+        marketing:0, fees:0, shipping:0, returns:0, software:0, other:0, debt:0
+      }, dx);
+    }
+  } catch(e) {}
   return {
     cogs: Math.round(monthlyRev*((bm.cogsPct||32)/100)),
     labor: Math.round(monthlyRev*((laborRate||0)/100)),
