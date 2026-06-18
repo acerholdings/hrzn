@@ -281,6 +281,9 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
               <div class="target-row" id="row-target-monthly"><div class="target-label">Monthly Revenue Target</div><input class="target-input" id="target-monthly" type="number" oninput="markDirty()"/><div class="target-unit">$</div></div>
               <div class="target-row" id="row-target-check"><div class="target-label" id="lbl-target-check">Avg Item Price Target</div><input class="target-input" id="target-check" type="number" oninput="markDirty()"/><div class="target-unit">$</div></div>
               <div class="target-row" id="row-target-doordash"><div class="target-label">DoorDash Revenue Target</div><input class="target-input" id="target-doordash" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-shipping" style="display:none;"><div class="target-label">Shipping Cost Target</div><input class="target-input" id="target-shipping" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-returns" style="display:none;"><div class="target-label">Returns Rate Target</div><input class="target-input" id="target-returns" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
+              <div class="target-row" id="row-target-cac" style="display:none;"><div class="target-label">Customer Acquisition Cost Target</div><input class="target-input" id="target-cac" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
               <div class="target-row" id="row-target-discount"><div class="target-label">Max Discount Rate</div><input class="target-input" id="target-discount" type="number" oninput="markDirty()"/><div class="target-unit">%</div></div>
             </div>
           </div>
@@ -491,7 +494,7 @@ function saveAll(){
     // the engine falls back to category benchmarks (prevents laundering display defaults).
     targets: (function(){
       const out = {};
-      ['labor','food','margin','revenue','monthly','check','doordash','discount'].forEach(k=>{
+      ['labor','food','margin','revenue','monthly','check','doordash','shipping','returns','cac','discount'].forEach(k=>{
         const el = document.getElementById('target-'+k);
         if(el && el.value !== '' && !isNaN(parseFloat(el.value))) out[k] = el.value;
       });
@@ -558,7 +561,7 @@ function handleCategoryChange(){
     const oldCat = String(s.businessType || s.bizType || '').toLowerCase();
     if (newCat && oldCat && newCat !== oldCat) {
       // Clear category-specific target fields (keep revenue + monthly goals).
-      ['labor','food','margin','check','doordash','discount'].forEach(k=>{
+      ['labor','food','margin','check','doordash','shipping','returns','cac','discount'].forEach(k=>{
         const el = document.getElementById('target-'+k);
         if (el) el.value = '';
       });
@@ -606,6 +609,14 @@ function applyCategoryFieldVisibility(){
     show('row-target-check', ticketApplies);
     // Labor target: hide for categories where labor isn't a primary lever (e.g. online).
     show('row-target-labor', (b.laborPct == null) ? true : b.laborPct > 0);
+    // Online/e-commerce-specific fields: shown only for categories whose profile
+    // lists them in settingsFields (currently 'online' → shipping/returns/cac).
+    // The cashflow/P&L engine reads these (e.g. cacPct for online marketing), so
+    // the user must have inputs to override the benchmark defaults.
+    const fields = Array.isArray(b.settingsFields) ? b.settingsFields : [];
+    show('row-target-shipping', fields.includes('shippingPct'));
+    show('row-target-returns', fields.includes('returnsPct'));
+    show('row-target-cac', fields.includes('cacPct'));
   }catch(e){}
 }
 
@@ -632,9 +643,10 @@ function loadSettings(){
         labor: tBm.laborPct, food: tBm.cogsPct, margin: tBm.netMarginTarget,
         doordash: tBm.deliveryTargetPct, discount: tBm.discountMaxPct,
         check: (tBm.avgTicket && tBm.avgTicket > 0) ? tBm.avgTicket : null,
+        shipping: tBm.shippingPct, returns: tBm.returnsPct, cac: tBm.cacPct,
         revenue: '12k', monthly: '50k'
       };
-      ['labor','food','margin','revenue','monthly','check','doordash','discount'].forEach(k=>{
+      ['labor','food','margin','revenue','monthly','check','doordash','shipping','returns','cac','discount'].forEach(k=>{
         const el = document.getElementById('target-'+k);
         if(!el) return;
         const saved = s.targets ? s.targets[k] : undefined;
