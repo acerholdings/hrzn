@@ -551,13 +551,17 @@ const months = HRZN.getMonths(d);
     }
   }
   // Demo mode: derive gross margin from the sample COGS profile so the trial
-  // experience is complete (matches the P&L page's demo margin).
+  // experience is complete (matches the P&L page's demo margin). A COGS value the
+  // user ENTERED in the P&L panel (hrzn-pl-data) overrides the demo default, so the
+  // margin here stays consistent with the P&L page even when demo expenses are edited.
   if (!itemsLoaded && HRZN.isDemoModeOn && HRZN.isDemoModeOn() && HRZN.getDemoData) {
     try {
-      const dx = HRZN.getDemoData()._expenses;
+      const dx = HRZN.getDemoData()._expenses || {};
+      let cogsMo = dx.cogs;
+      try { const pe = JSON.parse(localStorage.getItem('hrzn-pl-data') || '{}'); if (pe.cogs != null) cogsMo = pe.cogs; } catch(e) {}
       const moRev = (d.netSales || 0) / (((d.periodDays || 365) / 30.44) || 1);
-      if (dx && dx.cogs != null && moRev > 0) {
-        grossMargin = ((1 - dx.cogs / moRev) * 100).toFixed(1) + '%';
+      if (cogsMo != null && moRev > 0) {
+        grossMargin = ((1 - cogsMo / moRev) * 100).toFixed(1) + '%';
         itemsLoaded = true;
       }
     } catch(e) {}

@@ -581,7 +581,15 @@ const HRZN = {
       // In DEMO mode we have a full sample expense profile (_expenses), so populate
       // ALL pillars to give trial users the complete experience. Outside demo we keep
       // strict honesty: only score pillars backed by real uploaded data.
-      const _demoExp = _demoScore && this.getDemoData ? (this.getDemoData()._expenses || null) : null;
+      // Precedence (matches the P&L page): a value the user ENTERED in the P&L panel
+      // (hrzn-pl-data) wins over the demo default — so editing a demo expense updates
+      // the score consistently across pages, not just on the P&L page.
+      let _plEntered = {};
+      try { if (typeof localStorage !== 'undefined') _plEntered = JSON.parse(localStorage.getItem('hrzn-pl-data') || '{}'); } catch (e) {}
+      const _demoDefaults = _demoScore && this.getDemoData ? (this.getDemoData()._expenses || null) : null;
+      // Merge: entered values override demo defaults, field by field.
+      const _demoExp = (_demoDefaults || Object.keys(_plEntered).length)
+        ? Object.assign({}, _demoDefaults || {}, _plEntered) : null;
       const _demoMonthlyRev = m.monthly || 0;
 
       // 2) PROFITABILITY (gross margin)
