@@ -524,7 +524,7 @@ function generateAlerts(){
     warning.push({
       type:'warning', category:'Labor',
       title:`Labor at ${laborPct}% — approaching target threshold`,
-      desc:`Labor is ${(laborPct-t.labor).toFixed(1)} points above your ${t.labor}% target. Tuesday scheduling is the most likely culprit — review shift allocations for slow days.`,
+      desc:`Labor is ${(laborPct-t.labor).toFixed(1)} points above your ${t.labor}% target. Review shift allocations and scheduling on slower days to bring it back in line. Connect payroll for per-shift detail.`,
       value:`${laborPct}% actual`,
       action:"navigate('labor.html')", actionLabel:'View Labor →'
     });
