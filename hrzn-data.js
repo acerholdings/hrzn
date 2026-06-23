@@ -985,9 +985,13 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const t = d.tenders || {};
 
     // Performance signals
-    const discLabel = parseFloat(discPct) < 2 ? '✅ EXCELLENT pricing discipline'
-      : parseFloat(discPct) < 4 ? '✅ HEALTHY discount rate'
-      : parseFloat(discPct) < 6 ? '⚠️ monitor — approaching warning threshold'
+    // Discount thresholds scale to the CATEGORY's max (restaurant 5%, retail/others 10%) —
+    // a flat restaurant scale would wrongly flag a healthy retail 5% discount as a warning.
+    const _discMax = (this.getBenchmarks && this.getBenchmarks().discountMaxPct != null) ? this.getBenchmarks().discountMaxPct : 5;
+    const _dp = parseFloat(discPct);
+    const discLabel = _dp < _discMax * 0.4 ? '✅ EXCELLENT pricing discipline'
+      : _dp < _discMax * 0.8 ? '✅ HEALTHY discount rate'
+      : _dp < _discMax ? '⚠️ monitor — approaching the limit for this business type'
       : '🚨 HIGH — undermining margins';
 
     const tipsLabel = parseFloat(tipsPct) > 18 ? '✅ EXCEPTIONAL — luxury service level'
@@ -1044,7 +1048,7 @@ REVENUE:
 
 VOLUME & PRICING:
 - Items Sold: ${(d.itemsSold||0).toLocaleString()} (${Math.round(d.itemsSold/weeks)} items/week avg)
-- Avg Item Price: $${(d.avgCheck||0).toFixed ? parseFloat(d.avgCheck||0).toFixed(2) : d.avgCheck|0}${checkTarget > 0 ? ' (target: $' + checkTarget + ')' : ''}
+- ${ticketLbl}: $${(d.avgCheck||0).toFixed ? parseFloat(d.avgCheck||0).toFixed(2) : d.avgCheck|0}${checkTarget > 0 ? ' (target: $' + checkTarget + ')' : ''}
 
 PERIOD & VELOCITY:
 - Period: ${months.toFixed(1)} months (${Math.round(weeks)} weeks, ${periodDays} days)
