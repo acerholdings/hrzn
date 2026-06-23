@@ -76,7 +76,7 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
       </div>
       <div class="field">
         <label>Email</label>
-        <input id="email" type="email" placeholder="you@restaurant.com" autocomplete="email"/>
+        <input id="email" type="email" placeholder="you@business.com" autocomplete="email"/>
       </div>
       <div class="field">
         <label>Password</label>
@@ -93,11 +93,11 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
 
     <!-- STEP 2: Business Info -->
     <div class="step" id="step-2">
-      <div class="card-title">Your restaurant</div>
+      <div class="card-title">Your business</div>
       <div class="card-sub">Tell us about your business</div>
 
       <div class="field">
-        <label>Restaurant Name</label>
+        <label>Business Name</label>
         <input id="biz-name" type="text" placeholder="e.g. Sama Handroll LA"/>
       </div>
       <div class="field">
@@ -105,7 +105,7 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
         <input id="biz-location" type="text" placeholder="e.g. Los Angeles, CA"/>
       </div>
       <div class="field">
-        <label>Your POS System</label>
+        <label>Your POS / Sales System <span style="opacity:0.6;">(optional)</span></label>
         <div class="pos-grid">
           <div class="pos-option" onclick="selectPOS('clover', this)">
             <div class="pos-icon">🍀</div>
@@ -115,13 +115,9 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
             <div class="pos-icon">◼</div>
             <div class="pos-name">Square</div>
           </div>
-          <div class="pos-option" onclick="selectPOS('toast', this)">
-            <div class="pos-icon">🍞</div>
-            <div class="pos-name">Toast</div>
-          </div>
           <div class="pos-option" onclick="selectPOS('other', this)">
             <div class="pos-icon">⊡</div>
-            <div class="pos-name">Other</div>
+            <div class="pos-name">Other / None yet</div>
           </div>
         </div>
       </div>
@@ -144,6 +140,7 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
         <div class="pos-option" onclick="selectCategory('other', this)"><div class="pos-icon">⊡</div><div class="pos-name">Other</div></div>
       </div>
 
+      <div id="targets-wrap" style="display:none;">
       <div class="card-sub" style="margin-bottom:4px;">Targets are optional — leave blank to use smart defaults for your business type. You can change everything later in Settings.</div>
 
       <div class="target-row" id="row-t-labor">
@@ -165,6 +162,7 @@ body.light .divider-line{background:rgba(0,0,0,0.08);}
       <div class="target-row" id="row-t-delivery" style="border-bottom:none;">
         <div class="target-label">Delivery % Target</div>
         <div class="target-ctrl"><span class="target-unit"></span><input class="target-input" id="t-delivery" type="number" placeholder="e.g. 10" min="0" max="100"/><span class="target-unit">%</span></div>
+      </div>
       </div>
 
       <button class="btn-primary" style="margin-top:16px;" id="finish-btn" onclick="finish()">Launch My Dashboard →</button>
@@ -198,6 +196,7 @@ function selectCategory(key, el){
   document.querySelectorAll('#cat-grid .pos-option').forEach(o => o.classList.remove('selected'));
   if (el) el.classList.add('selected');
   const p = CATEGORY_PROFILES[key] || CATEGORY_PROFILES.other;
+  const tw = document.getElementById('targets-wrap'); if (tw) tw.style.display = '';
   const show = (id, on) => { const r = document.getElementById(id); if (r) r.style.display = on ? '' : 'none'; };
   const setLbl = (id, txt) => { const l = document.getElementById(id); if (l) l.textContent = txt; };
   const setHint = (id, v) => { const i = document.getElementById(id); if (i && v != null) i.placeholder = 'e.g. ' + v; };
@@ -286,7 +285,7 @@ async function goStep2() {
 function goStep3() {
   const bizName = document.getElementById('biz-name').value.trim();
   const err = document.getElementById('err-2');
-  if (!bizName) { err.textContent = 'Please enter your restaurant name.'; return; }
+  if (!bizName) { err.textContent = 'Please enter your business name.'; return; }
   storedBizName = bizName;
   storedBizLocation = document.getElementById('biz-location').value.trim();
   goToStep(3);
