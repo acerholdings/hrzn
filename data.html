@@ -167,7 +167,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <!-- CSV UPLOADS -->
     <div class="fade-2" style="margin-bottom:28px;">
       <div class="section-title">CSV Uploads — Clover Exports</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Export these reports from <strong style="color:var(--text);">Clover → Reports</strong> and upload them here. Each one powers specific pages in HRZN.</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Export these reports from your <strong style="color:var(--text);">POS or sales platform</strong> and upload them here. Each one powers specific pages in HRZN.</div>
       <div class="csv-grid" id="csv-grid">
         <!-- Rendered by JS -->
       </div>
@@ -182,7 +182,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
           <div class="int-logo">🟢</div>
           <div class="int-info">
             <div class="int-name">Clover POS</div>
-            <div class="int-desc">Sales, orders, menu items, inventory, employees</div>
+            <div class="int-desc">Sales, orders, items, inventory, employees</div>
             <div class="int-replaces">Replaces: <span>All CSV uploads above</span></div>
           </div>
           <span class="int-status" id="clover-status" style="background:var(--orange-dim);color:var(--orange);">CSV Mode</span>
@@ -253,7 +253,7 @@ function applyTheme(theme){const body=document.body,track=document.getElementByI
 function toggleTheme(){const n=getTheme()==='dark'?'light':'dark';localStorage.setItem(THEME_KEY,n);applyTheme(n);}
 function navigate(p){ hrznNavigate(p); }
 
-const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, tips, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Clover → Reports → Sales Overview → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '◫', 'desc': 'Per-item revenue, quantity sold, category breakdown', 'powers': 'Products page, AI product insights', 'path': 'Clover → Reports → Item Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Guest Count', 'icon': '👥', 'desc': 'Covers per day, table turns, party sizes', 'powers': 'Dashboard covers, Performance health score', 'path': 'Clover → Reports → Guest Count → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee, tips per employee, performance', 'powers': 'Labor page, team performance', 'path': 'Clover → Reports → Employee Sales → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order Types', 'icon': '🧾', 'desc': 'Dine-in vs takeout vs delivery split', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Clover → Reports → Order Types → Export CSV', 'parser': '/api/parse'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Clover → Reports → Discounts → Export CSV', 'parser': '/api/parse'}];
+const CSV_TYPES = [{'key': 'hrzn-data-csv', 'old_key': 'hrzn-sales-data', 'label': 'Sales Overview', 'icon': '📊', 'desc': 'Total revenue, payment methods, discounts', 'powers': 'Sales Report, P&L, Dashboard, AI Operator, Reports', 'path': 'Export from your POS / sales platform → Sales Overview', 'parser': '/api/parse'}, {'key': 'hrzn-data-items', 'old_key': '', 'label': 'Item Sales', 'icon': '◫', 'desc': 'Per-item / per-product revenue, quantity sold, category breakdown', 'powers': 'Products page, AI product insights', 'path': 'Export from your POS / sales platform → Item Sales', 'parser': '/api/parse'}, {'key': 'hrzn-data-guests', 'old_key': '', 'label': 'Customer Count', 'icon': '👥', 'desc': 'Customers / visits per day and average party or basket size', 'powers': 'Dashboard customer metrics, Performance health score', 'path': 'Export from your POS / sales platform → Customer / Guest Count', 'parser': '/api/parse'}, {'key': 'hrzn-data-employees', 'old_key': '', 'label': 'Employee Sales', 'icon': '👤', 'desc': 'Sales per employee and per-staff performance', 'powers': 'Labor page, team performance', 'path': 'Export from your POS / sales platform → Employee Sales', 'parser': '/api/parse'}, {'key': 'hrzn-data-orders', 'old_key': '', 'label': 'Order / Channel Types', 'icon': '🧾', 'desc': 'Sales split by channel (e.g. in-store, online, pickup, delivery)', 'powers': 'Revenue breakdown, Sales Report', 'path': 'Export from your POS / sales platform → Order Types', 'parser': '/api/parse'}, {'key': 'hrzn-data-discounts', 'old_key': '', 'label': 'Discounts', 'icon': '🏷️', 'desc': 'Discount types, amounts, frequency', 'powers': 'Alerts, Sales Report discount analysis', 'path': 'Export from your POS / sales platform → Discounts', 'parser': '/api/parse'}];
 
 let currentUploadKey = null;
 
