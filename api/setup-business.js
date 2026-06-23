@@ -19,6 +19,23 @@ export default async function handler(req, res) {
     const user = await userRes.json();
     if (!user.id) return res.status(401).json({ error: 'Invalid token' });
 
+    // Idempotency guard: signup should only ever create the owner's FIRST business.
+    // If they already have one (double-click, refresh, back-button, re-run), return it
+    // instead of creating a duplicate. Deliberately adding more businesses later (Pro
+    // multi-business) happens through a separate "add business" flow, not signup.
+    // NOTE: keyed on owner_id, NOT name — different owners can share a business name
+    // (e.g. same brand in different states), so name is not a safe uniqueness key.
+    try {
+      const existingRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/businesses?owner_id=eq.${user.id}&select=id&limit=1`,
+        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+      );
+      const existing = await existingRes.json();
+      if (Array.isArray(existing) && existing[0]?.id) {
+        return res.status(200).json({ ok: true, business_id: existing[0].id, existing: true });
+      }
+    } catch (e) { /* if the lookup fails, fall through and attempt creation */ }
+
     // Create business. business_type is the OWNER'S authoritative category pick —
     // persist it so the app's benchmarks/alerts/AI match the right category.
     // Defensive: if the businesses table doesn't have a business_type column yet,
