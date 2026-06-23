@@ -594,7 +594,8 @@ async function generateRevenueInsights() {
   const refreshBtn = document.getElementById('revRefreshBtn');
   const moreBtn = document.getElementById('revMoreBtn');
   if (!container) return;
-  if (typeof hrznHasData === 'function' && !hrznHasData()) {
+  const _revD = (typeof HRZN !== 'undefined' && HRZN.getData) ? HRZN.getData() : {};
+  if (_revD._source === 'empty') {
     container.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--text-dim);">Upload your data to get AI revenue insights.</div>';
     if (refreshBtn) refreshBtn.disabled = true;
     if (moreBtn) moreBtn.disabled = true;
