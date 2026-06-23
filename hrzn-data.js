@@ -425,6 +425,75 @@ const HRZN = {
     return { ...base, _source: 'demo' };
   },
 
+  // Category-appropriate sample item lists for the Products page in demo mode.
+  // Totals (sold / netSales) match each category's demo dataset so the Products
+  // page reconciles with Dashboard/Sales. Shape matches CSV/live: {name,category,sold,netSales}.
+  DEMO_ITEMS_BY_CATEGORY: {
+    restaurant: [
+      { name:'Spicy Tuna Roll', category:'Rolls', sold:5200, netSales:83200 },
+      { name:'California Roll', category:'Rolls', sold:4800, netSales:62400 },
+      { name:'Salmon Nigiri', category:'Nigiri', sold:4200, netSales:58800 },
+      { name:'Dragon Roll', category:'Specialty Rolls', sold:2900, netSales:75400 },
+      { name:'Chicken Teriyaki', category:'Entrees', sold:2600, netSales:54600 },
+      { name:'Edamame', category:'Appetizers', sold:3600, netSales:21600 },
+      { name:'Miso Soup', category:'Appetizers', sold:3400, netSales:17000 },
+      { name:'Gyoza', category:'Appetizers', sold:2400, netSales:21600 },
+      { name:'Sake (bottle)', category:'Beverages', sold:1500, netSales:52500 },
+      { name:'Green Tea', category:'Beverages', sold:1400, netSales:28200 },
+    ],
+    retail: [
+      { name:'Graphic Tee', category:'Apparel', sold:3800, netSales:76000 },
+      { name:'Socks 3-Pack', category:'Accessories', sold:3100, netSales:40300 },
+      { name:'Cap / Hat', category:'Accessories', sold:2600, netSales:52000 },
+      { name:'Premium Hoodie', category:'Apparel', sold:2400, netSales:108000 },
+      { name:'Denim Jeans', category:'Apparel', sold:1900, netSales:104500 },
+      { name:'Tote Bag', category:'Accessories', sold:1800, netSales:36000 },
+      { name:'Sneakers', category:'Footwear', sold:1500, netSales:127500 },
+      { name:'Denim Jacket', category:'Apparel', sold:1400, netSales:65700 },
+    ],
+    online: [
+      { name:'Skincare Serum', category:'Beauty', sold:1800, netSales:144000 },
+      { name:'Vitamin Bundle', category:'Wellness', sold:1400, netSales:126000 },
+      { name:'Gift Card', category:'Other', sold:1400, netSales:169000 },
+      { name:'Resistance Bands', category:'Fitness', sold:1300, netSales:52000 },
+      { name:'Coffee Subscription', category:'Food & Bev', sold:1200, netSales:108000 },
+      { name:'Yoga Mat', category:'Fitness', sold:1100, netSales:77000 },
+      { name:'Wireless Earbuds', category:'Electronics', sold:900, netSales:135000 },
+      { name:'Phone Case', category:'Accessories', sold:2100, netSales:63000 },
+    ],
+    service: [
+      { name:'Express Wash', category:'Service', sold:900, netSales:45000 },
+      { name:'Full Detail Package', category:'Service', sold:620, netSales:124000 },
+      { name:'Interior Clean', category:'Service', sold:480, netSales:72000 },
+      { name:'Wax & Polish', category:'Add-on', sold:410, netSales:41000 },
+      { name:'Headlight Restore', category:'Add-on', sold:340, netSales:17000 },
+      { name:'Ceramic Coating', category:'Service', sold:180, netSales:90000 },
+      { name:'Membership Plan', category:'Recurring', sold:170, netSales:32400 },
+    ],
+    other: [
+      { name:'Standard Package', category:'Core', sold:2400, netSales:144000 },
+      { name:'Add-on Service', category:'Add-on', sold:1800, netSales:54000 },
+      { name:'Premium Package', category:'Core', sold:1500, netSales:150000 },
+      { name:'Materials Fee', category:'Other', sold:1100, netSales:44000 },
+      { name:'Consultation', category:'Service', sold:900, netSales:72000 },
+      { name:'Rush Delivery', category:'Add-on', sold:700, netSales:21000 },
+      { name:'Extended Warranty', category:'Other', sold:600, netSales:19400 },
+    ],
+  },
+
+  // Returns the demo item list for the account's current category.
+  getDemoItems() {
+    let cat = 'restaurant';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        const bt = String(s.businessType || s.bizType || 'restaurant').toLowerCase();
+        if (this.DEMO_ITEMS_BY_CATEGORY[bt]) cat = bt;
+      }
+    } catch (e) {}
+    return (this.DEMO_ITEMS_BY_CATEGORY[cat] || []).map(i => ({ ...i }));
+  },
+
   // ── EMPTY DATASET (logged-in, no upload, demo NOT opted in) ──
   // Same shape as DEMO_DATA so every page renders safely — all zeros, honest source tag.
   EMPTY_DATA: {
@@ -1381,6 +1450,14 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
   // pillar item shape ({name, qtySold, revenue}) into the CSV item shape
   // ({name, sold, netSales}) so downstream readers don't need to change.
   getItems() {
+    // Demo mode: return category-appropriate sample items so the Products page
+    // gives trial users the full experience (was empty → "upload your CSV").
+    try {
+      if (this.isDemoModeOn && this.isDemoModeOn() && this.getDemoItems) {
+        const di = this.getDemoItems();
+        if (di && di.length) return { allItems: di, _source: 'demo' };
+      }
+    } catch (e) {}
     try {
       if (this.getSource() === 'api') {
         const apiRaw = localStorage.getItem(this.KEYS.API);

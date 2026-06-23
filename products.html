@@ -288,9 +288,10 @@ function buildProductContext() {
   // showed live data.
   const itemsResult = (HRZN.getItems ? HRZN.getItems() : null);
   const liveActive = itemsResult && itemsResult._source === 'api';
+  const demoActive = itemsResult && itemsResult._source === 'demo';
   let items, cats = '';
-  if (liveActive) {
-    items = itemsResult.allItems || [];
+  if (liveActive || demoActive) {
+    items = (itemsResult.allItems || []).slice().sort((a,b)=>(b.netSales||0)-(a.netSales||0));
   } else {
     const raw = localStorage.getItem(ITEMS_KEY);
     if (!raw) return null;
@@ -402,18 +403,31 @@ function loadData() {
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
   try {
     // Use the shared accessor so live integration items supersede a stale CSV
-    // (and we don't show CSV items that contradict live revenue).
+    // (and we don't show CSV items that contradict live revenue). Demo mode returns
+    // category-appropriate sample items so the page is populated for trial users.
     const itemsResult = (HRZN.getItems ? HRZN.getItems() : null);
     const liveActive = itemsResult && itemsResult._source === 'api';
-    const raw = liveActive ? null : localStorage.getItem(ITEMS_KEY);
-    if (!liveActive && !raw) {
+    const demoActive = itemsResult && itemsResult._source === 'demo';
+    const fromAccessor = liveActive || demoActive;
+    const raw = fromAccessor ? null : localStorage.getItem(ITEMS_KEY);
+    if (!fromAccessor && !raw) {
       const nudge = document.getElementById('items-nudge');
       if (nudge) nudge.style.display = 'flex';
       document.getElementById('no-data').style.display = 'block';
       document.getElementById('main-content').style.display = 'none';
       return;
     }
-    const d = liveActive ? { allItems: itemsResult.allItems } : JSON.parse(raw);
+    // Demo/live: items come from the accessor; pull period from the demo dataset.
+    let d;
+    if (fromAccessor) {
+      d = { allItems: itemsResult.allItems };
+      if (demoActive && HRZN.getDemoData) {
+        const dd = HRZN.getDemoData();
+        d.periodStart = dd.periodStart; d.periodEnd = dd.periodEnd; d.period = dd.period;
+      }
+    } else {
+      d = JSON.parse(raw);
+    }
     allItems = (d.allItems || d.items || []).map(i => ({
       ...i,
       sold: i.sold || i.qty || 0,  // handle both field names
@@ -432,6 +446,8 @@ function loadData() {
     if (nudge) nudge.style.display = 'none';
     document.getElementById('no-data').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
+    // Ensure Top Item reflects the best seller (allItems[0] is used below).
+    allItems.sort((a,b) => (b.netSales||0) - (a.netSales||0));
 
     const period = (d.periodStart 
     ? (d.periodStart + (d.periodEnd ? ' – ' + d.periodEnd : ''))
@@ -442,8 +458,18 @@ function loadData() {
     const uniqueCount = d.uniqueItems || allItems.length;
     // Margin requires COGS data. Live POS (Clover) doesn't provide it, so when
     // there's no real margin figure show "—" rather than a misleading 0.0%.
-    const hasMargin = (d.grossProfitMargin != null) || (d.grossProfit && d.grossSales);
-    const margin = d.grossProfitMargin || (d.grossProfit && d.grossSales ? (d.grossProfit/d.grossSales*100) : 0);
+    // In demo mode, derive gross margin from the category's sample COGS profile so
+    // the trial experience is complete and consistent with the P&L/Performance pages.
+    let hasMargin = (d.grossProfitMargin != null) || (d.grossProfit && d.grossSales);
+    let margin = d.grossProfitMargin || (d.grossProfit && d.grossSales ? (d.grossProfit/d.grossSales*100) : 0);
+    if (!hasMargin && demoActive && HRZN.getDemoData) {
+      try {
+        const dd = HRZN.getDemoData();
+        const moRev = (dd.netSales || 0) / (((dd.periodDays || 365) / 30.44) || 1);
+        const cogsMo = dd._expenses && dd._expenses.cogs;
+        if (cogsMo != null && moRev > 0) { margin = (1 - cogsMo/moRev) * 100; hasMargin = true; }
+      } catch(e) {}
+    }
     set('kpi-sold', totalSold.toLocaleString());
     set('kpi-unique', uniqueCount.toString());
     set('kpi-margin', hasMargin ? (margin.toFixed(1) + '%') : '—');
@@ -451,8 +477,23 @@ function loadData() {
     const top = allItems[0];
     if (top) { set('kpi-top', top.name); set('kpi-top-rev', fmt(top.netSales) + ' net sales'); }
 
+    // Demo: aggregate items into categories for the breakdown table (CSV provides
+    // d.categories directly; demo items don't, so roll them up here).
+    let catList = d.categories || [];
+    if ((!catList || !catList.length) && demoActive) {
+      const byCat = {};
+      const totNet = allItems.reduce((s,i)=>s+(i.netSales||0),0) || 1;
+      allItems.forEach(i => {
+        const k = i.category || 'Uncategorized';
+        if (!byCat[k]) byCat[k] = { name:k, sold:0, netSales:0 };
+        byCat[k].sold += (i.sold||0); byCat[k].netSales += (i.netSales||0);
+      });
+      catList = Object.values(byCat).sort((a,b)=>b.netSales-a.netSales)
+        .map(c => ({ ...c, pctOfNet: Math.round(c.netSales/totNet*1000)/10 }));
+    }
+
     renderItems(allItems, 'revenue');
-    renderCats(d.categories || []);
+    renderCats(catList);
     renderFullList(allItems);
     setTimeout(generateInsights, 500);
   } catch(e) {
