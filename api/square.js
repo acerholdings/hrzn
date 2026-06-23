@@ -58,10 +58,13 @@ export default async function handler(req, res) {
       const redirectUri = `${APP_URL}/api/square`;
       // Scopes: read-only sales data for the pillar engine. Keep minimal.
       const scope = ['MERCHANT_PROFILE_READ', 'ORDERS_READ', 'PAYMENTS_READ', 'ITEMS_READ'].join('+');
+      // NOTE: we intentionally omit `session=false`. With it, Square assumes an
+      // existing logged-in session and shows a blank page when there isn't one
+      // (the pre-sign-in friction). Omitting it lets Square present its own login
+      // screen inline when the user isn't signed in — the seamless connect flow.
       const url = `${SQUARE_BASE}/oauth2/authorize`
         + `?client_id=${encodeURIComponent(SQUARE_APP_ID)}`
         + `&scope=${scope}`
-        + `&session=false`
         + `&redirect_uri=${encodeURIComponent(redirectUri)}`
         + `&state=${encodeURIComponent(state)}`;
       return res.status(200).json({ ok: true, url });
