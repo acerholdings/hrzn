@@ -562,7 +562,7 @@ async function generatePLInsights(){
   const cogsPct = revenue>0 ? (cogs/revenue*100).toFixed(1) : 0;
   const netPct = revenue>0 ? (netProfit/revenue*100).toFixed(1) : 0;
   const grossPct = revenue>0 ? (grossProfit/revenue*100).toFixed(1) : 0;
-  const weekly = Math.round(revenue / (months*4.33));
+  const weekly = Math.round(revenue / ((d.periodDays || 365) / 7));
   const t = d.tenders||{};
   const ddPct = d.amountCollected>0 ? ((t.doorDash||0)/d.amountCollected*100).toFixed(1) : 0;
   const tipsPct = revenue>0 ? ((d.tips||0)/revenue*100).toFixed(1) : 0;
@@ -575,8 +575,6 @@ async function generatePLInsights(){
   const mktMo = Math.round(marketing/months);
   const mktAt2pct = Math.round(revenue*0.02/months);
   const mktExtra = Math.max(0, mktAt2pct - mktMo);
-  const priceGapPeriod = Math.round((15.00 - parseFloat(d.avgCheck||0)) * (d.itemsSold||0));
-  const priceGapAnnual = Math.round(priceGapPeriod/months*12);
   const moProfitFinal = Math.round(netProfit/months);
 
   const { system: plSystem, prompt: plBasePrompt } = HRZN.getInsightPrompt('pl', null, _plInsights.length ? { exclude: _plInsights.map(i=>i.title) } : {});
@@ -677,7 +675,7 @@ async function generateMorePLInsights(){
   const debtSavingMo2 = Math.round((debt-debtAt12pct)/months);
   const d2 = HRZN.getData();
   const avgItemPrice = +(d2.avgCheck || 0);   // real avg item price from data, not a hardcoded 13.70
-  const avgTarget2 = 15.00;
+  const avgTarget2 = (plBm.avgTicket && plBm.avgTicket > 0) ? plBm.avgTicket : 0;
   const hasAvgPrice = avgItemPrice > 0;       // guard: only state a price/gap when real data exists
   const itemsSold2 = d2.itemsSold||0;
   const priceGapPeriod2 = Math.round((avgTarget2-avgItemPrice)*itemsSold2);
