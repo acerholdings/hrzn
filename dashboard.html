@@ -151,7 +151,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:7px;height:7px;border-radius:50%;background:#4caf7d;box-shadow:0 0 0 0 rgba(76,175,125,0.4);animation:pulse 2s infinite;"></div>
           <span style="font-size:11px;font-weight:500;letter-spacing:0.04em;">HRZN AI Operator</span>
-          <span style="font-size:10px;color:var(--text-dim);">· Online</span>
+          <span style="font-size:10px;color:var(--text-dim);">· Connected</span>
         </div>
         <a href="operator.html" style="font-size:10px;color:var(--gold);text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background='transparent'">Open full chat →</a>
       </div>
@@ -615,8 +615,13 @@ document.addEventListener('DOMContentLoaded', () => {
   set('kpi-items', (d.itemsSold||0).toLocaleString());
   set('kpi-items-change', months.toFixed(1) + ' month period');
   set('kpi-avg-check', '$'+parseFloat(d.avgCheck||0).toFixed(2));
-  try { const _dbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _lbl = document.getElementById('kpi-avg-check-label'); if(_lbl && _dbm.avgTicketLabel) _lbl.textContent = _dbm.avgTicketLabel; } catch(e){}
-  set('kpi-check-change', (d.itemsSold||0).toLocaleString() + ' items sold');
+  try {
+    const _dbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {};
+    const _lbl = document.getElementById('kpi-avg-check-label'); if(_lbl && _dbm.avgTicketLabel) _lbl.textContent = _dbm.avgTicketLabel;
+    const _cat = _dbm._category || 'restaurant';
+    const _noun = _cat === 'service' ? 'jobs' : _cat === 'online' ? 'orders' : 'items';
+    set('kpi-check-change', (d.itemsSold||0).toLocaleString() + ' ' + _noun + ' sold');
+  } catch(e){ set('kpi-check-change', (d.itemsSold||0).toLocaleString() + ' items sold'); }
   set('kpi-collected', fmt(d.amountCollected||0));
 
   // Quick stats

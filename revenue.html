@@ -123,7 +123,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="kpi-card">
         <div class="kpi-label">Best Day Est.</div>
         <div class="kpi-value" id="rev-best-day">—</div>
-        <div class="kpi-sub" style="color:var(--orange);">⚠ Estimated · Friday avg</div>
+        <div class="kpi-sub" id="rev-best-day-sub" style="color:var(--orange);">⚠ Estimated · Friday avg</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Avg Daily Revenue</div>
@@ -392,7 +392,13 @@ const months = HRZN.getMonths(d);
   set('rev-weekly-kpi', fmt(weekly));
   set('rev-daily', fmt(daily));
   set('rev-avg-check-kpi', '$'+(d.avgCheck||0));
-  try { const _rbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _rl = document.getElementById('rev-avg-check-label'); if(_rl && _rbm.avgTicketLabel) _rl.textContent = _rbm.avgTicketLabel; } catch(e){}
+  try {
+    const _rbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {};
+    const _rl = document.getElementById('rev-avg-check-label'); if(_rl && _rbm.avgTicketLabel) _rl.textContent = _rbm.avgTicketLabel;
+    const _rcat = _rbm._category || 'restaurant';
+    const _rnoun = _rcat === 'service' ? 'job' : _rcat === 'online' ? 'order' : 'item';
+    const _rsub = document.getElementById('rev-check-change'); if(_rsub) _rsub.textContent = 'Per ' + _rnoun;
+  } catch(e){}
   set('rev-weekly-label', Math.round(weekly).toLocaleString());
 
   // Day weights — used ONLY as a last-resort estimate, and only for categories
@@ -424,6 +430,16 @@ const months = HRZN.getMonths(d);
   } else {
     set('rev-best-day', '—');
   }
+  // Subtitle: the Fri-avg estimate only applies to restaurants. For other categories
+  // (and when we have real daily data) don't claim a restaurant traffic pattern.
+  try {
+    const _bdSub = document.getElementById('rev-best-day-sub');
+    if (_bdSub) {
+      if (hasRealDaily) { _bdSub.textContent = 'Based on your data'; _bdSub.style.color = 'var(--green)'; }
+      else if (canEstimate) { _bdSub.textContent = '⚠ Estimated · Friday avg'; _bdSub.style.color = 'var(--orange)'; }
+      else { _bdSub.textContent = 'Needs daily data · connect POS'; _bdSub.style.color = 'var(--text-dim)'; }
+    }
+  } catch(e){}
 
   // Revenue by Day list
   const revByDay = document.getElementById('rev-by-day-list');

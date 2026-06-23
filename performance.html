@@ -616,8 +616,10 @@ const months = HRZN.getMonths(d);
     // Table turns & covers are restaurant concepts — hide/relabel for other categories.
     const turnCard = document.getElementById('perf-turn-card');
     if (turnCard && hmConcepts.dayparts === false) { turnCard.style.display = 'none'; }
+    const _pcat = hmBm._category || 'restaurant';
+    const _pnoun = _pcat === 'service' ? 'Jobs' : _pcat === 'online' ? 'Orders' : _pcat === 'restaurant' ? 'Covers' : 'Items Sold';
     const coversLbl = document.getElementById('vs-covers-label');
-    if (coversLbl && hmConcepts.dayparts === false) { coversLbl.textContent = 'Items Sold'; }
+    if (coversLbl) coversLbl.textContent = _pnoun;
   } catch(e) {}
   // No dollar figures: per-cell amounts were fabricated precision (invented weights × weekly avg).
   try {
