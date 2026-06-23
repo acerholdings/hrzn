@@ -328,22 +328,58 @@ async function finish() {
     targets
   }));
 
-  // Create business in Supabase if we have a token
-  if (authToken) {
-    try {
-      await fetch('/api/setup-business', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          token: authToken,
-          name: bizName,
-          location,
-          pos: selectedPOS,
-          businessType: selectedCategory,
-          targets
-        })
-      });
-    } catch(e) { /* continue anyway */ }
+  // Create the business row in Supabase. This MUST succeed before the user reaches
+  // the app — without a business_id, data uploads and live integrations all fail.
+  // (Previously this ignored the result and redirected regardless, stranding new
+  // users on the dashboard with no backend business.)
+  if (!authToken) {
+    // No session token (e.g. email-confirmation signup). Can't create the business yet.
+    // Persist the choices locally so Settings can finish setup once they're signed in,
+    // and tell them what to do rather than silently dropping them into a broken state.
+    err.textContent = 'Account created — please check your email to confirm, then sign in to finish setup.';
+    btn.textContent = 'Launch My Dashboard \u2192';
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/setup-business', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        token: authToken,
+        name: bizName,
+        location,
+        pos: selectedPOS,
+        businessType: selectedCategory,
+        targets
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) {
+      err.textContent = (j.error && /already/i.test(j.error))
+        ? '' // business already exists for this account — fine, proceed
+        : 'Could not finish setting up your business. Please try again.';
+      if (err.textContent) {
+        btn.textContent = 'Launch My Dashboard \u2192';
+        btn.disabled = false;
+        return;
+      }
+    }
+    // Store the new business_id locally so the app can reference it immediately.
+    if (j.business_id || j.businessId || j.id) {
+      const bid = j.business_id || j.businessId || j.id;
+      try {
+        const s = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
+        s.business_id = bid;
+        localStorage.setItem('hrzn-settings', JSON.stringify(s));
+      } catch(e) {}
+    }
+  } catch(e) {
+    err.textContent = 'Connection error while setting up your business. Please try again.';
+    btn.textContent = 'Launch My Dashboard \u2192';
+    btn.disabled = false;
+    return;
   }
 
   window.location.href = 'dashboard.html';
