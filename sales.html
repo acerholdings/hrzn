@@ -140,12 +140,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
       <div class="kpi-card">
         <div class="kpi-label">Items Sold</div>
         <div class="kpi-value" id="val-items">—</div>
-        <div class="kpi-sub">Total transactions</div>
+        <div class="kpi-sub" id="val-items-sub">Total transactions</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label" id="val-avg-check-label">Avg Item Price</div>
         <div class="kpi-value" id="val-avg-check">—</div>
-        <div class="kpi-sub">Per item sold</div>
+        <div class="kpi-sub" id="val-avg-check-sub">Per item sold</div>
       </div>
     </div>
     <div class="grid-2 fade-3">
@@ -544,7 +544,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     set('val-taxes', fmt(d.taxes||0));
     set('val-items', (d.itemsSold||0).toLocaleString());
     set('val-avg-check', '$'+(Math.round((d.avgCheck||0)*100)/100).toFixed(2));
-    try { const _sbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}; const _sl = document.getElementById('val-avg-check-label'); if(_sl && _sbm.avgTicketLabel) _sl.textContent = _sbm.avgTicketLabel; } catch(e){}
+    try {
+      const _sbm = HRZN.getBenchmarks ? HRZN.getBenchmarks() : {};
+      const _sl = document.getElementById('val-avg-check-label'); if(_sl && _sbm.avgTicketLabel) _sl.textContent = _sbm.avgTicketLabel;
+      // Category-aware subtitles: jobs (service) / orders (online) / items (retail/restaurant)
+      const _cat = _sbm._category || 'restaurant';
+      const _noun = _cat === 'service' ? 'job' : _cat === 'online' ? 'order' : 'item';
+      const _isub = document.getElementById('val-items-sub'); if(_isub) _isub.textContent = 'Total ' + _noun + 's';
+      const _asub = document.getElementById('val-avg-check-sub'); if(_asub) _asub.textContent = 'Per ' + _noun;
+    } catch(e){}
     // DoorDash row is a delivery concept — hide for categories without it (unless dollars exist).
     try {
       const sBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};

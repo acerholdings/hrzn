@@ -577,11 +577,14 @@ const HRZN = {
         pillars.push({ key:'revenue', label:'Revenue', val:null, real:false });
       }
 
-      // 2) PROFITABILITY (gross margin) — read the SAME real source the pages use:
-      //    item-sales data (hrzn-data-items.grossProfitMargin), with the cached fallback
-      //    (hrzn-settings._cachedGrossMargin) for when Safari ITP clears the Items CSV.
-      //    Only when the source is genuinely CSV — on empty/demo there is no real
-      //    margin, and a leftover cache must not produce a ghost profitability score.
+      const _demoScore = !!(this.isDemoModeOn && this.isDemoModeOn());
+      // In DEMO mode we have a full sample expense profile (_expenses), so populate
+      // ALL pillars to give trial users the complete experience. Outside demo we keep
+      // strict honesty: only score pillars backed by real uploaded data.
+      const _demoExp = _demoScore && this.getDemoData ? (this.getDemoData()._expenses || null) : null;
+      const _demoMonthlyRev = m.monthly || 0;
+
+      // 2) PROFITABILITY (gross margin)
       let margin = null;
       const scoreSrc = (this.getSource ? this.getSource() : 'demo');
       try {
@@ -594,8 +597,11 @@ const HRZN = {
           }
         }
       } catch (e) {}
-      // Last-resort: a margin carried on the data object itself (e.g. live/demo data).
       if (margin == null && d.grossProfitMargin != null) margin = parseFloat(d.grossProfitMargin);
+      // Demo: derive gross margin from the sample COGS profile.
+      if (margin == null && _demoExp && _demoMonthlyRev > 0 && _demoExp.cogs != null) {
+        margin = (1 - (_demoExp.cogs / _demoMonthlyRev)) * 100;
+      }
       if (margin != null && !isNaN(margin)) {
         const bm = this.getBenchmarks ? this.getBenchmarks() : {};
         const tgt = (bm.grossMarginTarget != null) ? bm.grossMarginTarget : 65;
@@ -605,17 +611,23 @@ const HRZN = {
         pillars.push({ key:'margin', label:'Profitability', val:null, real:false });
       }
 
-      // 3) LABOR — real only when the rate is NOT a fallback estimate (live API or manual)
+      // 3) LABOR — real when rate is live/manual; in demo, use the sample labor profile.
       const laborMeta = this.getLaborRateMeta();
       if (laborMeta && laborMeta.source !== 'fallback') {
         pillars.push({ key:'labor', label:'Labor', val:gradeBelowTarget(laborMeta.value, t.labor), real:true });
+      } else if (_demoExp && _demoMonthlyRev > 0 && _demoExp.labor != null && t.labor > 0) {
+        const demoLaborPct = _demoExp.labor / _demoMonthlyRev * 100;
+        pillars.push({ key:'labor', label:'Labor', val:gradeBelowTarget(demoLaborPct, t.labor), real:true });
       } else {
         pillars.push({ key:'labor', label:'Labor', val:null, real:false });
       }
 
-      // 4) COST DISCIPLINE (COGS/food) — only if a real cost-of-goods figure exists
-      const cogsPctReal = (d.plData && d.plData.food_cost != null && m.netSales > 0)
+      // 4) COST DISCIPLINE (COGS) — real plData if present; in demo, use sample COGS.
+      let cogsPctReal = (d.plData && d.plData.food_cost != null && m.netSales > 0)
         ? (parseFloat(d.plData.food_cost) / m.netSales * 100) : null;
+      if (cogsPctReal == null && _demoExp && _demoMonthlyRev > 0 && _demoExp.cogs != null) {
+        cogsPctReal = _demoExp.cogs / _demoMonthlyRev * 100;
+      }
       if (cogsPctReal != null && !isNaN(cogsPctReal)) {
         pillars.push({ key:'cogs', label:'Cost Discipline', val:gradeBelowTarget(cogsPctReal, t.food), real:true });
       } else {

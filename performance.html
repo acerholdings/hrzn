@@ -550,6 +550,18 @@ const months = HRZN.getMonths(d);
       } catch(e) {}
     }
   }
+  // Demo mode: derive gross margin from the sample COGS profile so the trial
+  // experience is complete (matches the P&L page's demo margin).
+  if (!itemsLoaded && HRZN.isDemoModeOn && HRZN.isDemoModeOn() && HRZN.getDemoData) {
+    try {
+      const dx = HRZN.getDemoData()._expenses;
+      const moRev = (d.netSales || 0) / (((d.periodDays || 365) / 30.44) || 1);
+      if (dx && dx.cogs != null && moRev > 0) {
+        grossMargin = ((1 - dx.cogs / moRev) * 100).toFixed(1) + '%';
+        itemsLoaded = true;
+      }
+    } catch(e) {}
+  }
 
   set('vs-rev-this', fmt(weekly));
   set('vs-rev-last', lastWeekly == null ? '—' : fmt(lastWeekly));
