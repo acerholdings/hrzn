@@ -573,6 +573,11 @@ function handleCategoryChange(){
         const s2 = JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');
         if (s2.laborRate) { delete s2.laborRate; localStorage.setItem(SETTINGS_KEY, JSON.stringify(s2)); }
       } catch(e) {}
+      // Clear manually-entered P&L expenses (hrzn-pl-data). They are category-specific
+      // dollar amounts — a service business's $X COGS is meaningless for a retail/other
+      // business, and leaving them would make P&L/cashflow/health-score show the old
+      // category's costs. Cleared so each category starts from its own demo/estimate baseline.
+      try { localStorage.removeItem('hrzn-pl-data'); } catch(e) {}
     }
   } catch(e) {}
   markDirty();
