@@ -506,6 +506,44 @@ async function hrznDisconnectOtherPOS(keep){
   } catch(e){}
 }
 
+// Reconcile on page load: connect-time enforcement can't fix two connections
+// that ALREADY exist in the DB (e.g. Clover connected last month, Square today).
+// On load, check every POS; if more than one is connected, keep the most
+// recently connected (latest token_expires_at) and disconnect the rest, so the
+// one-POS invariant always holds regardless of how the connections got there.
+// Returns the name of the POS that was disconnected (if any) so the caller can
+// refresh that card, or null.
+async function hrznReconcileSinglePOS(){
+  const token = hrznGetToken();
+  if (!token || (typeof hrznIsDemo === 'function' && hrznIsDemo())) return null;
+  const live = [];
+  for (const name of POS_INTEGRATIONS){
+    try {
+      const s = await fetch('/api/' + name + '?action=status', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()).catch(()=>({}));
+      if (s && s.connected){
+        const exp = s.token_expires_at ? new Date(s.token_expires_at).getTime() : 0;
+        live.push({ name, exp });
+      }
+    } catch(e){}
+  }
+  if (live.length < 2) return null;   // 0 or 1 connected → nothing to reconcile
+  // Keep the one with the latest expiry (most recently issued token).
+  live.sort((a, b) => b.exp - a.exp);
+  const keep = live[0].name;
+  let disconnectedOne = false;
+  for (let i = 1; i < live.length; i++){
+    try { await fetch('/api/' + live[i].name + '?action=disconnect', { headers: { 'Authorization': 'Bearer ' + token } }); disconnectedOne = true; } catch(e){}
+  }
+  if (disconnectedOne){
+    try {
+      localStorage.removeItem('hrzn-data-api');
+      sessionStorage.removeItem('hrzn-active-integration');
+      sessionStorage.removeItem('hrzn-clover-synced');
+    } catch(e){}
+  }
+  return keep;
+}
+
 async function connectClover(){
   const token = hrznGetToken();
   if (!token || hrznIsDemo()) { showToast('Sign in to connect Clover', true); return; }
@@ -692,11 +730,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Update sidebar with logged-in user info
   hrznSetupSidebar();
 
-  // Reflect live Clover connection status on the integration row
-  refreshCloverStatus();
-
-  // Reflect live Square connection status on the integration row
-  refreshSquareStatus();
+  // Enforce one-POS-at-a-time across pre-existing connections, THEN reflect
+  // each POS's (now reconciled) status on its card.
+  (async () => {
+    try { await hrznReconcileSinglePOS(); } catch(e){}
+    refreshCloverStatus();
+    refreshSquareStatus();
+  })();
 
 
   // Trial countdown banner - only show if on trial plan
