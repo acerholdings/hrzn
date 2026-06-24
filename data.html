@@ -512,7 +512,6 @@ async function connectClover(){
   const btn = document.getElementById('clover-btn');
   if (btn) { btn.textContent = 'Opening…'; btn.disabled = true; }
   try {
-    await hrznDisconnectOtherPOS('clover');   // one POS at a time
     const r = await fetch('/api/clover?action=connect', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -550,6 +549,11 @@ async function refreshCloverStatus(){
   const p = new URLSearchParams(window.location.search).get('clover');
   if (!p) return;
   try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
+  // One POS at a time: now that Clover is actually connected, disconnect any
+  // other POS. Doing this here (on confirmed success) rather than before the
+  // OAuth redirect means an abandoned/cancelled connect never strands the user
+  // with no POS — the previous POS stays connected until the new one succeeds.
+  if (p === 'connected') { try { hrznDisconnectOtherPOS('clover'); } catch(e){} }
   const msgs = {
     connected: ['✓ Clover connected successfully', false],
     denied: ['Clover connection was cancelled', true],
@@ -572,7 +576,6 @@ async function connectSquare(){
   const btn = document.getElementById('square-btn');
   if (btn) { btn.textContent = 'Opening…'; btn.disabled = true; }
   try {
-    await hrznDisconnectOtherPOS('square');   // one POS at a time
     const r = await fetch('/api/square?action=connect', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -666,6 +669,10 @@ async function hrznDisconnect(name){
   // A connection state just changed — clear cached detection + sync guards so
   // the new connection is picked up immediately.
   try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
+  // One POS at a time: disconnect any other POS now that Square is confirmed
+  // connected (see the Clover handler for why this happens on success, not
+  // before the redirect).
+  if (p === 'connected') { try { hrznDisconnectOtherPOS('square'); } catch(e){} }
   const msgs = {
     connected: ['✓ Square connected successfully', false],
     denied: ['Square connection was cancelled', true],
