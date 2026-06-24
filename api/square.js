@@ -283,6 +283,37 @@ export default async function handler(req, res) {
           .map(it => ({ name: it.name, qtySold: Math.round(it.qtySold * 1000) / 1000, revenue: Math.round(it.revenue) / 100 }))
           .sort((a, b) => b.revenue - a.revenue);
 
+        // Payment-method breakdown from each order's tenders[]. Square tender.type is
+        // CARD | CASH | SQUARE_GIFT_CARD | etc.; for CARD, card_details.card.card_brand
+        // distinguishes credit vs debit isn't always present, so we bucket by entry:
+        // DEBIT_* brands → debit, everything else card → credit. Cash → cash.
+        const tenderCents = { credit: 0, debit: 0, cash: 0, other: 0 };
+        for (const o of paid) {
+          for (const t of (o.tenders || [])) {
+            const amt = (t.amount_money && typeof t.amount_money.amount === 'number') ? t.amount_money.amount : 0;
+            if (amt <= 0) continue;
+            const type = t.type || '';
+            if (type === 'CASH') { tenderCents.cash += amt; }
+            else if (type === 'CARD') {
+              const brand = (t.card_details && t.card_details.card && t.card_details.card.card_brand) || '';
+              const isDebit = /DEBIT/i.test(brand) || (t.card_details && t.card_details.card && /DEBIT/i.test(t.card_details.card.card_type || ''));
+              if (isDebit) tenderCents.debit += amt; else tenderCents.credit += amt;
+            }
+            else { tenderCents.other += amt; }
+          }
+        }
+        // If an order had no tenders attached (e.g. some sandbox/API orders), fall back
+        // to crediting the order total to "credit" so payment totals still reconcile
+        // with revenue rather than showing all $0.
+        const tenderedTotal = tenderCents.credit + tenderCents.debit + tenderCents.cash + tenderCents.other;
+        if (tenderedTotal === 0 && revenueCents > 0) { tenderCents.credit = revenueCents; }
+        const payments = {
+          credit: Math.round(tenderCents.credit) / 100,
+          debit: Math.round(tenderCents.debit) / 100,
+          cash: Math.round(tenderCents.cash) / 100,
+          other: Math.round(tenderCents.other) / 100
+        };
+
         const orderCount = paid.length;
         return res.status(200).json({
           source: 'square',
@@ -294,6 +325,7 @@ export default async function handler(req, res) {
           },
           dailyRevenue,
           items,
+          payments,
           location_id: LOCATION
         });
       }
