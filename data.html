@@ -481,30 +481,11 @@ function hrznConnectErrorMessage(err, posName) {
 // ── Clover live integration ──────────────────────────────────────
 // ── One-POS-at-a-time enforcement ────────────────────────────────
 // POS integrations (Clover, Square, …) are mutually exclusive: a business has
-// one POS. Before connecting one, disconnect any other connected POS so live
-// data has a single unambiguous source. Payroll/accounting/delivery are NOT
-// POS and stack freely — they are not touched here.
+// one POS, so live data has a single unambiguous source. Payroll/accounting/
+// delivery are NOT POS and stack freely. Enforcement happens entirely at LOAD
+// time via hrznReconcileSinglePOS() below — never mid-connect — so a failed or
+// abandoned connect can't leave the user with fewer connections than they had.
 const POS_INTEGRATIONS = ['clover', 'square'];
-async function hrznDisconnectOtherPOS(keep){
-  const token = hrznGetToken();
-  if (!token) return;
-  for (const name of POS_INTEGRATIONS){
-    if (name === keep) continue;
-    try {
-      // Only call disconnect if it's actually connected (avoids noise).
-      const s = await fetch('/api/' + name + '?action=status', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()).catch(()=>({}));
-      if (s && s.connected){
-        await fetch('/api/' + name + '?action=disconnect', { headers: { 'Authorization': 'Bearer ' + token } }).catch(()=>{});
-      }
-    } catch(e){ /* best-effort; connect proceeds regardless */ }
-  }
-  // Clear cached source/data so the newly connected POS becomes active cleanly.
-  try {
-    localStorage.removeItem('hrzn-data-api');
-    sessionStorage.removeItem('hrzn-active-integration');
-    sessionStorage.removeItem('hrzn-clover-synced');
-  } catch(e){}
-}
 
 // Reconcile on page load: connect-time enforcement can't fix two connections
 // that ALREADY exist in the DB (e.g. Clover connected last month, Square today).
@@ -587,11 +568,11 @@ async function refreshCloverStatus(){
   const p = new URLSearchParams(window.location.search).get('clover');
   if (!p) return;
   try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
-  // One POS at a time: now that Clover is actually connected, disconnect any
-  // other POS. Doing this here (on confirmed success) rather than before the
-  // OAuth redirect means an abandoned/cancelled connect never strands the user
-  // with no POS — the previous POS stays connected until the new one succeeds.
-  if (p === 'connected') { try { hrznDisconnectOtherPOS('clover'); } catch(e){} }
+  // One-POS enforcement is handled entirely by hrznReconcileSinglePOS() on load
+  // (see below). We deliberately do NOT disconnect the other POS here: doing so
+  // mid-flow created a race where a failed/abandoned connect could leave the user
+  // with fewer connections than they started with. Reconciliation on the next
+  // load keeps exactly one POS without that risk.
   const msgs = {
     connected: ['✓ Clover connected successfully', false],
     denied: ['Clover connection was cancelled', true],
@@ -707,10 +688,8 @@ async function hrznDisconnect(name){
   // A connection state just changed — clear cached detection + sync guards so
   // the new connection is picked up immediately.
   try { sessionStorage.removeItem('hrzn-active-integration'); sessionStorage.removeItem('hrzn-clover-synced'); } catch(e){}
-  // One POS at a time: disconnect any other POS now that Square is confirmed
-  // connected (see the Clover handler for why this happens on success, not
-  // before the redirect).
-  if (p === 'connected') { try { hrznDisconnectOtherPOS('square'); } catch(e){} }
+  // One-POS enforcement is handled by hrznReconcileSinglePOS() on load (see the
+  // Clover handler note) — not here, to avoid the mid-flow race.
   const msgs = {
     connected: ['✓ Square connected successfully', false],
     denied: ['Square connection was cancelled', true],
