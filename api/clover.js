@@ -88,12 +88,12 @@ export default async function handler(req, res) {
       const b = await getBusinessId();
       if (b.error) return res.status(200).json({ connected: false });
       const connRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}&select=merchant_id,token_expires_at`,
+        `${SUPABASE_URL}/rest/v1/clover_connections?business_id=eq.${b.businessId}&select=merchant_id,token_expires_at,updated_at`,
         { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
       );
       const [conn] = await connRes.json();
       if (!conn) return res.status(200).json({ connected: false });
-      return res.status(200).json({ connected: true, merchant_id: conn.merchant_id, token_expires_at: conn.token_expires_at || null });
+      return res.status(200).json({ connected: true, merchant_id: conn.merchant_id, token_expires_at: conn.token_expires_at || null, updated_at: conn.updated_at || null });
     }
 
     // ── DISCONNECT: delete this business's stored Clover connection ─
