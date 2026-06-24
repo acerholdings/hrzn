@@ -269,7 +269,14 @@ export default async function handler(req, res) {
       // labor, rent, marketing, recurring are not in POS data and stay sourced
       // from settings/CSV until those integrations exist.
       if (what === 'pillars') {
-        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems,payments`);
+        // NOTE: we do NOT expand `payments` here. The app's granted permissions
+        // (Orders, Inventory, Merchant, Customers, Employees) do not include
+        // Payments, and expand=payments triggers a 403 "Invalid permissions for
+        // expandable fields." Without it, per-tender data is unavailable, so the
+        // payment-method breakdown below falls back to crediting the order total.
+        // To get a real credit/debit/cash split, add the Payments read permission
+        // to the Clover app and restore `,payments` to the expand.
+        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`);
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
         const paid = (data.elements || []).filter(countsAsRevenue);
