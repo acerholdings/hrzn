@@ -262,7 +262,7 @@ export default async function handler(req, res) {
       // labor, rent, marketing, recurring are not in POS data and stay sourced
       // from settings/CSV until those integrations exist.
       if (what === 'pillars') {
-        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems`);
+        const r = await cloverFetch(`${BASE}/orders?filter=createdTime>=${windowStart}&filter=createdTime<${now}&limit=500&expand=lineItems,payments`);
         if (!r.ok) { const t = await r.text(); return res.status(502).json({ error: 'Clover fetch failed', status: r.status, detail: t }); }
         const data = await r.json();
         const paid = (data.elements || []).filter(countsAsRevenue);
@@ -298,6 +298,33 @@ export default async function handler(req, res) {
           .map(it => ({ name: it.name, qtySold: Math.round(it.qtySold * 1000) / 1000, revenue: Math.round(it.revenue) / 100 }))
           .sort((a, b) => b.revenue - a.revenue);
 
+        // Payment-method breakdown from each order's payments[].tender. Clover tender
+        // labels vary ("Credit Card", "Debit Card", "Cash", "External Payment", etc.),
+        // so we classify by label/labelKey text. Falls back to crediting the order
+        // total to "credit" if no tender info, so payment totals still reconcile.
+        const tenderCents = { credit: 0, debit: 0, cash: 0, other: 0 };
+        for (const o of paid) {
+          const pays = (o.payments && o.payments.elements) || [];
+          if (!pays.length) continue;
+          for (const pmt of pays) {
+            const amt = typeof pmt.amount === 'number' ? pmt.amount : 0;
+            if (amt <= 0) continue;
+            const label = ((pmt.tender && (pmt.tender.label || pmt.tender.labelKey)) || '').toLowerCase();
+            if (label.includes('cash')) tenderCents.cash += amt;
+            else if (label.includes('debit')) tenderCents.debit += amt;
+            else if (label.includes('credit') || label.includes('card')) tenderCents.credit += amt;
+            else tenderCents.other += amt;
+          }
+        }
+        const tenderedTotal = tenderCents.credit + tenderCents.debit + tenderCents.cash + tenderCents.other;
+        if (tenderedTotal === 0 && revenueCents > 0) { tenderCents.credit = revenueCents; }
+        const payments = {
+          credit: Math.round(tenderCents.credit) / 100,
+          debit: Math.round(tenderCents.debit) / 100,
+          cash: Math.round(tenderCents.cash) / 100,
+          other: Math.round(tenderCents.other) / 100
+        };
+
         const orderCount = paid.length;
         return res.status(200).json({
           source: 'clover',           // lets HRZN flag live vs CSV vs demo
@@ -313,6 +340,7 @@ export default async function handler(req, res) {
           },
           dailyRevenue,
           items,
+          payments,
           merchant_id: MID
         });
       }
