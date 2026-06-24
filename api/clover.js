@@ -132,9 +132,16 @@ export default async function handler(req, res) {
       const [conn] = await connRes.json();
       if (!conn) return res.status(400).json({ error: 'Clover not connected' });
 
-      // Clover's production API host (data lives here once a merchant is connected,
-      // both sandbox-test and production merchants resolve via api base).
-      const API_BASE = process.env.CLOVER_API_BASE || 'https://api.clover.com';
+      // Clover's data API base must match the environment the merchant was
+      // authorized in. Sandbox merchants live at apisandbox.dev.clover.com;
+      // production merchants at api.clover.com. The OAuth base (CLOVER_BASE)
+      // already tells us which environment we're in, so derive the API base
+      // from it (overridable via CLOVER_API_BASE) to keep them in sync — a
+      // sandbox OAuth that points at the production API silently 404s/401s
+      // ("Clover fetch failed").
+      const isSandbox = /sandbox\.dev\.clover\.com/i.test(CLOVER_BASE);
+      const API_BASE = process.env.CLOVER_API_BASE
+        || (isSandbox ? 'https://apisandbox.dev.clover.com' : 'https://api.clover.com');
       const MID = conn.merchant_id;
       const BASE = `${API_BASE}/v3/merchants/${MID}`;
 
