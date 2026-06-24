@@ -1583,6 +1583,19 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     const periodEnd = daily.length ? daily[daily.length - 1].date : '';
     const period = (periodStart && periodEnd) ? (periodStart + ' – ' + periodEnd) : ('Last ' + days + ' days');
 
+    // Payment-method breakdown, when the integration provides it (Square returns
+    // payments:{credit,debit,cash,other}). Falls back to all-zero if absent so older
+    // payloads / integrations without tender data don't break.
+    const pay = (p && p.payments) || {};
+    const tenders = {
+      creditCard: Math.round((pay.credit || 0) * 100) / 100,
+      debitCard:  Math.round((pay.debit || 0) * 100) / 100,
+      doorDash: 0,
+      cash:       Math.round((pay.cash || 0) * 100) / 100,
+      doorDashPct: 0,
+      giftCard:   Math.round((pay.other || 0) * 100) / 100
+    };
+
     return {
       _source: 'api',
       _filename: labels[integration] || 'Live integration',
@@ -1602,7 +1615,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
       amountCollected: Math.round(revenue * 100) / 100,
       itemsSold,
       avgCheck: Math.round(avgCheck * 100) / 100,
-      tenders: { creditCard: 0, debitCard: 0, doorDash: 0, cash: 0, doorDashPct: 0, giftCard: 0 },
+      tenders,
       _items: items,
       _dailyRevenue: daily
     };
