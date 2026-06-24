@@ -502,14 +502,18 @@ async function hrznReconcileSinglePOS(){
     try {
       const s = await fetch('/api/' + name + '?action=status', { headers: { 'Authorization': 'Bearer ' + token } }).then(r=>r.json()).catch(()=>({}));
       if (s && s.connected){
-        const exp = s.token_expires_at ? new Date(s.token_expires_at).getTime() : 0;
-        live.push({ name, exp });
+        // Rank by when the connection was last made/refreshed (updated_at), NOT
+        // token expiry — Square tokens live ~30 days while Clover's live hours,
+        // so expiry would always favor Square even right after connecting Clover.
+        const when = s.updated_at ? new Date(s.updated_at).getTime()
+                   : (s.token_expires_at ? new Date(s.token_expires_at).getTime() : 0);
+        live.push({ name, when });
       }
     } catch(e){}
   }
   if (live.length < 2) return null;   // 0 or 1 connected → nothing to reconcile
-  // Keep the one with the latest expiry (most recently issued token).
-  live.sort((a, b) => b.exp - a.exp);
+  // Keep the most recently connected; disconnect the rest.
+  live.sort((a, b) => b.when - a.when);
   const keep = live[0].name;
   let disconnectedOne = false;
   for (let i = 1; i < live.length; i++){
