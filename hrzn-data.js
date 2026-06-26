@@ -281,6 +281,11 @@ async function hrznLoadFromCloud() {
       if (data.business.name) merged.businessName = merged.businessName || data.business.name;
       if (data.business.name) merged.bizName = merged.bizName || data.business.name;
       if (data.business.location) merged.bizLocation = merged.bizLocation || data.business.location;
+      // Plan + subscription status are AUTHORITATIVE from the database — always
+      // overwrite the local copy (the badge and paywall read settings.plan, so this
+      // makes the DB the single source of truth instead of stale localStorage).
+      if (data.business.plan != null) merged.plan = data.business.plan;
+      if (data.business.subscription_status != null) merged.subscription_status = data.business.subscription_status;
     }
     if (data.settings) {
       // Restore items CSV filename if available
@@ -2265,10 +2270,19 @@ async function hrznCheckTrialAndPaywall() {
 
   const user = hrznGetUser();
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const plan = settings.plan || settings.subscription_status || 'trial';
+  const plan = settings.plan || 'trial';
+  const status = settings.subscription_status || '';
 
-  // If paid plan — nothing to check
-  if (plan === 'pro' || plan === 'starter') return;
+  // Active paid plan — full access. (Stripe keeps a cancelled sub 'active' until the
+  // period ends, so a user who cancels keeps access until 'cancelled' actually arrives.)
+  if ((plan === 'pro' || plan === 'starter') && status !== 'cancelled' && status !== 'past_due') return;
+
+  // Cancelled (period ended) or past-due payment → paywall now. Do NOT fall through
+  // to the trial logic below, which would wrongly grant trial access to a lapsed payer.
+  if (plan === 'cancelled' || status === 'cancelled' || status === 'past_due') {
+    hrznShowPaywall(user.email);
+    return;
+  }
 
   // Check if trial expired
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
