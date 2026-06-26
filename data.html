@@ -192,7 +192,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-replaces">Replaces: <span>Sales &amp; item CSV uploads</span></div>
           </div>
           <span class="int-status" id="clover-status" style="background:var(--orange-dim);color:var(--orange);">CSV Mode</span>
-          <button class="int-btn" id="clover-btn" onclick="connectClover()">Connect →</button>
+          <button class="int-btn int-live" data-int="clover" id="clover-btn" onclick="connectClover()">Connect →</button>
         </div>
         <div class="integration-row">
           <div class="int-logo">🟩</div>
@@ -202,7 +202,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-replaces">Replaces: <span>Sales &amp; item CSV uploads</span></div>
           </div>
           <span class="int-status" id="square-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn" id="square-btn" onclick="connectSquare()">Connect →</button>
+          <button class="int-btn int-live" data-int="square" id="square-btn" onclick="connectSquare()">Connect →</button>
         </div>
       </div>
 
@@ -220,7 +220,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-replaces">Powers: <span>Labor page</span></div>
           </div>
           <span class="int-status" style="background:var(--orange-dim);color:var(--orange);">Pending Approval</span>
-          <button class="int-btn">Check Status →</button>
+          <button class="int-btn int-live" data-int="gusto">Check Status →</button>
         </div>
       </div>
 
@@ -238,7 +238,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-replaces">Powers: <span>P&L, Cash Flow automation</span></div>
           </div>
           <span class="int-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn">Connect →</button>
+          <button class="int-btn int-live" data-int="quickbooks">Connect →</button>
         </div>
       </div>
 
@@ -256,7 +256,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-replaces">Powers: <span>Delivery analytics</span></div>
           </div>
           <span class="int-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn">Connect →</button>
+          <button class="int-btn int-live" data-int="doordash">Connect →</button>
         </div>
       </div>
     </div>
@@ -708,6 +708,27 @@ async function hrznDisconnect(name){
   window.history.replaceState({}, '', '/data.html');
 })();
 
+// ── Live integrations are a Pro feature ──────────────────────────
+// Starter/trial/cancelled users keep full CSV upload, but live integrations
+// (POS, payroll, accounting, delivery) require Pro. For non-Pro users we replace
+// each live Connect button with a "Pro only →" button that routes to pricing.
+// Pro users are unaffected. Plan comes from settings.plan, which is fed by the
+// authoritative DB row (see hrznLoadFromCloud), not stale localStorage alone.
+function hrznGateLiveIntegrations(){
+  if (typeof hrznIsDemo === 'function' && hrznIsDemo()) return;       // demo preview: leave as-is
+  if (typeof hrznIsLoggedIn === 'function' && !hrznIsLoggedIn()) return;
+  let plan = 'trial';
+  try { plan = (JSON.parse(localStorage.getItem('hrzn-settings') || '{}').plan) || 'trial'; } catch(e){}
+  if (plan === 'pro') return;                                         // Pro keeps live access
+  document.querySelectorAll('.int-btn.int-live').forEach(btn => {
+    btn.textContent = 'Pro only →';
+    btn.disabled = false;
+    btn.onclick = () => { window.location.href = 'pricing.html'; };
+    btn.style.opacity = '0.85';
+    btn.title = 'Live integrations are available on the Pro plan';
+  });
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   
   // Update sidebar with logged-in user info
@@ -719,6 +740,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     try { await hrznReconcileSinglePOS(); } catch(e){}
     refreshCloverStatus();
     refreshSquareStatus();
+    // Gate live integrations behind Pro. Runs AFTER status refresh so a non-Pro
+    // user never sees a working Connect button, even briefly.
+    try { hrznGateLiveIntegrations(); } catch(e){}
   })();
 
 
