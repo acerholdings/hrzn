@@ -14,9 +14,11 @@ export default async function handler(req, res) {
   if (!plan || !PRICE_IDS[plan]) return res.status(400).json({ error: 'Invalid plan' });
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const BASE_URL = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://atlas-os-kappa.vercel.app';
+  // Use the public app domain for redirects. VERCEL_URL resolves to the internal
+  // deployment hostname, which is protected by Vercel Authentication (SSO wall) —
+  // sending customers there after checkout broke the post-payment redirect. Prefer
+  // the explicit APP_BASE_URL env var, then fall back to the known public domain.
+  const BASE_URL = process.env.APP_BASE_URL || 'https://atlas-os-kappa.vercel.app';
   try {
     // Get user email from token
     let userEmail = null;
