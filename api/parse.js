@@ -8,6 +8,18 @@ export default async function handler(req, res) {
   const { type, csv } = req.body;
   if (!csv) return res.status(400).json({ error: 'No CSV data provided' });
 
+  // ── PRE-CHECK: reject obviously-empty files before spending an AI call ──
+  // (Empty, whitespace-only, or header-row-only files can't contain sales data.)
+  {
+    const nonEmptyLines = String(csv).split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (nonEmptyLines.length === 0) {
+      return res.status(400).json({ error: 'This file looks empty. Please upload a sales export with data in it.' });
+    }
+    if (nonEmptyLines.length === 1) {
+      return res.status(400).json({ error: 'This file only has a header row and no data. Please export a report that includes sales rows.' });
+    }
+  }
+
   const prompts = {
     sales: `You are a data extraction expert. Extract financial data from this POS sales report CSV.
 The CSV may be from any POS system (Clover, Square, Toast, Lightspeed, etc.) in any format.
@@ -293,6 +305,29 @@ Return ONLY JSON.`
         }
       }
     }
+    // ── VALIDATION: for SALES uploads, make sure the AI actually found sales data. ──
+    // Haiku returns a well-formed JSON with 0s even for garbage/non-sales files (it's
+    // told to use 0 for missing values), so a clean parse is NOT proof of valid data.
+    // Reject when there's no usable revenue signal, so the user gets a clear message
+    // instead of a silent "uploaded" that leads to a $0 dashboard.
+    if (type === 'sales') {
+      const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
+      const gross = num(parsed.grossSales);
+      const net = num(parsed.netSales);
+      const collected = num(parsed.amountCollected);
+      const items = num(parsed.itemsSold);
+      const tenderVals = parsed.tenders && typeof parsed.tenders === 'object'
+        ? Object.values(parsed.tenders).reduce((s, v) => s + num(v), 0) : 0;
+      // Usable if ANY real money signal is present. Items alone is NOT enough — a corrupt
+      // file can yield a stray item count with zero revenue (exactly the bug we saw).
+      const hasRevenue = gross > 0 || net > 0 || collected > 0 || tenderVals > 0;
+      if (!hasRevenue) {
+        return res.status(400).json({
+          error: "We couldn't find any valid sales figures in this file. Please check it's a Sales Overview / sales summary export (with revenue columns) and try again."
+        });
+      }
+    }
+
     parsed._source = 'csv';
     parsed._uploadedAt = Date.now();
     parsed.rowCount = csv.split('\n').length;
