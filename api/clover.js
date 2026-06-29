@@ -75,6 +75,23 @@ export default async function handler(req, res) {
       if (b.error) return res.status(b.code).json({ error: b.error });
       const state = Buffer.from(JSON.stringify({ b: b.businessId, t: Date.now() })).toString('base64url');
       const redirectUri = `${APP_URL}/api/clover`;
+      // ── ENTITLEMENT: live integrations are PRO-only ──────────────────
+      // Connecting a POS is a Pro feature. Starter/trial/cancelled cannot connect.
+      // Enforced server-side so the connect URL can't be obtained directly.
+      {
+        const _bizRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/businesses?id=eq.${b.businessId}&select=plan,subscription_status`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [_biz] = await _bizRes.json();
+        const _plan = (_biz?.plan || '').toLowerCase();
+        const _status = (_biz?.subscription_status || '').toLowerCase();
+        const _proActive = _plan === 'pro' && _status !== 'cancelled' && _status !== 'past_due';
+        if (!_proActive) {
+          return res.status(403).json({ error: 'Live integrations are available on the Pro plan.', code: 'pro_required' });
+        }
+      }
+
       const url = `${CLOVER_BASE}/oauth/v2/authorize`
         + `?client_id=${encodeURIComponent(CLOVER_APP_ID)}`
         + `&redirect_uri=${encodeURIComponent(redirectUri)}`

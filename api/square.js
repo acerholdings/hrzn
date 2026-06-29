@@ -56,6 +56,24 @@ export default async function handler(req, res) {
       if (b.error) return res.status(b.code).json({ error: b.error });
       const state = Buffer.from(JSON.stringify({ b: b.businessId, t: Date.now() })).toString('base64url');
       const redirectUri = `${APP_URL}/api/square`;
+      // ── ENTITLEMENT: live integrations are PRO-only ──────────────────
+      // Connecting a POS is a Pro feature. Starter/trial/cancelled cannot connect.
+      // (Front-end shows "Pro only \u2192"; this enforces it server-side so the
+      // connect URL can't be obtained by calling the endpoint directly.)
+      {
+        const _bizRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/businesses?id=eq.${b.businessId}&select=plan,subscription_status`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [_biz] = await _bizRes.json();
+        const _plan = (_biz?.plan || '').toLowerCase();
+        const _status = (_biz?.subscription_status || '').toLowerCase();
+        const _proActive = _plan === 'pro' && _status !== 'cancelled' && _status !== 'past_due';
+        if (!_proActive) {
+          return res.status(403).json({ error: 'Live integrations are available on the Pro plan.', code: 'pro_required' });
+        }
+      }
+
       // Scopes: read-only sales data for the pillar engine. Keep minimal.
       const scope = ['MERCHANT_PROFILE_READ', 'ORDERS_READ', 'PAYMENTS_READ', 'ITEMS_READ'].join('+');
       // NOTE: we intentionally omit `session=false`. With it, Square assumes an
