@@ -48,28 +48,23 @@ function hrznSetupSidebar() {
     const userRoleEl = document.querySelector('.user-role');
     if (userRoleEl) {
       // Badge reflects BOTH plan and subscription_status (authoritative from the DB
-      // via hrznLoadFromCloud). A cancelled/past-due account must not show "Trial" or
-      // a healthy paid label — surface the real state so the UI doesn't mislead.
+      // via hrznLoadFromCloud). Cancelled/past-due must not show "Trial" or a healthy
+      // paid label — surface the real state so the UI doesn't mislead.
       const plan = (settings.plan || 'trial').toLowerCase();
       const status = (settings.subscription_status || '').toLowerCase();
       let planLabel, planColor;
       if (status === 'past_due') {
-        planLabel = 'Past Due';
-        planColor = '#e08c35';            // orange — needs attention
+        planLabel = 'Past Due'; planColor = '#e08c35';        // orange — needs attention
       } else if (plan === 'cancelled' || status === 'cancelled') {
-        planLabel = 'Cancelled';
-        planColor = '#e05555';            // red — lapsed
+        planLabel = 'Cancelled'; planColor = '#e05555';       // red — lapsed
       } else if (plan === 'pro') {
-        planLabel = 'Pro';
-        planColor = '#C9A84C';
+        planLabel = 'Pro'; planColor = '#C9A84C';
       } else if (plan === 'starter') {
-        planLabel = 'Starter';
-        planColor = '#C9A84C';
+        planLabel = 'Starter'; planColor = '#C9A84C';
       } else {
-        planLabel = 'Trial';
-        planColor = 'rgba(201,168,76,0.6)';
+        planLabel = 'Trial'; planColor = 'rgba(201,168,76,0.6)';
       }
-      userRoleEl.innerHTML = 'Owner &nbsp;<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:' + planColor + ';border:1px solid ' + planColor + ';padding:1px 6px;border-radius:10px;">' + planLabel + '</span>';
+      userRoleEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;">Owner<span style="font-size:9px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;line-height:1;color:' + planColor + ';border:1px solid ' + planColor + ';padding:2px 6px;border-radius:10px;">' + planLabel + '</span></span>';
     }
     const avatarEl = document.querySelector('.user-avatar') || document.getElementById('s-avatar');
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
