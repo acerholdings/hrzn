@@ -1094,15 +1094,15 @@ html, body { background: var(--white) !important; }
   </div>
 </div>
 
-<!-- CTA / WAITLIST -->
-<div class="cta-section" id="waitlist">
+<!-- CTA / FREE TRIAL -->
+<div class="cta-section" id="get-started">
   <h2>Ready to run your business smarter?</h2>
-  <p>Join the waitlist and get early access to HRZN. Free to join.</p>
+  <p>Start your free trial today. No credit card required.</p>
   <div class="cta-form">
     <input class="cta-input" type="email" id="emailInput" placeholder="Enter your email address"/>
-    <button class="btn-gold" onclick="window.location.href='signup.html'">Start Free Trial →</button>
+    <button class="btn-gold" onclick="goToSignup()">Start Free Trial →</button>
   </div>
-  <div class="cta-sub" id="cta-message">No spam. No credit card. Just early access.</div>
+  <div class="cta-sub" id="cta-message">14-day free trial · No credit card · Cancel anytime</div>
 </div>
 
 <!-- FOOTER -->
@@ -1119,21 +1119,13 @@ html, body { background: var(--white) !important; }
 </footer>
 
 <script>
-function submitEmail() {
-  const email = document.getElementById('emailInput').value;
-  const msg = document.getElementById('cta-message');
-  if (!email || !email.includes('@')) {
-    msg.style.color = '#e05555';
-    msg.textContent = 'Please enter a valid email address.';
-    return;
-  }
-  msg.style.color = '#4caf7d';
-  msg.textContent = '✓ You\'re on the list! We\'ll be in touch soon.';
-  document.getElementById('emailInput').value = '';
+function goToSignup() {
+  var e = document.getElementById('emailInput').value.trim();
+  window.location.href = 'signup.html' + (e ? ('?email=' + encodeURIComponent(e)) : '');
 }
 
 document.getElementById('emailInput').addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') submitEmail();
+  if (e.key === 'Enter') goToSignup();
 });
 </script>
 
