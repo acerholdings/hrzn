@@ -134,6 +134,29 @@ export default async function handler(req, res) {
       if (!type || !data) return res.status(400).json({ error: 'Missing type or data' });
       if (!businessId) return res.status(400).json({ error: 'No business found for user' });
 
+      // ── ENTITLEMENT (POST only) ──────────────────────────────────────
+      // Saving/uploading data is a paid/trial feature. A cancelled, past-due, or
+      // expired-trial account may still LOAD its own data (GET, above, stays open
+      // so the app can read the plan and enforce the paywall) but may NOT write new
+      // data. Allowed: active starter/pro (not cancelled/past_due) OR active trial.
+      {
+        const bizAuthRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}&select=plan,subscription_status,trial_ends_at`,
+          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+        );
+        const [bizAuth] = await bizAuthRes.json();
+        const plan = (bizAuth?.plan || 'trial').toLowerCase();
+        const status = (bizAuth?.subscription_status || '').toLowerCase();
+        const paidActive = (plan === 'starter' || plan === 'pro') && status !== 'cancelled' && status !== 'past_due';
+        let trialActive = false;
+        if (plan === 'trial') {
+          trialActive = bizAuth?.trial_ends_at ? (new Date(bizAuth.trial_ends_at).getTime() > Date.now()) : true;
+        }
+        if (!paidActive && !trialActive) {
+          return res.status(403).json({ error: 'Your plan does not include saving data. Upgrade to continue.', code: 'not_entitled' });
+        }
+      }
+
       if (type === 'sales') {
         // Upsert sales data
         await fetch(`${SUPABASE_URL}/rest/v1/sales_data`, {
