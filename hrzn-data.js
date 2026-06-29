@@ -2112,11 +2112,22 @@ function hrznInjectFloatingAI() {
     thinkDiv.innerHTML = '<div class="hrzn-dot"></div><div class="hrzn-dot"></div><div class="hrzn-dot"></div>';
     msgs.appendChild(thinkDiv);
     msgs.scrollTop = msgs.scrollHeight;
+    // Demo / logged-out: don't spend API — nudge to sign up instead.
+    if ((typeof hrznIsDemo === 'function' && hrznIsDemo()) || (typeof hrznIsLoggedIn === 'function' && !hrznIsLoggedIn())) {
+      thinkDiv.remove();
+      const nudge = document.createElement('div');
+      nudge.className = 'hrzn-msg-ai';
+      nudge.textContent = 'Sign up to use the AI Operator on your own business data.';
+      msgs.appendChild(nudge);
+      msgs.scrollTop = msgs.scrollHeight;
+      return;
+    }
     // Call API
     try {
+      const _tok = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
       const r = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (_tok || '') },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 600,
@@ -2125,8 +2136,16 @@ function hrznInjectFloatingAI() {
         })
       });
       const data = await r.json();
-      const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t process that.';
       thinkDiv.remove();
+      if (r.status === 401 || r.status === 403) {
+        const gateDiv = document.createElement('div');
+        gateDiv.className = 'hrzn-msg-ai';
+        gateDiv.textContent = data.error || 'Your plan does not include the AI Operator.';
+        msgs.appendChild(gateDiv);
+        msgs.scrollTop = msgs.scrollHeight;
+        return;
+      }
+      const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t process that.';
       const aiDiv = document.createElement('div');
       aiDiv.className = 'hrzn-msg-ai';
       aiDiv.textContent = reply;

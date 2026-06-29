@@ -330,11 +330,17 @@ async function hrznAskWidget(prompt) {
   if (!text) return;
   if (input) input.value = '';
   response.style.display = 'block';
+  // Demo / logged-out visitors don't get live AI (no token, no API spend).
+  if ((typeof hrznIsDemo === 'function' && hrznIsDemo()) || (typeof hrznIsLoggedIn === 'function' && !hrznIsLoggedIn())) {
+    response.textContent = 'The AI Operator is available once you sign up. Start a free trial to ask about your own business data.';
+    return;
+  }
   response.textContent = 'Thinking...';
   try {
     const d = HRZN.getData();
+    const _tok = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
     const r = await fetch('/api/chat', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 500,
         system: HRZN.getSystemPrompt(d) + '\nRespond in 2-3 sentences. Be direct and specific with dollar amounts.',
@@ -342,6 +348,10 @@ async function hrznAskWidget(prompt) {
       })
     });
     const data = await r.json();
+    if (r.status === 401 || r.status === 403) {
+      response.textContent = data.error || 'Your plan does not include the AI Operator.';
+      return;
+    }
     response.textContent = data.content?.[0]?.text || 'Unable to respond.';
   } catch(e) {
     response.textContent = 'Connection error. Try again.';
@@ -547,8 +557,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!hrznHasData()) { summaryEl.textContent = 'Upload your CSV to get personalized AI insights.'; return; }
     try {
       const d2 = HRZN.getData();
+      // Demo / logged-out: don't spend API on the auto-summary; show a sign-up nudge.
+      if ((typeof hrznIsDemo === 'function' && hrznIsDemo()) || (typeof hrznIsLoggedIn === 'function' && !hrznIsLoggedIn())) {
+        if(summaryEl) summaryEl.textContent = 'Sign up to get AI insights on your own business data.';
+        return;
+      }
+      const _tok = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
       const r = await fetch('/api/chat', {
-        method:'POST', headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},
         body: JSON.stringify({
           model:'claude-sonnet-4-6', max_tokens:250,
           system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d2) : HRZN.getSystemPrompt(d2)),
@@ -556,6 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       const data = await r.json();
+      if (r.status === 401 || r.status === 403) { if(summaryEl) summaryEl.textContent = data.error || 'Upgrade to use AI insights.'; return; }
       if(summaryEl) summaryEl.textContent = data.content?.[0]?.text || 'Ready to analyze your business.';
     } catch(e) {
       if(summaryEl) summaryEl.textContent = 'Ready. Ask me anything about your business.';
