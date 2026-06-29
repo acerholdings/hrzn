@@ -166,12 +166,12 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <!-- Daily Breakdown Table -->
     <div id="daypart-table-card" class="card fade-3">
       <div class="card-header">
-        <div class="card-title">Daily Revenue Breakdown <span style="font-size:10px;color:var(--orange);">⚠ Est.</span></div>
-        <div style="font-size:10px;color:var(--text-dim);">Estimated from weekly avg + industry day weights</div>
+        <div class="card-title">Daily Revenue Breakdown</div>
+        <div style="font-size:10px;color:var(--text-dim);">Loading…</div>
       </div>
       <div style="overflow-x:auto;">
         <table class="data-table">
-          <thead><tr><th>Day</th><th>Lunch Est.</th><th>Dinner Est.</th><th>Total Est.</th><th>Items Est.</th><th>Avg Price</th><th>vs Avg</th></tr></thead>
+          <thead><tr><th>Day</th><th>Revenue</th><th>vs Avg</th></tr></thead>
           <tbody id="rev-table-body"></tbody>
         </table>
       </div>
@@ -497,44 +497,55 @@ const months = HRZN.getMonths(d);
   // Revenue Insights — real AI via central engine (replaces old hardcoded array)
   generateRevenueInsights();
 
-  // Daily breakdown table — Lunch/Dinner dayparts are a restaurant concept:
-  // hide the whole card for categories without dayparts (retail, online).
+  // Daily breakdown table.
+  //  - Non-restaurant categories (no dayparts): hide the card entirely.
+  //  - Empty data: hide the card.
+  //  - Restaurant WITHOUT real per-day data: previously this fabricated a precise
+  //    Lunch/Dinner table from weekly avg × hardcoded 32/68 weights, shown as if it
+  //    were real. That's the dishonest spot. Now we DECLINE honestly (same pattern as
+  //    "Revenue by Day" above) — show a "needs live daily data" message instead.
+  //  - Restaurant WITH real per-day data: show the real per-day totals. (Lunch/Dinner
+  //    split still isn't in CSV/POS daily data, so those columns are dropped in favor
+  //    of an honest real-total table.)
   const revBm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const revConcepts = revBm.concepts || { dayparts: true };
   const dpCard = document.getElementById('daypart-table-card');
-  if (dpCard && (revConcepts.dayparts === false || HRZN.getData()._source === 'empty')) dpCard.style.display = 'none';
+  const dpTitle = dpCard ? dpCard.querySelector('.card-title') : null;
+  const dpSub = dpCard ? dpCard.querySelector('.card-header > div:last-child') : null;
+  const dpThead = dpCard ? dpCard.querySelector('thead tr') : null;
   const tableBody = document.getElementById('rev-table-body');
-  if(tableBody && revConcepts.dayparts !== false && d._source !== 'empty') {
-    const rows = allDays.map(day => {
-      const dayRev = Math.round(weekly * dayWeights[day] / 7);
-      const lunch = Math.round(dayRev * 0.32);
-      const dinner = Math.round(dayRev * 0.68);
-      const items = Math.round(weeklyItems * dayWeights[day] / 7);
-      const isTue = day === 'tue';
-      const vsAvg = dayRev > daily*1.1 ? '<span style="color:var(--green);">above avg</span>' :
-                    dayRev < daily*0.85 ? '<span style="color:var(--red);">below avg</span>' :
-                    '<span style="color:var(--text-dim);">near avg</span>';
-      return '<tr' + (isTue ? ' style="background:rgba(224,85,85,0.04);"' : '') + '>' +
-        '<td style="font-weight:500;color:var(--text);">' + dayNames[day] + (isTue ? ' ⚑' : '') + '</td>' +
-        '<td style="font-family:DM Mono,monospace;">' + fmt(lunch) + '</td>' +
-        '<td style="font-family:DM Mono,monospace;">' + fmt(dinner) + '</td>' +
-        '<td style="font-family:DM Mono,monospace;font-weight:500;color:var(--text);">' + fmt(dayRev) + '</td>' +
-        '<td style="font-family:DM Mono,monospace;">' + items + '</td>' +
-        '<td style="font-family:DM Mono,monospace;">$' + (d.avgCheck||0) + '</td>' +
-        '<td>' + vsAvg + '</td>' +
-      '</tr>';
-    });
-    // Total row
-    rows.push('<tr style="background:var(--surface2);font-weight:600;">' +
-      '<td style="color:var(--text);">Weekly Total</td>' +
-      '<td style="font-family:DM Mono,monospace;">' + fmt(Math.round(weekly*0.32)) + '</td>' +
-      '<td style="font-family:DM Mono,monospace;">' + fmt(Math.round(weekly*0.68)) + '</td>' +
-      '<td style="font-family:DM Mono,monospace;color:var(--gold);">' + fmt(weekly) + '</td>' +
-      '<td style="font-family:DM Mono,monospace;">' + weeklyItems + '</td>' +
-      '<td style="font-family:DM Mono,monospace;">$' + (d.avgCheck||0) + '</td>' +
-      '<td style="color:var(--text-dim);">weekly avg</td>' +
-    '</tr>');
-    tableBody.innerHTML = rows.join('');
+
+  if (dpCard && (revConcepts.dayparts === false || d._source === 'empty')) {
+    dpCard.style.display = 'none';
+  } else if (dpCard && hasRealDaily) {
+    // REAL per-day data — show honest totals (no fabricated Lunch/Dinner split).
+    if (dpTitle) dpTitle.innerHTML = 'Daily Revenue Breakdown';
+    if (dpSub) { dpSub.textContent = 'From your connected POS'; dpSub.style.color = 'var(--green)'; }
+    if (dpThead) dpThead.innerHTML = '<th>Day</th><th>Revenue</th><th>vs Avg</th>';
+    if (tableBody) {
+      const vals = realDaily.map(x => x.revenue);
+      const avg = vals.reduce((s,v)=>s+v,0) / (vals.length || 1);
+      const rows = realDaily.slice().sort((a,b)=>b.revenue-a.revenue).map(rd => {
+        const val = Math.round(rd.revenue);
+        const vsAvg = val > avg*1.1 ? '<span style="color:var(--green);">above avg</span>' :
+                      val < avg*0.85 ? '<span style="color:var(--red);">below avg</span>' :
+                      '<span style="color:var(--text-dim);">near avg</span>';
+        return '<tr><td style="font-weight:500;color:var(--text);">' + rd.date + '</td>' +
+          '<td style="font-family:DM Mono,monospace;font-weight:500;color:var(--text);">' + fmt(val) + '</td>' +
+          '<td>' + vsAvg + '</td></tr>';
+      });
+      tableBody.innerHTML = rows.join('');
+    }
+  } else if (dpCard) {
+    // Restaurant, NO real daily data — decline honestly instead of fabricating.
+    if (dpTitle) dpTitle.innerHTML = 'Daily Revenue Breakdown';
+    if (dpSub) { dpSub.textContent = 'Needs live daily data'; dpSub.style.color = 'var(--text-dim)'; }
+    if (dpThead) dpThead.innerHTML = '<th>Day</th><th>Revenue</th><th>vs Avg</th>';
+    if (tableBody) {
+      tableBody.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;font-size:12px;color:var(--text-dim);">' +
+        'Day-by-day revenue (and lunch vs dinner split) needs live data. Connect a POS and sync a wider period to see your real daily breakdown.' +
+        '</td></tr>';
+    }
   }
 });
 
