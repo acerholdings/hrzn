@@ -310,14 +310,15 @@ Return ONLY JSON.`
     // told to use 0 for missing values), so a clean parse is NOT proof of valid data.
     // Reject when there's no usable revenue signal, so the user gets a clear message
     // instead of a silent "uploaded" that leads to a $0 dashboard.
+    const _num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
+    const _sumArr = (arr, key) => Array.isArray(arr) ? arr.reduce((s, r) => s + _num(r && r[key]), 0) : 0;
+
     if (type === 'sales') {
-      const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
-      const gross = num(parsed.grossSales);
-      const net = num(parsed.netSales);
-      const collected = num(parsed.amountCollected);
-      const items = num(parsed.itemsSold);
+      const gross = _num(parsed.grossSales);
+      const net = _num(parsed.netSales);
+      const collected = _num(parsed.amountCollected);
       const tenderVals = parsed.tenders && typeof parsed.tenders === 'object'
-        ? Object.values(parsed.tenders).reduce((s, v) => s + num(v), 0) : 0;
+        ? Object.values(parsed.tenders).reduce((s, v) => s + _num(v), 0) : 0;
       // Usable if ANY real money signal is present. Items alone is NOT enough — a corrupt
       // file can yield a stray item count with zero revenue (exactly the bug we saw).
       const hasRevenue = gross > 0 || net > 0 || collected > 0 || tenderVals > 0;
@@ -325,6 +326,79 @@ Return ONLY JSON.`
         return res.status(400).json({
           error: "We couldn't find any valid sales figures in this file. Please check it's a Sales Overview / sales summary export (with revenue columns) and try again."
         });
+      }
+    }
+
+    // Same honesty check for the other AI-parsed upload types: if the AI returned a
+    // well-formed-but-empty result (no usable rows / all-zero totals), reject with a
+    // type-specific message instead of silently "succeeding" into empty pages.
+    if (type === 'employees') {
+      const rows = Array.isArray(parsed.employees) ? parsed.employees.length : 0;
+      const totalSales = _num(parsed.totalNetSales) || _sumArr(parsed.employees, 'netSales');
+      if (rows === 0 || totalSales <= 0) {
+        return res.status(400).json({
+          error: "We couldn't find employee sales data in this file. Please upload an Employee Sales export (staff names with their sales)."
+        });
+      }
+    }
+
+    if (type === 'guests') {
+      const rows = Array.isArray(parsed.daily) ? parsed.daily.length : 0;
+      const total = _num(parsed.totalGuests) || _sumArr(parsed.daily, 'guests');
+      if (rows === 0 && total <= 0) {
+        return res.status(400).json({
+          error: "We couldn't find customer/guest counts in this file. Please upload a Customer Count export (visits or guests per day)."
+        });
+      }
+    }
+
+    if (type === 'orders') {
+      const rows = Array.isArray(parsed.orderTypes) ? parsed.orderTypes.length : 0;
+      const total = _sumArr(parsed.orderTypes, 'sales') + _sumArr(parsed.orderTypes, 'count');
+      if (rows === 0 || total <= 0) {
+        return res.status(400).json({
+          error: "We couldn't find order/channel data in this file. Please upload an Order Types export (sales split by channel)."
+        });
+      }
+    }
+
+    if (type === 'discounts') {
+      const rows = Array.isArray(parsed.discounts) ? parsed.discounts.length : 0;
+      const total = _num(parsed.totalDiscounts) || _sumArr(parsed.discounts, 'amount');
+      // Discounts can legitimately be zero-dollar but should still list discount TYPES;
+      // reject only when there are no rows at all (nothing recognized).
+      if (rows === 0) {
+        return res.status(400).json({
+          error: "We couldn't find discount data in this file. Please upload a Discounts export (discount types and amounts)."
+        });
+      }
+    }
+
+    // ── DATE HARDENING (sales): the AI can return malformed/blank period dates from a
+    // messy file, which previously produced inconsistent date ranges across pages.
+    // Validate them; recompute periodDays from valid dates; null out anything unparseable
+    // so downstream code falls back to its own defaults instead of trusting bad values.
+    if (type === 'sales') {
+      const validDate = (s) => {
+        if (!s || typeof s !== 'string') return null;
+        const t = Date.parse(s);
+        return isFinite(t) ? new Date(t) : null;
+      };
+      const ds = validDate(parsed.periodStart);
+      const de = validDate(parsed.periodEnd);
+      if (!ds) parsed.periodStart = null;
+      if (!de) parsed.periodEnd = null;
+      if (ds && de && de >= ds) {
+        // Recompute inclusive day span from the two valid dates (don't trust AI's count).
+        const days = Math.round((de - ds) / 86400000) + 1;
+        if (days > 0 && days < 3660) parsed.periodDays = days;   // sane cap (~10yr)
+      } else {
+        // Without a valid start+end we can't trust periodDays; drop it if it's not a
+        // sane positive integer so the front-end uses its own fallback.
+        const pd = parsed.periodDays;
+        if (!(typeof pd === 'number' && isFinite(pd) && pd > 0 && pd < 3660)) {
+          parsed.periodDays = null;
+        }
       }
     }
 
