@@ -554,7 +554,7 @@ Weekly revenue: $${weekly.toLocaleString()}
 Estimated weekly labor cost: $${Math.round(weekly * rate.value/100).toLocaleString()}
 Labor rate vs benchmark: ${(rate.value - tgtLabor).toFixed(1)} percentage points ${rate.value > tgtLabor ? 'above the industry benchmark' : 'at or below the industry benchmark'}`}
 
-If the labor rate is an estimate (not live), frame insights as estimates and recommend connecting Gusto for real per-shift labor data rather than inventing specifics.`;
+If the labor rate is an estimate (not live), frame insights as estimates and recommend connecting Gusto for real per-shift labor data rather than inventing specifics. CRITICAL: Do NOT invent or cite any weekly-revenue target, average-check target, or DoorDash target — none are provided here and you must not assume values like \$12,000, \$15, or 10%. Discuss ONLY labor against the labor figure/benchmark above; refer to revenue only as the actual figure shown, never as a gap to a target.`;
 }
 
 function renderLaborInsights(list, container, append) {

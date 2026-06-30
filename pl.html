@@ -599,7 +599,7 @@ ${expenseLinesPrompt}
 - Monthly Breakeven: $${Math.round(breakeven).toLocaleString()}/mo${tipsLinePL}
 - Weekly Revenue: $${weekly.toLocaleString()}/week${ddLinePL}
 
-CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your own figures.`;
+CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your own figures. Do NOT invent or cite a weekly-revenue target, average-check target, or DoorDash target that is not explicitly stated above (never assume \$12,000, \$15, or 10%). Only describe a metric as below/above target when a line above states an owner-set target; otherwise compare to the stated benchmark or omit.`;
 
   try{
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2200,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',messages:[{role:'user',content:prompt}]})});
@@ -717,7 +717,7 @@ Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)` :
 ${_plReal2.check ? `Avg Item Price: $${avgItemPrice.toFixed(2)} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)` : `Avg Item Price: $${avgItemPrice.toFixed(2)} (industry benchmark ~$${avgTarget2}; owner set no target — context only, do NOT claim a revenue gap)`}` : '')}${(plConcepts.delivery ? `
 DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution` : '')}
 
-RULES: Use ONLY numbers above. Never recalculate.`;
+RULES: Use ONLY numbers above. Never recalculate. Do NOT invent or cite a weekly-revenue, average-check, or DoorDash target that is not explicitly stated above (never assume \$12,000, \$15, or 10%). Where a line says no target was set, treat the figure as context/benchmark and do NOT claim a gap.`;
 
   const system = plMoreSystem;
   try{
