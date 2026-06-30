@@ -546,10 +546,13 @@ function buildLaborContext() {
 EXACT DATA — USE THESE NUMBERS ONLY:
 Business type: ${category}
 Labor rate: ${rate.value}% of revenue (source: ${rate.source}${rate.source !== 'api' ? ' — ESTIMATE, not from live payroll' : ' — live'})
-Labor cost target: ${tgtLabor}%
+${(m.targetIsReal&&m.targetIsReal.labor) ? `Labor cost target: ${tgtLabor}% (owner-set)
 Weekly revenue: $${weekly.toLocaleString()}
 Estimated weekly labor cost: $${Math.round(weekly * rate.value/100).toLocaleString()}
-Gap to target: ${(rate.value - tgtLabor).toFixed(1)} percentage points ${rate.value > tgtLabor ? 'ABOVE target (overspending)' : 'at or below target (healthy)'}
+Gap to target: ${(rate.value - tgtLabor).toFixed(1)} percentage points ${rate.value > tgtLabor ? 'ABOVE target (overspending)' : 'at or below target (healthy)'}` : `Industry labor benchmark: ${tgtLabor}% (owner set NO labor target — treat as benchmark context, do NOT claim the owner is over/under a target or quantify overspend vs a target)
+Weekly revenue: $${weekly.toLocaleString()}
+Estimated weekly labor cost: $${Math.round(weekly * rate.value/100).toLocaleString()}
+Labor rate vs benchmark: ${(rate.value - tgtLabor).toFixed(1)} percentage points ${rate.value > tgtLabor ? 'above the industry benchmark' : 'at or below the industry benchmark'}`}
 
 If the labor rate is an estimate (not live), frame insights as estimates and recommend connecting Gusto for real per-shift labor data rather than inventing specifics.`;
 }

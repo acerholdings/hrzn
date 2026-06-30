@@ -555,6 +555,7 @@ async function generatePLInsights(){
   const laborPct = revenue>0 ? (labor/revenue*100).toFixed(1) : 0;
   const _plgt = HRZN.getTargets ? HRZN.getTargets().labor : null; const _plbm = HRZN.getBenchmarks ? HRZN.getBenchmarks().laborPct : null; const laborTarget = (_plgt != null ? _plgt : (_plbm != null ? _plbm : 25));
   const laborOverageMo = revenue>0 ? Math.round((labor/revenue - laborTarget/100)*revenue/months) : 0;
+  const _plReal = ((HRZN.getMetrics ? (HRZN.getMetrics(d).targetIsReal) : null) || {});
   const laborOverageAnn = laborOverageMo * 12;
   const debtPct = revenue>0 ? (debt/revenue*100).toFixed(1) : 0;
   const debtHealthy = revenue*0.08;
@@ -589,7 +590,7 @@ P&L DATA (${months.toFixed(1)} month period) — USE THESE EXACT NUMBERS:${estNo
 - Revenue (Net Sales): $${Math.round(revenue).toLocaleString()}
 - ${cogsLbl} (COGS): $${Math.round(cogs).toLocaleString()} (${cogsPct}% of revenue — target ~${cogsTargetPct}% for this business type — ${parseFloat(cogsPct)<=cogsTargetPct?'✅ at or below target':'⚠️ above target'})${eTag('cogs')}
 - Gross Profit: $${Math.round(grossProfit).toLocaleString()} (${grossPct}% margin)
-- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}% — target ${laborTarget}% — ${laborOverageMo>0?'⚠️ $'+laborOverageMo.toLocaleString()+'/mo OVER target':'✅ at or below target'})${eTag('labor')}
+- Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%${_plReal.labor ? ` — target ${laborTarget}% — ${laborOverageMo>0?'⚠️ $'+laborOverageMo.toLocaleString()+'/mo OVER target':'✅ at or below target'}` : ` — industry benchmark ${laborTarget}%; owner set NO labor target, so treat as context and do NOT claim $/mo over a target`})${eTag('labor')}
 ${expenseLinesPrompt}
 - Marketing: $${Math.round(marketing).toLocaleString()} ($${mktMo.toLocaleString()}/mo — room to grow to 2% = $${mktAt2pct.toLocaleString()}/mo, $${mktExtra.toLocaleString()}/mo extra budget available)${eTag('marketing')}
 - Debt Payments: $${Math.round(debt).toLocaleString()} (${debtPct}% — ${debtOverage>0?'⚠️ $'+debtOverage.toLocaleString()+' OVER 8% benchmark — $'+debtMoDrag.toLocaleString()+'/mo drag':'✅ within healthy range'})${eTag('debt')}
@@ -674,6 +675,7 @@ async function generateMorePLInsights(){
   const debtSavingPeriod = Math.round(debt-debtAt12pct);
   const debtSavingMo2 = Math.round((debt-debtAt12pct)/months);
   const d2 = HRZN.getData();
+  const _plReal2 = ((HRZN.getMetrics ? (HRZN.getMetrics(d2).targetIsReal) : null) || {});
   const avgItemPrice = +(d2.avgCheck || 0);   // real avg item price from data, not a hardcoded 13.70
   const avgTarget2 = (plBm.avgTicket && plBm.avgTicket > 0) ? plBm.avgTicket : 0;
   const hasAvgPrice = avgItemPrice > 0;       // guard: only state a price/gap when real data exists
@@ -705,14 +707,14 @@ Period: ${months.toFixed(1)} months
 Net Sales: $${Math.round(revenue).toLocaleString()}
 ${plBm.cogsLabel||'Cost of Goods'}: $${Math.round(cogs).toLocaleString()} (${cogsPct}%) vs ${plBm.cogsPct!=null?plBm.cogsPct:35}% benchmark for this business type
 Gross Profit: $${Math.round(revenue-cogs).toLocaleString()} (${grossPct2}% margin)
-Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%) — overage = $${laborOverageMo2.toLocaleString()}/mo ($${laborOverageAnn.toLocaleString()}/yr)
+Labor: $${Math.round(labor).toLocaleString()} (${laborPct}%)${_plReal2.labor ? ` — overage vs owner target = $${laborOverageMo2.toLocaleString()}/mo ($${laborOverageAnn.toLocaleString()}/yr)` : ` (owner set NO labor target — context only, do NOT quantify an overage vs a target)`}
 ${expenseLinesPrompt}
 Marketing: $${Math.round(marketing).toLocaleString()} (${mktPct}%) = $${Math.round(marketing/months).toLocaleString()}/mo — room to grow to $${mktAt2pct.toLocaleString()}/mo (2% of revenue = $${mktBudgetExtra.toLocaleString()}/mo extra budget)
 Debt: $${Math.round(debt).toLocaleString()} (${debtPct}%) — overage vs 8% = $${debtOverage2.toLocaleString()} — reducing to 12% saves $${debtSavingMo2.toLocaleString()}/mo
 Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%) = $${moProfitCalc2.toLocaleString()}/mo
 Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo${(plConcepts.tips ? `
 Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)` : '')}${((plBm.avgTicket && plBm.avgTicket>0 && hasAvgPrice) ? `
-Avg Item Price: $${avgItemPrice.toFixed(2)} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)` : '')}${(plConcepts.delivery ? `
+${_plReal2.check ? `Avg Item Price: $${avgItemPrice.toFixed(2)} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)` : `Avg Item Price: $${avgItemPrice.toFixed(2)} (industry benchmark ~$${avgTarget2}; owner set no target — context only, do NOT claim a revenue gap)`}` : '')}${(plConcepts.delivery ? `
 DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution` : '')}
 
 RULES: Use ONLY numbers above. Never recalculate.`;

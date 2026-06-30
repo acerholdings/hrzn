@@ -577,13 +577,14 @@ function buildRevenueContext() {
 
 EXACT DATA — USE THESE NUMBERS ONLY:
 Total net sales: $${Math.round(d.netSales||0).toLocaleString()} over ${weeks.toFixed(1)} weeks
-Weekly revenue: $${weekly.toLocaleString()} vs $${(+targetRev).toLocaleString()} target — gap = $${(weekly - targetRev).toLocaleString()}/week
+${(m.targetIsReal&&m.targetIsReal.revenue) ? `Weekly revenue: $${weekly.toLocaleString()} vs $${(+targetRev).toLocaleString()} target — gap = $${(weekly - targetRev).toLocaleString()}/week` : `Weekly revenue: $${weekly.toLocaleString()} (owner set NO weekly revenue target — describe the trend only; do NOT claim a gap or annualized shortfall)`}
 Daily average: $${daily.toLocaleString()}
 Items sold per week: ${weeklyItems.toLocaleString()}
-${pTicketApplies ? `${pTicketLabel}: $${d.avgCheck||0} vs $${targetCheck} target
-` : ''}${digitalPct!=null ? `Digital payments (${pDigitalLabel}): ${digitalPct}% of collected${cashPctVal!=null ? ` — cash only ${cashPctVal}%` : ''}` : ''}
+${pTicketApplies ? ((m.targetIsReal&&m.targetIsReal.check) ? `${pTicketLabel}: $${d.avgCheck||0} vs $${targetCheck} target
+` : `${pTicketLabel}: $${d.avgCheck||0} (industry benchmark ~$${targetCheck}; owner set no target — context only, do NOT claim a dollar shortfall)
+`) : ''}${digitalPct!=null ? `Digital payments (${pDigitalLabel}): ${digitalPct}% of collected${cashPctVal!=null ? ` — cash only ${cashPctVal}%` : ''}` : ''}
 
-When referencing digital payment share, use EXACTLY ${digitalPct!=null ? digitalPct+'%' : 'the figure above'} — do not recalculate it. Focus on revenue trends, the gap to target, average-check opportunity, and the highest-impact lever to grow revenue. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
+When referencing digital payment share, use EXACTLY ${digitalPct!=null ? digitalPct+'%' : 'the figure above'} — do not recalculate it. Focus on revenue trends and the highest-impact lever to grow revenue. Only describe a "gap to target" or annual shortfall when a line above states an owner-set target; where it says no target was set, treat the figure as context or compare to the stated benchmark — never invent a target. Frame day-level suggestions generically (do not claim specific days are strong/weak — that data isn't available yet).`;
 }
 
 function renderRevInsights(list, container, append) {
