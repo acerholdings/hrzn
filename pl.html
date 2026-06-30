@@ -529,6 +529,32 @@ function calcAndRender(){
 }
 
 let _plInsights = [];  // shown insights, for exclusion + ceiling
+// Post-generation guard: Haiku sometimes invents owner "targets" the prompt never gave it
+// (e.g. "weekly revenue below your $12,000 target", "your operator target is 10%").
+// Drop any insight that asserts an owner-set target for a metric whose targetIsReal is false.
+function plDropFabricatedTargetInsights(insights, real){
+  real = real || {};
+  if(!Array.isArray(insights)) return insights;
+  // ownership words that turn a benchmark into a false "owner target" claim
+  const ownerClaim = /(your|owner[- ]?set|operator|internal)\s+(weekly\s+)?(revenue\s+|sales\s+|check\s+|labor\s+|food\s+|cogs\s+|doordash\s+|delivery\s+)?target|target\s*\(your setting\)|your setting/i;
+  const metricMap = [
+    { re: /(weekly\s+revenue|revenue\s+target|\$?12[,.]?000)/i, key: 'revenue' },
+    { re: /(average\s+check|avg\s+check|\$?15\b.*check|check.*\$?15\b)/i, key: 'check' },
+    { re: /(labor\s+target|labor.*target)/i, key: 'labor' },
+    { re: /(food\s+cost\s+target|cogs\s+target)/i, key: 'food' },
+    { re: /(doordash|delivery).*(target|10%)/i, key: 'doordash' }
+  ];
+  return insights.filter(function(ins){
+    const txt = ((ins && ins.title) || '') + ' ' + ((ins && ins.insight) || '');
+    if(!ownerClaim.test(txt)) return true; // no owner-target claim -> keep
+    // It claims an owner target. Keep only if SOME referenced metric is actually owner-set.
+    for(const mm of metricMap){
+      if(mm.re.test(txt) && real[mm.key] === true) return true; // legit owner target
+    }
+    return false; // fabricated owner target -> drop the insight
+  });
+}
+
 async function generatePLInsights(){
   if (HRZN.getData()._source === 'empty') {
     const c = document.getElementById('plInsightsContainer');
@@ -605,7 +631,8 @@ CRITICAL: Use ONLY the dollar amounts above. Do not calculate or estimate your o
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2200,system:plSystem+'\n\nRespond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}',messages:[{role:'user',content:prompt}]})});
     const data=await r.json();
     const text=data.content?.[0]?.text||'[]';
-    const insights=HRZN.parseInsights(text);
+    let insights=HRZN.parseInsights(text);
+    insights = plDropFabricatedTargetInsights(insights, _plReal);
     _plInsights = Array.isArray(insights) ? insights : [];
     _plInsights._tapped = false;
     renderPLInsights(_plInsights, container);
@@ -724,7 +751,8 @@ RULES: Use ONLY numbers above. Never recalculate. Do NOT invent or cite a weekly
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2200,system:system+'\n\nRespond ONLY with a JSON array. No markdown.',messages:[{role:'user',content:morePrompt}]})});
     const data=await r.json();
     const text=data.content?.[0]?.text||'[]';
-    const insights=HRZN.parseInsights(text);
+    let insights=HRZN.parseInsights(text);
+    insights = plDropFabricatedTargetInsights(insights, _plReal2);
     const loading=document.getElementById('pl-more-loading');
     if(loading)loading.remove();
     const fresh = Array.isArray(insights) ? insights : [];
