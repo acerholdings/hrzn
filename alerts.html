@@ -246,6 +246,10 @@ function buildAlertsContext(d) {
   const deliveryApplies = !!concepts.delivery;
   const tipsApplies = !!concepts.tips;
 
+  // Real weekly revenue target (matches the value getMetrics uses for the gap math).
+  // Declared here, before first use below, to avoid a temporal-dead-zone error.
+  const _real = (m.targetIsReal || {});
+
   const priceGapPeriod = (ticketApplies && _real.check && t.avgCheck != null) ? Math.round((t.avgCheck - avgPrice) * items) : 0;
   const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
   const ddGapPeriod = (deliveryApplies && _real.doordash && t.doordash != null) ? Math.round(net * (t.doordash/100) - dd) : 0;
@@ -258,8 +262,6 @@ function buildAlertsContext(d) {
   const laborMeta = HRZN.getLaborRateMeta ? HRZN.getLaborRateMeta() : { value: 32, isEstimate: true };
   const laborRate = laborMeta.value;
   const laborTgt = (m.targetLabor != null ? m.targetLabor : ((settings.targets && settings.targets.labor != null) ? settings.targets.labor : (t.labor != null ? t.labor : 25)));
-  // Real weekly revenue target (matches the value getMetrics uses for the gap math).
-  const _real = (m.targetIsReal || {});
   // Owner-set weekly target only — never the hardcoded 12000.
   const weeklyRevTgt = _real.revenue ? parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue)) : null;
 
