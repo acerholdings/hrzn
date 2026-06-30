@@ -615,22 +615,33 @@ const HRZN = {
       const dt = demoOn ? (this.getDemoData()._targets || {}) : {};
       const num = (v, fb) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
       // In demo mode, prefer the demo target; otherwise the user's saved target wins.
+      const userSet = (k) => { const v = tg[k]; return v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v)); };
       const pick = (savedKey, demoVal, fb) => {
         if (demoOn && demoVal != null) return num(demoVal, fb);
         return num(tg[savedKey], (demoVal != null ? demoVal : fb));
       };
+      // Goal targets (weekly revenue, avg check, doordash) must NOT be fabricated from a
+      // hardcoded constant. Return NULL when neither demo nor the owner has set one;
+      // downstream code already guards on `> 0` / `|| 0` and shows the plain figure.
+      const pickReal = (savedKey, demoVal) => {
+        if (demoOn && demoVal != null) return num(demoVal, null);
+        if (userSet(savedKey)) return num(tg[savedKey], null);
+        return null;
+      };
       return {
+        // Ratio targets — a meaningful category benchmark always exists, safe to default.
         labor: pick('labor', dt.labor, b.laborPct != null ? b.laborPct : (g.laborPct != null ? g.laborPct : 25)),
         food: pick('food', dt.food, b.cogsPct != null ? b.cogsPct : (g.cogsPct != null ? g.cogsPct : 35)),
         margin: pick('margin', dt.margin, b.netMarginTarget != null ? b.netMarginTarget : (g.netMarginTarget != null ? g.netMarginTarget : 10)),
-        weeklyRevenue: pick('revenue', dt.revenue, 12000),
-        monthlyRevenue: pick('monthly', dt.monthly, 50000),
-        avgCheck: pick('check', dt.check, b.avgTicket ? b.avgTicket : 0),
-        doordash: pick('doordash', dt.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
         discount: pick('discount', dt.discount, b.discountMaxPct != null ? b.discountMaxPct : (g.discountMaxPct != null ? g.discountMaxPct : 10)),
+        // Goal targets — NULL when unset (no hardcoded 12000/15/10).
+        weeklyRevenue: pickReal('revenue', dt.revenue),
+        monthlyRevenue: pickReal('monthly', dt.monthly),
+        avgCheck: pickReal('check', dt.check),
+        doordash: pickReal('doordash', dt.doordash),
       };
     } catch (e) {
-      return { labor:28, food:30, margin:15, weeklyRevenue:12000, monthlyRevenue:50000, avgCheck:15, doordash:10, discount:5 };
+      return { labor:28, food:30, margin:15, weeklyRevenue:null, monthlyRevenue:null, avgCheck:null, doordash:null, discount:5 };
     }
   },
 
@@ -774,11 +785,11 @@ const HRZN = {
       let count = 0;
       // Critical
       if (laborPct > t.labor + 4) count++;                 // labor well over target
-      if (weekly < t.weeklyRevenue * 0.85) count++;         // revenue >15% below target
+      if (t.weeklyRevenue != null && weekly < t.weeklyRevenue * 0.85) count++;  // revenue >15% below an OWNER-SET target only
       // Warning
       if (laborPct > t.labor && laborPct <= t.labor + 4) count++; // labor slightly over
       if (discountPct > t.discount) count++;                // discounts over target
-      if (ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck) count++;   // avg check below target
+      if (ticketApplies && avgCheck > 0 && t.avgCheck != null && avgCheck < t.avgCheck) count++;   // avg check below an OWNER-SET target only
       return count;
     } catch (e) {
       return 0;
@@ -1121,9 +1132,9 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const targets = settings.targets || {};
     const ctTargets = this.getTargets ? this.getTargets() : {};
     const laborTarget = (ctTargets.labor != null ? ctTargets.labor : (this.getBenchmarks && this.getBenchmarks().laborPct != null ? this.getBenchmarks().laborPct : 25));
-    const revenueTarget = ctTargets.weeklyRevenue || 0;
-    const checkTarget = ctTargets.avgCheck || 0;
-    const ddTarget = ctTargets.doordash || 10;
+    const revenueTarget = ctTargets.weeklyRevenue || 0;   // 0 when owner set none → existing ternary shows plain $/week
+    const checkTarget = ctTargets.avgCheck || 0;          // 0 when none → no '(target: $X)' suffix
+    const ddTarget = (ctTargets.doordash != null ? ctTargets.doordash : null);  // null when none → no DoorDash target line
 
     // Category concepts: never push restaurant-only concepts (tips, delivery) into the AI's
     // context for categories that don't have them — even if a target was saved in settings.
@@ -1133,7 +1144,7 @@ CRITICAL ANALYSIS RULES — THESE OVERRIDE EVERYTHING ELSE:
     const tipsLine = spConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales — ${tipsLabel})` : '';
     const showDD = spConcepts.delivery || (t.doorDash||0) > 0;
     const ddPayLine = showDD ? `\n- DoorDash/Delivery: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — ${ddLabel})` : '';
-    const ddTargetLine = spConcepts.delivery ? `\n- DoorDash target: ${ddTarget}%` : '';
+    const ddTargetLine = (spConcepts.delivery && ddTarget != null) ? `\n- DoorDash target: ${ddTarget}% (owner-set)` : (spConcepts.delivery ? `\n- DoorDash: ~10% is a common industry benchmark (owner set NO target — context only, do NOT claim a gap to a target)` : '');
 
     // Target comparison strings
     const revenueVsTarget = revenueTarget > 0
@@ -1378,20 +1389,27 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     const digitalTotal = credit + debit + dd;
     const digitalPct   = collected > 0 ? (digitalTotal / collected * 100) : 0;
 
-    // ── REVENUE GAPS ──
-    const weeklyGap    = targetRevenue - weekly;
+    // Realness flags — gaps are only meaningful against an OWNER-SET goal target.
+    // When the owner set no target, the "gap" is 0 (honest: there is no shortfall to a
+    // goal they never chose). Prevents fabricated $X-below-target figures downstream.
+    const _rRev = (typeof _st !== 'undefined') ? _isSet('revenue') : false;
+    const _rChk = (typeof _st !== 'undefined') ? _isSet('check')   : false;
+    const _rDD  = (typeof _st !== 'undefined') ? _isSet('doordash'): false;
+
+    // ── REVENUE GAPS ── (0 unless owner set a weekly revenue target)
+    const weeklyGap    = _rRev ? (targetRevenue - weekly) : 0;
     const periodGap    = weeklyGap * weeks;
     const annualGap    = weeklyGap * 52;
     const monthlyGap   = weeklyGap * 52 / 12;
 
-    // ── DOORDASH GAPS ──
+    // ── DOORDASH GAPS ── (0 unless owner set a doordash target)
     const ddTarget       = netSales * (targetDoorDash / 100);
-    const ddGapPeriod    = ddTarget - dd;
+    const ddGapPeriod    = _rDD ? (ddTarget - dd) : 0;
     const ddGapWeekly    = weeks  > 0 ? ddGapPeriod / weeks  : 0;
     const ddGapAnnual    = months > 0 ? ddGapPeriod / months * 12 : 0;
 
-    // ── PRICE GAPS ──
-    const priceGapPerItem  = targetCheck - avgPrice;
+    // ── PRICE GAPS ── (0 unless owner set an avg-check target)
+    const priceGapPerItem  = _rChk ? (targetCheck - avgPrice) : 0;
     const priceGapPeriod   = priceGapPerItem * itemsSold;
     const priceGapAnnual   = months > 0 ? priceGapPeriod / months * 12 : 0;
     const priceGapWeekly   = weeks  > 0 ? priceGapPeriod / weeks  : 0;

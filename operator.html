@@ -268,16 +268,6 @@ async function sendMessage(){
   const input=document.getElementById('aiInput'),btn=document.getElementById('aiSend');
   if(!input||!btn)return;
   const text=input.value.trim();if(!text)return;
-
-  // Demo / logged-out visitors don't get live AI (no token, no API spend).
-  // Gate the box behind sign-up instead of calling the API.
-  if ((typeof hrznIsDemo === 'function' && hrznIsDemo()) || (typeof hrznIsLoggedIn === 'function' && !hrznIsLoggedIn())) {
-    addMessage('user', text);
-    addMessage('ai', 'The AI Operator is available once you sign up. Start a free trial to ask questions about your own business data. → signup.html');
-    input.value='';
-    return;
-  }
-
   input.value='';btn.disabled=true;
   
   // Hide suggestions after first message
@@ -289,17 +279,11 @@ async function sendMessage(){
   addMessage('ai','Analyzing your business data...', true);
   
   try{
-    const _tok = (typeof hrznGetToken === 'function') ? hrznGetToken() : localStorage.getItem('hrzn_token');
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:HRZN.getAIContext(),messages:conversationHistory})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:HRZN.getAIContext(),messages:conversationHistory})});
     const d=await r.json();
-    document.getElementById('typing')?.remove();
-    if (r.status === 401 || r.status === 403) {
-      addMessage('ai', d.error || 'Your plan does not include the AI Operator.');
-      btn.disabled=false; input.focus();
-      return;
-    }
     const reply=d.content?.[0]?.text||'Error getting response';
     conversationHistory.push({role:'assistant',content:reply});
+    document.getElementById('typing')?.remove();
     addMessage('ai',reply);
   }catch(e){
     document.getElementById('typing')?.remove();
@@ -327,12 +311,12 @@ function getTargets(){
     return {
       labor:        num(t.labor,    b.laborPct != null ? b.laborPct : 25),
       food:         num(t.food,     b.cogsPct  != null ? b.cogsPct  : 35),
-      weeklyRevenue:num(t.revenue,  12000),
-      avgCheck:     num(t.check,    b.avgTicket ? b.avgTicket : 0),
-      doordash:     num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+      weeklyRevenue:(t.revenue!=null&&t.revenue!==''&&!isNaN(parseFloat(t.revenue)))?num(t.revenue,null):null,
+      avgCheck:     (t.check!=null&&t.check!==''&&!isNaN(parseFloat(t.check)))?num(t.check,null):null,
+      doordash:     (t.doordash!=null&&t.doordash!==''&&!isNaN(parseFloat(t.doordash)))?num(t.doordash,null):null,
       discount:     num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 10)
     };
-  }catch(e){return {labor:25,food:35,weeklyRevenue:12000,avgCheck:0,doordash:0,discount:10};}
+  }catch(e){return {labor:25,food:35,weeklyRevenue:null,avgCheck:null,doordash:null,discount:10};}
 }
 
 
@@ -635,9 +619,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(concepts.delivery && doorDashPct < t.doordash) alerts.push({color:'var(--red)', text:'DoorDash only '+doorDashPct+'% of revenue', q:'How should I grow DoorDash revenue?'});
     const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
     // Avg-ticket alert only when the category itself defines a ticket target, using its own label.
-    if(ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:ticketLabel+' $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase '+ticketLabel.toLowerCase()+'?'});
+    if(ticketApplies && avgCheck > 0 && t.avgCheck != null && avgCheck < t.avgCheck) alerts.push({color:'var(--orange)', text:ticketLabel+' $'+avgCheck+' below $'+t.avgCheck+' target', q:'How do I increase '+ticketLabel.toLowerCase()+'?'});
     if(discountPct > t.discount) alerts.push({color:'var(--orange)', text:'Discounts at '+discountPct+'% of gross sales', q:'Are my discounts hurting my margins?'});
-    if(weekly < t.weeklyRevenue) alerts.push({color:'var(--orange)', text:'Weekly avg $'+Math.round(weekly).toLocaleString()+' below target', q:'What can I do to increase weekly revenue?'});
+    if(t.weeklyRevenue != null && weekly < t.weeklyRevenue) alerts.push({color:'var(--orange)', text:'Weekly avg $'+Math.round(weekly).toLocaleString()+' below target', q:'What can I do to increase weekly revenue?'});
 
     // Always add a win
     if(discountPct <= t.discount) alerts.push({color:'var(--green)', text:'Discount rate '+discountPct+'% — healthy', q:'How can I use my low discount rate to my advantage?'});

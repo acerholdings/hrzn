@@ -362,6 +362,7 @@ async function generateSpecificReport(type) {
   }
   const d = HRZN.getData();
   const m = HRZN.getMetrics(d);
+  const _rReal = (m.targetIsReal || {});
   const period = d.period || 'Jan–May 2026';
   const shortPeriod = period.replace(/12:00 AM|11:59 PM/g,'').replace(/  /g,' ').trim();
   const settings2 = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
@@ -406,7 +407,8 @@ async function generateSpecificReport(type) {
   const digitalTotal = (t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0);
   const digitalPct = d.amountCollected > 0 ? (digitalTotal/d.amountCollected*100).toFixed(1) : 0;
   const priceGap = ticketTarget ? Math.round((ticketTarget-(d.avgCheck||0))*(d.itemsSold||0)) : 0;
-  const ddGapAnn = Math.round(((d.netSales||0)*0.10-(t.doorDash||0))/monthsReal*12);
+  const _ddTgtReal = (_rReal.doordash && rTargets.doordash != null) ? rTargets.doordash : null;
+  const ddGapAnn = _ddTgtReal != null ? Math.round(((d.netSales||0)*(_ddTgtReal/100)-(t.doorDash||0))/monthsReal*12) : 0;
 
   // Labor rate from the central labor-rate chain (Item 2.5), not a hardcoded 32%.
   let laborMeta = null;
@@ -420,9 +422,9 @@ async function generateSpecificReport(type) {
   // Concept-gated, non-editorialized data fragments (no prejudging "excellent"/"strong" —
   // let the AI assess against benchmarks; don't feed restaurant concepts to other categories).
   const tipsLine = rConcepts.tips ? `\n- Tips: $${Math.round(d.tips||0).toLocaleString()} (${tipsPct}% of net sales)` : '';
-  const ddLineW = rConcepts.delivery ? `\n- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — gap to 10% target = $${ddGapAnn.toLocaleString()}/yr)` : '';
-  const ticketLineW = ticketTarget ? `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)} vs $${ticketTarget} target (gap = $${priceGap.toLocaleString()} this period)` : `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)}`;
-  const ddGrowthLine = rConcepts.delivery ? `\n- Growth opportunity: $${ddGapAnn.toLocaleString()}/yr from delivery expansion` : '';
+  const ddLineW = rConcepts.delivery ? (_ddTgtReal != null ? `\n- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% — gap to ${_ddTgtReal}% OWNER-SET target = $${ddGapAnn.toLocaleString()}/yr)` : `\n- DoorDash: $${Math.round(t.doorDash||0).toLocaleString()} (${ddPct}% of revenue — industry benchmark ~8-10%, owner set NO target; context only, do NOT claim a gap)`) : '';
+  const ticketLineW = ticketTarget ? ((_rReal.check && rTargets.avgCheck != null) ? `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)} vs $${rTargets.avgCheck} OWNER-SET target (gap = $${priceGap.toLocaleString()} this period)` : `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)} (industry benchmark ~$${ticketTarget}; owner set NO target — context only, do NOT claim a gap)`) : `\n- ${ticketLabel}: $${(d.avgCheck||0).toFixed(2)}`;
+  const ddGrowthLine = (rConcepts.delivery && _ddTgtReal != null) ? `\n- Growth opportunity: $${ddGapAnn.toLocaleString()}/yr from delivery expansion` : '';
 
   const reportPrompts = {
     weekly: `Write a comprehensive weekly business summary report for ${bizName}, a ${rbm.label || 'business'}. Use this EXACT real data and assess it against benchmarks yourself — do not assume any figure is good or bad without comparing it:
@@ -458,7 +460,7 @@ Format as professional executive summary with: Business Overview, Financial Perf
   };
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
@@ -488,7 +490,7 @@ async function generateCustomReport() {
   card.scrollIntoView({behavior:'smooth'});
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),

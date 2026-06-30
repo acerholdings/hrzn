@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const coll = d.amountCollected || 0;
     const weekly = net / weeks;
     const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-    const tgt = (HRZN.getTargets ? (function(){const t=HRZN.getTargets(); return { revenue:+(t.weeklyRevenue||12000), check:+(t.avgCheck||0), labor:+(t.labor!=null?t.labor:28), doordash:+(t.doordash||0), discount:+(t.discount||10) };})() : { revenue:12000, check:15, labor:28, doordash:10, discount:5 });
+    const tgt = (HRZN.getTargets ? (function(){const t=HRZN.getTargets(); return { revenue:(t.weeklyRevenue!=null?+t.weeklyRevenue:null), check:(t.avgCheck!=null?+t.avgCheck:null), labor:+(t.labor!=null?t.labor:28), doordash:(t.doordash!=null?+t.doordash:null), discount:+(t.discount||10) };})() : { revenue:null, check:null, labor:28, doordash:null, discount:5 });
     const ddGapWeekly = Math.max(0, (net * tgt.doordash/100 - (t.doorDash||0)) / weeks);
     return {
       weeks, months, weekly, monthly: net/months, daily: weekly/7,
@@ -603,9 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cashPct: coll > 0 ? (t.cash||0)/coll*100 : 0,
       digitalTotal: (t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0),
       digitalPct: coll > 0 ? ((t.creditCard||0)+(t.debitCard||0)+(t.doorDash||0))/coll*100 : 0,
-      weeklyGap: tgt.revenue - weekly, annualGap: (tgt.revenue-weekly)*52,
+      weeklyGap: (tgt.revenue!=null? tgt.revenue - weekly : 0), annualGap: (tgt.revenue!=null? (tgt.revenue-weekly)*52 : 0),
       ddGapWeekly, ddGapAnnual: ddGapWeekly*52,
-      priceGapPeriod: (tgt.check - (d.itemsSold>0?net/d.itemsSold:0)) * (d.itemsSold||0),
+      priceGapPeriod: (tgt.check!=null ? (tgt.check - (d.itemsSold>0?net/d.itemsSold:0)) * (d.itemsSold||0) : 0),
       laborExcessWeekly: weekly * Math.max(0, (HRZN.getLaborRate ? HRZN.getLaborRate() : 32)-tgt.labor) / 100,
       targetRevenue: tgt.revenue, targetCheck: tgt.check,
       targetLabor: tgt.labor, targetDoorDash: tgt.doordash,
@@ -660,8 +660,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Targets from settings
   // Category-aware targets (user-saved wins, else category benchmark) — was hardcoded restaurant values.
-  let tgt = {labor:28,doordash:10,discount:5,check:15,revenue:12000};
-  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt = { labor:+(t.labor!=null?t.labor:28), doordash:+(t.doordash||0), discount:+(t.discount||10), check:+(t.avgCheck||0), revenue:+(t.weeklyRevenue||12000) }; } catch(e){}
+  let tgt = {labor:28,doordash:null,discount:5,check:null,revenue:null};
+  try { const t = HRZN.getTargets ? HRZN.getTargets() : {}; tgt = { labor:+(t.labor!=null?t.labor:28), doordash:(t.doordash!=null?+t.doordash:null), discount:+(t.discount||10), check:(t.avgCheck!=null?+t.avgCheck:null), revenue:(t.weeklyRevenue!=null?+t.weeklyRevenue:null) }; } catch(e){}
 
   const laborPct = m.laborPct;  // central: live → manual → fallback (see HRZN.getLaborRateMeta)
   const doorDashPct = d.amountCollected > 0 
@@ -683,8 +683,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashConcepts = dashBm.concepts || { delivery:true, tips:true };
   const dashTicketApplies = !!(dashBm.avgTicket && dashBm.avgTicket > 0);
   const dashTicketLabel = dashBm.avgTicketLabel || 'Avg item price';
-  if(!dashEmpty && dashConcepts.delivery && doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
-  if(!dashEmpty && dashTicketApplies && avgCheck > 0 && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:dashTicketLabel+' $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on lifting the average sale',link:'products.html'});
+  if(!dashEmpty && dashConcepts.delivery && tgt.doordash!=null && doorDashPct < tgt.doordash) alerts.push({icon:'🚗',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:'DoorDash at '+doorDashPct+'% -- below '+tgt.doordash+'% target',desc:'Est. '+fmt(Math.round(m.ddGapWeekly))+'/week revenue gap',link:'sales.html'});
+  if(!dashEmpty && dashTicketApplies && avgCheck > 0 && tgt.check!=null && avgCheck < tgt.check) alerts.push({icon:'📈',color:'var(--orange)',bg:'rgba(224,140,53,0.1)',title:dashTicketLabel+' $'+avgCheck+' below $'+tgt.check+' target',desc:'Focus on lifting the average sale',link:'products.html'});
   if(!dashEmpty && discountPct <= tgt.discount) alerts.push({icon:'✓',color:'var(--green)',bg:'rgba(76,175,125,0.1)',title:'Discount rate '+discountPct+'% -- healthy',desc:'Below the '+(dashBm.discountMaxPct || 6)+'% warning threshold for your business type',link:'alerts.html'});
 
   const alertsList = document.getElementById('dash-alerts-list');

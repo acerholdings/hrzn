@@ -230,9 +230,10 @@ function buildAlertsContext(d) {
   const tipsPct = net > 0 ? (tips/net*100).toFixed(1) : 0;
   const ddPct = collected > 0 ? (dd/collected*100).toFixed(1) : 0;
   const weeklyRev = Math.round(m.weekly);
-  const weeklyGap = m.weeklyGap;
-  const annualGap = Math.round(m.annualGap);
-  const periodGap = Math.round(weeklyGap * weeks);
+  const _realRev = (m.targetIsReal && m.targetIsReal.revenue);
+  const weeklyGap = _realRev ? m.weeklyGap : 0;        // no fabricated revenue gap when target unset
+  const annualGap = _realRev ? Math.round(m.annualGap) : 0;
+  const periodGap = _realRev ? Math.round(weeklyGap * weeks) : 0;
   const avgPrice = net > 0 && items > 0 ? net/items : 0;
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
   const bizName = settings.businessName || 'this business';
@@ -240,14 +241,14 @@ function buildAlertsContext(d) {
   const bm = (HRZN.getBenchmarks ? HRZN.getBenchmarks() : {}) || {};
   const concepts = bm.concepts || { delivery: true };
   const ticketLabel = bm.avgTicketLabel || 'Avg Item Price';
-  const t = (typeof getTargets === 'function') ? getTargets() : { avgCheck: 15, doordash: 10 };
+  const t = (typeof getTargets === 'function') ? getTargets() : { avgCheck: null, doordash: null, weeklyRevenue: null };
   const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
   const deliveryApplies = !!concepts.delivery;
   const tipsApplies = !!concepts.tips;
 
-  const priceGapPeriod = ticketApplies ? Math.round((t.avgCheck - avgPrice) * items) : 0;
+  const priceGapPeriod = (ticketApplies && _real.check && t.avgCheck != null) ? Math.round((t.avgCheck - avgPrice) * items) : 0;
   const priceGapAnnual = Math.round(priceGapPeriod / months * 12);
-  const ddGapPeriod = deliveryApplies ? Math.round(net * (t.doordash/100) - dd) : 0;
+  const ddGapPeriod = (deliveryApplies && _real.doordash && t.doordash != null) ? Math.round(net * (t.doordash/100) - dd) : 0;
   const ddGapAnnual = Math.round(ddGapPeriod / months * 12);
   // Combined opportunity only includes gaps that apply to this category.
   const combinedPeriod = periodGap + (ddGapPeriod > 0 ? ddGapPeriod : 0) + (priceGapPeriod > 0 ? priceGapPeriod : 0);
@@ -258,20 +259,24 @@ function buildAlertsContext(d) {
   const laborRate = laborMeta.value;
   const laborTgt = (m.targetLabor != null ? m.targetLabor : ((settings.targets && settings.targets.labor != null) ? settings.targets.labor : (t.labor != null ? t.labor : 25)));
   // Real weekly revenue target (matches the value getMetrics uses for the gap math).
-  const weeklyRevTgt = parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue) || 12000);
+  const _real = (m.targetIsReal || {});
+  // Owner-set weekly target only — never the hardcoded 12000.
+  const weeklyRevTgt = _real.revenue ? parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue)) : null;
 
   const lines = [
     'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
     '',
     'EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:',
     'Period: ' + (d.periodStart||'Jan 1') + ' – ' + (d.periodEnd||'May 28, 2026') + ' (' + Math.round(weeks) + ' weeks, ' + months.toFixed(1) + ' months)',
-    'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $' + weeklyRevTgt.toLocaleString() + ' target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)',
+    (weeklyRevTgt != null
+      ? 'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + ' vs $' + weeklyRevTgt.toLocaleString() + ' OWNER-SET target — gap $' + weeklyGap.toLocaleString() + '/wk ($' + annualGap.toLocaleString() + '/yr, $' + periodGap.toLocaleString() + ' this period)'
+      : 'Net Sales: $' + Math.round(net).toLocaleString() + ' | Weekly avg: $' + weeklyRev.toLocaleString() + '/week (owner set NO weekly revenue target — describe the trend; do NOT claim a gap or annualized shortfall, and do NOT invent a $12,000 target)'),
     'Discounts: $' + Math.round(disc).toLocaleString() + ' = ' + discPct + '% of gross (assess against this business type\'s benchmark)',
     (tipsApplies ? 'Tips: $' + Math.round(tips).toLocaleString() + ' = ' + tipsPct + '% of net sales — ' + (parseFloat(tipsPct)>15?'STRONG WIN (above 15%)':'average') : null),
     'Labor cost: ' + laborRate + '% of revenue (ACTUAL' + (laborMeta.isEstimate ? ', estimated' : '') + ') vs ' + laborTgt + '% target — ' + (laborRate > laborTgt ? (laborRate-laborTgt).toFixed(0)+' points ABOVE target' : 'at or below target') + '. Use ' + laborRate + '% as the actual labor rate; do NOT use the ' + laborTgt + '% target as if it were the actual.',
     'Digital payments (credit+debit+DoorDash): $' + Math.round(digitalTotal).toLocaleString() + ' = ' + digitalPct + '% of collected — cash only ' + cashPct + '%',
-    (deliveryApplies ? 'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to ' + t.doordash + '% target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)' : null),
-    (ticketApplies ? ticketLabel + ': $' + avgPrice.toFixed(2) + ' vs $' + t.avgCheck + ' target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)' : null),
+    (deliveryApplies ? ((_real.doordash && t.doordash != null) ? 'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% — gap to ' + t.doordash + '% OWNER-SET target = $' + ddGapPeriod.toLocaleString() + ' this period ($' + ddGapAnnual.toLocaleString() + '/yr)' : 'DoorDash: $' + Math.round(dd).toLocaleString() + ' = ' + ddPct + '% of revenue (industry benchmark ~8-10%; owner set NO target — context only, do NOT claim a gap)') : null),
+    (ticketApplies ? ((_real.check && t.avgCheck != null) ? ticketLabel + ': $' + avgPrice.toFixed(2) + ' vs $' + t.avgCheck + ' OWNER-SET target — gap = $' + priceGapPeriod.toLocaleString() + ' this period ($' + priceGapAnnual.toLocaleString() + '/yr)' : ticketLabel + ': $' + avgPrice.toFixed(2) + ' (industry benchmark ~$' + (bm.avgTicket||15) + '; owner set NO target — context only, do NOT claim a gap)') : null),
     'Items Sold: ' + items.toLocaleString() + ' (' + Math.round(items/weeks) + '/week)',
     'COMBINED addressable opportunity: $' + combinedPeriod.toLocaleString() + ' this period ($' + combinedAnnual.toLocaleString() + '/yr) = revenue gap' + (deliveryApplies ? ' + DoorDash gap' : '') + (ticketApplies ? ' + price gap' : ''),
     '',
@@ -303,7 +308,7 @@ async function generateAlertsInsights() {
   const { system, prompt } = HRZN.getInsightPrompt('alerts', calcCtx, priorTitles.length ? { exclude: priorTitles } : {});
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
         system, messages:[{role:'user', content: prompt}]
@@ -345,7 +350,7 @@ async function generateMoreAlertsInsights() {
   });
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
         system, messages:[{role:'user', content: prompt}]
@@ -437,13 +442,13 @@ function getTargets(){
       labor: num(t.labor, b.laborPct != null ? b.laborPct : 25),
       food: num(t.food, b.cogsPct != null ? b.cogsPct : 35),
       margin: num(t.margin, b.netMarginTarget != null ? b.netMarginTarget : 10),
-      weeklyRevenue: num(t.revenue, 12000),
-      monthlyRevenue: num(t.monthly, 50000),
-      avgCheck: num(t.check, b.avgTicket ? b.avgTicket : 0),
-      doordash: num(t.doordash, b.deliveryTargetPct != null ? b.deliveryTargetPct : 0),
+      weeklyRevenue: (t.revenue!=null && t.revenue!=='' && !isNaN(parseFloat(t.revenue))) ? num(t.revenue, null) : null,
+      monthlyRevenue: (t.monthly!=null && t.monthly!=='' && !isNaN(parseFloat(t.monthly))) ? num(t.monthly, null) : null,
+      avgCheck: (t.check!=null && t.check!=='' && !isNaN(parseFloat(t.check))) ? num(t.check, null) : null,
+      doordash: (t.doordash!=null && t.doordash!=='' && !isNaN(parseFloat(t.doordash))) ? num(t.doordash, null) : null,
       discount: num(t.discount, b.discountMaxPct != null ? b.discountMaxPct : 10),
     };
-  }catch(e){return {labor:25,food:35,margin:10,weeklyRevenue:12000,monthlyRevenue:50000,avgCheck:0,doordash:0,discount:10};}
+  }catch(e){return {labor:25,food:35,margin:10,weeklyRevenue:null,monthlyRevenue:null,avgCheck:null,doordash:null,discount:10};}
 }
 
 function makeAlertCard(alert){
@@ -507,8 +512,8 @@ function generateAlerts(){
     });
   }
 
-  // Revenue below weekly target
-  if(weekly < t.weeklyRevenue * 0.85){
+  // Revenue below weekly target — ONLY when the owner actually set a weekly target
+  if(t.weeklyRevenue != null && weekly < t.weeklyRevenue * 0.85){
     critical.push({
       type:'critical', category:'Revenue',
       title:`Weekly revenue ${fmt(weekly)} is below target`,
@@ -543,7 +548,7 @@ function generateAlerts(){
 
   // Avg ticket below target (only when the CATEGORY itself defines a ticket target)
   const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
-  if(ticketApplies && avgCheck > 0 && avgCheck < t.avgCheck){
+  if(ticketApplies && avgCheck > 0 && t.avgCheck != null && avgCheck < t.avgCheck){
     warning.push({
       type:'warning', category:'Pricing',
       title:`${ticketLabel} $${parseFloat(avgCheck).toFixed(2)} is below $${parseFloat(t.avgCheck).toFixed(2)} target`,
@@ -618,8 +623,8 @@ function generateAlerts(){
     });
   }
 
-  // Revenue target met
-  if(weekly >= t.weeklyRevenue){
+  // Revenue target met — ONLY when the owner actually set a weekly target
+  if(t.weeklyRevenue != null && weekly >= t.weeklyRevenue){
     wins.push({
       type:'win', category:'Revenue',
       title:`Weekly revenue ${fmt(weekly)} meets target`,
