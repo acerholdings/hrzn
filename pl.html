@@ -715,7 +715,7 @@ Net Profit: $${Math.round(netProfit).toLocaleString()} (${netPct}%) = $${moProfi
 Monthly Breakeven: $${Math.round((cogs+opex)/months).toLocaleString()}/mo${(plConcepts.tips ? `
 Tips: $${Math.round(d2.tips||0).toLocaleString()} (${tipsPct2}% of net sales)` : '')}${((plBm.avgTicket && plBm.avgTicket>0 && hasAvgPrice) ? `
 ${_plReal2.check ? `Avg Item Price: $${avgItemPrice.toFixed(2)} vs $${avgTarget2} target — revenue gap = $${priceGapPeriod2.toLocaleString()} this period ($${priceGapAnnual2.toLocaleString()}/yr)` : `Avg Item Price: $${avgItemPrice.toFixed(2)} (industry benchmark ~$${avgTarget2}; owner set no target — context only, do NOT claim a revenue gap)`}` : '')}${(plConcepts.delivery ? `
-DoorDash: $${Math.round(dd2).toLocaleString()} — gap to 10% target = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution` : '')}
+DoorDash: $${Math.round(dd2).toLocaleString()} — vs 10% industry benchmark (NOT an owner target), gap = $${ddGapPeriod2.toLocaleString()} this period ($${ddGapAnnual2.toLocaleString()}/yr) — at 10% with 20% commission = $${ddAt10net.toLocaleString()} net contribution. Call 10% a 'benchmark', never a 'target'.` : '')}
 
 RULES: Use ONLY numbers above. Never recalculate. Do NOT invent or cite a weekly-revenue, average-check, or DoorDash target that is not explicitly stated above (never assume \$12,000, \$15, or 10%). Where a line says no target was set, treat the figure as context/benchmark and do NOT claim a gap.`;
 
