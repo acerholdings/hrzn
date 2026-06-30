@@ -535,23 +535,34 @@ let _plInsights = [];  // shown insights, for exclusion + ceiling
 function plDropFabricatedTargetInsights(insights, real){
   real = real || {};
   if(!Array.isArray(insights)) return insights;
-  // ownership words that turn a benchmark into a false "owner target" claim
-  const ownerClaim = /(your|owner[- ]?set|operator|internal)\s+(weekly\s+)?(revenue\s+|sales\s+|check\s+|labor\s+|food\s+|cogs\s+|doordash\s+|delivery\s+)?target|target\s*\(your setting\)|your setting/i;
+  // Phrases that assert an OWNER target/goal (possessive forms included) rather than an industry benchmark.
+  const ownerClaim = /((your|owner'?s?|owner[- ]?set|operator|internal|set)\s+(weekly\s+)?(revenue\s+|sales\s+|check\s+|labor\s+|food\s+|food\s+cost\s+|cogs\s+|doordash\s+|delivery\s+)?(target|goal))|target\s*\(your setting\)|your setting/i;
+  // Implied-target language: "gap"/"shortfall"/"below target" tied to weekly revenue or avg check
+  // (the model dressing up a fabricated $12,000/$15 target without the word "your").
+  const impliedRevGap = /(weekly\s+revenue\s+gap|revenue\s+gap|weekly\s+shortfall|\$?1[,.]?980|below\s+target|short\s+of\s+target)/i;
+  const mentionsWeeklyRev = /(weekly\s+revenue|\$?12[,.]?000|\$?10[,.]?020)/i;
+  const mentionsCheck = /(average\s+check|avg\s+check|\$?15\b|\$?13\.7)/i;
   const metricMap = [
     { re: /(weekly\s+revenue|revenue\s+target|\$?12[,.]?000)/i, key: 'revenue' },
     { re: /(average\s+check|avg\s+check|\$?15\b.*check|check.*\$?15\b)/i, key: 'check' },
     { re: /(labor\s+target|labor.*target)/i, key: 'labor' },
-    { re: /(food\s+cost\s+target|cogs\s+target)/i, key: 'food' },
+    { re: /(food\s+cost\s+target|food\s+target|cogs\s+target)/i, key: 'food' },
     { re: /(doordash|delivery).*(target|10%)/i, key: 'doordash' }
   ];
   return insights.filter(function(ins){
     const txt = ((ins && ins.title) || '') + ' ' + ((ins && ins.insight) || '');
-    if(!ownerClaim.test(txt)) return true; // no owner-target claim -> keep
-    // It claims an owner target. Keep only if SOME referenced metric is actually owner-set.
-    for(const mm of metricMap){
-      if(mm.re.test(txt) && real[mm.key] === true) return true; // legit owner target
+    // (A) Explicit owner-target claim -> keep only if a referenced metric is truly owner-set
+    if(ownerClaim.test(txt)){
+      let legit = false;
+      for(const mm of metricMap){ if(mm.re.test(txt) && real[mm.key] === true){ legit = true; break; } }
+      if(!legit) return false;
     }
-    return false; // fabricated owner target -> drop the insight
+    // (B) Implied revenue/check "gap to target" without owner-set target -> drop
+    if(impliedRevGap.test(txt)){
+      if(mentionsWeeklyRev.test(txt) && real.revenue !== true) return false;
+      if(mentionsCheck.test(txt) && real.check !== true) return false;
+    }
+    return true;
   });
 }
 
