@@ -460,7 +460,7 @@ Format as professional executive summary with: Business Overview, Financial Perf
   };
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
@@ -468,6 +468,7 @@ Format as professional executive summary with: Business Overview, Financial Perf
       })
     });
     const data = await r.json();
+    if (!r.ok || data.error) { body.textContent = data.error || ('Report request failed ('+r.status+')'); return; }
     const text = data.content?.[0]?.text || 'Error generating report';
     body.innerHTML = renderMarkdown(text);
     addToReportHistory(titles[type] || 'Generated Report', type);
@@ -490,7 +491,7 @@ async function generateCustomReport() {
   card.scrollIntoView({behavior:'smooth'});
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
@@ -498,6 +499,7 @@ async function generateCustomReport() {
       })
     });
     const data = await r.json();
+    if (!r.ok || data.error) { body.textContent = data.error || ('Report request failed ('+r.status+')'); return; }
     const text = data.content?.[0]?.text || 'Error generating report';
     body.innerHTML = renderMarkdown(text);
     addToReportHistory('Custom: ' + prompt.slice(0,40) + (prompt.length>40?'...':''), 'custom');
