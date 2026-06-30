@@ -606,7 +606,7 @@ function renderRevInsights(list, container, append) {
 async function callRevInsights(opts) {
   const { system, prompt } = HRZN.getInsightPrompt('revenue', buildRevenueContext(), opts);
   const r = await fetch('/api/chat', {
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
     body: JSON.stringify({
       model:'claude-haiku-4-5-20251001', max_tokens:1500,
       system, messages:[{role:'user', content: prompt}]

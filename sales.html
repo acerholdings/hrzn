@@ -248,7 +248,7 @@ async function generateInsights(d) {
     const { system, prompt } = HRZN.getInsightPrompt('sales', calcCtx, priorTitles.length ? { exclude: priorTitles } : {});
     const r = await fetch('/api/chat', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1500,
@@ -355,7 +355,7 @@ async function generateMoreInsights() {
       more: true, count: asked, exclude: _salesInsights.map(i => i.title)
     });
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model:'claude-haiku-4-5-20251001', max_tokens:1500,
         system, messages:[{role:'user',content:prompt}]

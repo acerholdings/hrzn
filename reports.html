@@ -458,7 +458,7 @@ Format as professional executive summary with: Business Overview, Financial Perf
   };
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
@@ -488,7 +488,7 @@ async function generateCustomReport() {
   card.scrollIntoView({behavior:'smooth'});
   try {
     const r = await fetch('/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},
       body: JSON.stringify({
         model:'claude-sonnet-4-6', max_tokens:4000,
         system: HRZN.getAIContext(),
