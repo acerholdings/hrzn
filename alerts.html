@@ -264,7 +264,7 @@ function buildAlertsContext(d) {
   const weeklyRevTgt = _real.revenue ? parseFloat(m.targetRevenue || (settings.targets && settings.targets.revenue)) : null;
 
   const lines = [
-    'Identify the 3 most critical issues and 3 strongest wins for ' + bizName + '. Use ONLY the pre-calculated numbers below.',
+    'Business: ' + bizName + '. Identify the 3 most critical issues and 3 strongest wins using ONLY the pre-calculated numbers below.',
     '',
     'EXACT PRE-CALCULATED DATA — USE THESE NUMBERS ONLY:',
     'Period: ' + (d.periodStart||'Jan 1') + ' – ' + (d.periodEnd||'May 28, 2026') + ' (' + Math.round(weeks) + ' weeks, ' + months.toFixed(1) + ' months)',
@@ -280,8 +280,7 @@ function buildAlertsContext(d) {
     'Items Sold: ' + items.toLocaleString() + ' (' + Math.round(items/weeks) + '/week)',
     'COMBINED addressable opportunity: $' + combinedPeriod.toLocaleString() + ' this period ($' + combinedAnnual.toLocaleString() + '/yr) = revenue gap' + (deliveryApplies ? ' + DoorDash gap' : '') + (ticketApplies ? ' + price gap' : ''),
     '',
-    'RULES: Use ONLY numbers above. Never recalculate. When recommending improvements, the GOAL is always the stated target above (e.g. the labor target) — do NOT invent a different or "interim" target number; if suggesting a phased approach, describe the steps but keep the stated target as the end goal. When referencing total opportunity, use $' + combinedPeriod.toLocaleString() + ' this period. Include exactly 3 wins and 3 opportunities.',
-    'Respond ONLY with a JSON array of exactly 6 objects. No markdown. Each: {"emoji":"...","title":"5-8 words","insight":"2-3 sentences with exact numbers and one clear action."}'
+    'RULES: Use ONLY numbers above. Never recalculate. When recommending improvements, the GOAL is always the stated target above (e.g. the labor target) — do NOT invent a different or "interim" target number; if suggesting a phased approach, describe the steps but keep the stated target as the end goal. When referencing total opportunity, use $' + combinedPeriod.toLocaleString() + ' this period. Include exactly 3 wins and 3 opportunities.'
   ];
   return lines.filter(function(l){ return l !== null; }).join('\n');
 }
@@ -315,11 +314,20 @@ async function generateAlertsInsights() {
       })
     });
     const data = await r.json();
+    if (!r.ok || data.error) {
+      container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">'+(data.error || ('AI request failed ('+r.status+')'))+'</div>';
+      if(btn){btn.textContent='+ Refresh';btn.disabled=false;}
+      return;
+    }
     const text = data.content?.[0]?.text || '[]';
     const insights = HRZN.parseInsights(text);
     _alertsInsights = Array.isArray(insights) ? insights : [];
     _alertsInsights._tapped = false;
-    renderAlertsInsights(_alertsInsights, container);
+    if (_alertsInsights.length === 0) {
+      container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-dim);font-size:12px;">No insights could be generated from the current data. Try Refresh, or upload more history.</div>';
+    } else {
+      renderAlertsInsights(_alertsInsights, container);
+    }
   } catch(e) {
     container.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--red);">Error: '+e.message+'</div>';
   }
@@ -357,10 +365,15 @@ async function generateMoreAlertsInsights() {
       })
     });
     const data = await r.json();
+    const loadingErr = document.getElementById('alerts-more-loading');
+    if (!r.ok || data.error) {
+      if(loadingErr) loadingErr.remove();
+      container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--red);border-top:1px solid var(--border);">'+(data.error || ('AI request failed ('+r.status+')'))+'</div>');
+      if(btn){btn.textContent='+ Generate More';btn.disabled=false;}
+      return;
+    }
     const text = data.content?.[0]?.text || '[]';
     const insights = HRZN.parseInsights(text);
-    const loading = document.getElementById('alerts-more-loading');
-    if(loading) loading.remove();
     const fresh = Array.isArray(insights) ? insights : [];
     if(fresh.length === 0){
       container.insertAdjacentHTML('beforeend', '<div style="padding:14px 16px;font-size:11px;color:var(--text-dim);font-style:italic;border-top:1px solid var(--border);">No further distinct insights from current data. Upload more history for deeper analysis.</div>');
