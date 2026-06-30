@@ -1345,6 +1345,27 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     const targetDoorDash = tgt('doordash', _ct.doordash, _bm.deliveryTargetPct || 0);
     const targetDiscount = tgt('discount', _ct.discount, 5);
 
+    // ── WHICH TARGETS ARE REAL (owner-set) vs DEFAULT ──────────────────
+    // A target is "real" only when the owner actually saved it in Settings.
+    // Otherwise it's a category default/placeholder and MUST NOT be used to
+    // claim a "gap" (e.g. "you're $50k/yr below target") in AI insights — that
+    // would invent a goal the owner never chose. In demo mode the demo dataset's
+    // own targets are legitimate (they describe the sample numbers), so treat as real.
+    const _st = (settings && settings.targets) ? settings.targets : {};
+    const _isSet = (k) => {
+      if (_demoOn) return true;
+      const v = _st[k];
+      return v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v));
+    };
+    const targetIsReal = {
+      revenue:  _isSet('revenue'),
+      check:    _isSet('check'),
+      labor:    _isSet('labor'),
+      food:     _isSet('food'),
+      doordash: _isSet('doordash'),
+      discount: _isSet('discount'),
+    };
+
     // ── PERCENTAGES ──
     const discPct      = grossSales > 0 ? (discounts / grossSales * 100) : 0;
     const tipsPct      = netSales   > 0 ? (tips      / netSales   * 100) : 0;
@@ -1409,6 +1430,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 
       // Targets
       targetRevenue, targetCheck, targetLabor, targetFood, targetDoorDash, targetDiscount,
+      targetIsReal,
 
       // Percentages
       discPct, tipsPct, ddPct, cashPct, creditPct, debitPct,

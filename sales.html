@@ -308,9 +308,21 @@ function buildSalesContext(d) {
   const concepts = bm.concepts || { delivery:true, tips:true };
   const ticketApplies = !!(bm.avgTicket && bm.avgTicket > 0);
   const ticketLabel = bm.avgTicketLabel || 'Avg Item Price';
+  // Only frame a metric as a "gap vs target" when the owner actually SET that target.
+  // For unset (default) targets we present the figure plainly / as a benchmark —
+  // never as a dollar "shortfall", which would invent a goal the owner never chose.
+  const _real = (m.targetIsReal || {});
   const tipsLine = concepts.tips ? `Tips: $${Math.round(tips).toLocaleString()} = ${tipsPct}% of net sales — ${parseFloat(tipsPct)>15?'STRONG (above 15% benchmark)':'average'}\n` : '';
-  const ddLine = concepts.delivery ? `DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% of collected — gap to ${targetDoorDash}% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)\n` : '';
-  const priceLine = ticketApplies ? `${ticketLabel}: $${avgPrice} vs $${avgTarget} target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)\n` : '';
+  const ddLine = concepts.delivery
+    ? (_real.doordash
+        ? `DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% of collected — gap to ${targetDoorDash}% target = $${ddGapPeriod.toLocaleString()} this period ($${ddGapAnnual.toLocaleString()}/yr)\n`
+        : `DoorDash: $${Math.round(dd).toLocaleString()} = ${ddPct}% of collected (no owner DoorDash target set — do NOT claim a gap)\n`)
+    : '';
+  const priceLine = ticketApplies
+    ? (_real.check
+        ? `${ticketLabel}: $${avgPrice} vs $${avgTarget} target — gap = $${priceGapPeriod.toLocaleString()} this period ($${priceGapAnnual.toLocaleString()}/yr)\n`
+        : `${ticketLabel}: $${avgPrice} (industry benchmark ~$${avgTarget}; owner set no target — treat as context, do NOT claim a dollar shortfall)\n`)
+    : '';
   const tipsRule = concepts.tips ? ` Tips at ${tipsPct}% of net = ${parseFloat(tipsPct)>15?'STRONG WIN':'average'}.` : '';
 
   return `Analyze the sales data for ${bizName} and provide exactly 6 specific insights. Mix 3 wins (✅) and 3 opportunities (🎯). Use ONLY the pre-calculated numbers below — do not recalculate or estimate your own figures.
@@ -326,9 +338,9 @@ ${priceLine}Credit Card: $${Math.round(credit).toLocaleString()} (${collected>0?
 Debit Card: $${Math.round(debit).toLocaleString()} (${collected>0?Math.round(debit/collected*100):0}% of collected)
 ${ddLine}Cash: $${Math.round(cash).toLocaleString()} = ${cashPct}% of collected
 Digital payments total (credit+debit+DoorDash): $${Math.round(digitalTotal).toLocaleString()} = ${digitalPct}% of collected
-Weekly revenue: $${weeklyRev.toLocaleString()} vs $${weeklyTarget.toLocaleString()} target — gap = $${weeklyGap.toLocaleString()}/wk ($${annualGap.toLocaleString()}/yr, $${periodGap.toLocaleString()} this period)
+${(m.targetIsReal&&m.targetIsReal.revenue) ? `Weekly revenue: $${weeklyRev.toLocaleString()} vs $${weeklyTarget.toLocaleString()} target — gap = $${weeklyGap.toLocaleString()}/wk ($${annualGap.toLocaleString()}/yr, $${periodGap.toLocaleString()} this period)` : `Weekly revenue: $${weeklyRev.toLocaleString()} (owner set NO weekly revenue target — do NOT claim a revenue gap or annualized shortfall; describe trend only)`}
 
-RULES: Use ONLY the dollar amounts above. Never recalculate. Discounts at ${discPct}% = EXCELLENT WIN.${tipsRule}`;
+RULES: Use ONLY the dollar amounts above. Never recalculate. Discounts at ${discPct}% = EXCELLENT WIN.${tipsRule} IMPORTANT: Only describe a metric as "below/above target" or quantify an annual "shortfall/opportunity" when a line above explicitly states an owner-set target. Where a line says no target was set, treat that metric as context or compare to the stated industry benchmark — do NOT invent a target or a dollar gap.`;
 }
 
 async function generateMoreInsights() {
