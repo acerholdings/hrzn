@@ -549,8 +549,6 @@ const HRZN = {
   LABOR: {
     FALLBACK_PCT: 25,   // generic cross-industry last-resort; getLaborRateMeta()
                         // overrides this with the active category's benchmark.
-    SCORE: { excellent: 28, good: 30, ok: 32 },
-    SCORE_VALS: { excellent: 95, good: 80, ok: 70, poor: 55 },
   },
 
   getLaborRate() {
