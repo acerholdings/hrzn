@@ -5,8 +5,8 @@
 <title>HRZN — Reports</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-:root{--gold:#C9A84C;--gold-dim:#7a6330;--black:#080808;--surface:#0f0f0f;--surface2:#141414;--surface3:#1a1a1a;--surface4:#202020;--border:rgba(255,255,255,0.06);--border-gold:rgba(201,168,76,0.2);--text:#e8e8e8;--text-dim:#666;--text-mid:#999;--red:#e05555;--red-dim:rgba(224,85,85,0.12);--green:#4caf7d;--green-dim:rgba(76,175,125,0.12);--orange:#e08c35;--orange-dim:rgba(224,140,53,0.12);--blue:#4c8faf;--sidebar-w:240px;}
-body.light{--black:#f5f4f1;--surface:#ffffff;--surface2:#f8f7f5;--surface3:#f0ede8;--surface4:#e8e4de;--border:rgba(0,0,0,0.07);--border-gold:rgba(201,168,76,0.3);--text:#111111;--text-mid:#555;--text-dim:#999;--red:#c0392b;--red-dim:rgba(192,57,43,0.08);--green:#2a7d4f;--green-dim:rgba(42,125,79,0.08);--orange:#c0700a;--orange-dim:rgba(192,112,10,0.08);}
+:root{--gold:#C9A84C;--gold-dim:#7a6330;--black:#060606;--surface:#131313;--surface2:#171717;--surface3:#1f1f1f;--surface4:#242424;--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.12);--border-gold:rgba(201,168,76,0.2);--text:#e8e8e8;--text-dim:#666;--text-mid:#999;--red:#e05555;--red-dim:rgba(224,85,85,0.12);--green:#4caf7d;--green-dim:rgba(76,175,125,0.12);--orange:#e08c35;--orange-dim:rgba(224,140,53,0.12);--blue:#4c8faf;--sidebar-w:240px;--shadow-card:0 1px 2px rgba(0,0,0,0.4),0 6px 20px rgba(0,0,0,0.28);--shadow-lift:0 2px 4px rgba(0,0,0,0.45),0 14px 34px rgba(0,0,0,0.4);}
+body.light{--black:#f5f4f1;--surface:#ffffff;--surface2:#faf9f7;--surface3:#f0ede8;--surface4:#e8e4de;--border:rgba(0,0,0,0.07);--border-gold:rgba(201,168,76,0.3);--text:#111111;--text-mid:#555;--text-dim:#999;--red:#c0392b;--red-dim:rgba(192,57,43,0.08);--green:#2a7d4f;--green-dim:rgba(42,125,79,0.08);--orange:#c0700a;--orange-dim:rgba(192,112,10,0.08);--border-hi:rgba(0,0,0,0.12);--shadow-card:0 1px 2px rgba(0,0,0,0.04),0 6px 20px rgba(0,0,0,0.06);--shadow-lift:0 2px 4px rgba(0,0,0,0.06),0 14px 34px rgba(0,0,0,0.1);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;display:flex;overflow-x:hidden;transition:background 0.3s,color 0.3s;}
 .sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow:hidden;transition:background 0.3s,border-color 0.3s;}
@@ -43,14 +43,18 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 .topbar-btn-ghost{background:transparent;color:var(--text-dim);font-size:11px;padding:7px 14px;border-radius:6px;cursor:pointer;border:1px solid var(--border);font-family:'DM Sans',sans-serif;transition:all 0.2s;}
 .topbar-btn-ghost:hover{color:var(--text);border-color:var(--gold);}
 .content{padding:24px 28px;flex:1;}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color 0.2s,background 0.3s;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-card);transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;}
+.card:hover{border-color:var(--border-hi);box-shadow:var(--shadow-lift);transform:translateY(-2px);}
 .card:hover{border-color:var(--border-gold);}
 .card-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .card-title{font-size:11px;font-weight:500;color:var(--text);letter-spacing:0.02em;}
 .card-body{-webkit-text-size-adjust:100%;padding:16px;}
-.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;}
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px 18px 16px;box-shadow:var(--shadow-card);transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;}
+.kpi-card:hover{border-color:var(--border-hi);box-shadow:var(--shadow-lift);transform:translateY(-2px);}
 .kpi-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
-.kpi-value{font-size:26px;font-weight:300;color:var(--text);letter-spacing:-0.02em;line-height:1;margin-bottom:6px;}
+.kpi-value{font-size:27px;font-weight:300;color:var(--text);letter-spacing:-0.02em;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+[style*="DM Mono"]{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+@media (prefers-reduced-motion: reduce){.fade-1,.fade-2,.fade-3,.fade-4{animation:none !important;opacity:1 !important;transform:none !important;}.card,.kpi-card{transition:none !important;}.card:hover,.kpi-card:hover{transform:none !important;}}
 .kpi-sub{font-size:11px;color:var(--text-dim);}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-1{animation:fadeUp 0.4s ease both}.fade-2{animation:fadeUp 0.4s ease 0.08s both}.fade-3{animation:fadeUp 0.4s ease 0.16s both}.fade-4{animation:fadeUp 0.4s ease 0.24s both}
@@ -598,7 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <div id="paywall-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
-  <div style="background:#0f0f0f;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:48px;max-width:480px;width:90%;text-align:center;">
+  <div style="background:var(--surface);box-shadow:var(--shadow-lift);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:48px;max-width:480px;width:90%;text-align:center;">
     <div style="font-size:32px;margin-bottom:16px;">⏱</div>
     <div style="font-size:22px;font-weight:300;letter-spacing:-0.02em;margin-bottom:10px;">Your free trial has ended</div>
     <div style="font-size:13px;color:#666;margin-bottom:32px;line-height:1.7;">Upgrade to keep access to your dashboard, analytics, AI operator, and all your data.</div>
