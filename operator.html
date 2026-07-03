@@ -281,7 +281,7 @@ async function sendMessage(){
   addMessage('ai','Analyzing your business data...', true);
   
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:HRZN.getAIContext(),messages:conversationHistory})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+((typeof hrznGetToken==='function')?hrznGetToken():(localStorage.getItem('hrzn_token')||''))},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,system:HRZN.getAIContext(),messages:conversationHistory})});
     const d=await r.json();
     const reply=d.content?.[0]?.text||'Error getting response';
     conversationHistory.push({role:'assistant',content:reply});
