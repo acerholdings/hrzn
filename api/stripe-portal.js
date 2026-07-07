@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const { token } = req.body;
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const BASE_URL = 'https://atlas-os-kappa.vercel.app';
+  const BASE_URL = process.env.APP_BASE_URL || 'https://atlas-os-kappa.vercel.app';
 
   try {
     // Get user from token
