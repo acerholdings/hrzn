@@ -25,6 +25,10 @@ export default async function handler(req, res) {
   // Update plan by user ID (extra = optional fields like stripe_customer_id)
   const updateByUserId = async (userId, plan, status, extra = {}) => {
     if (!userId) return false;
+    // A null `plan` means "don't touch the tier" — used for status-only changes
+    // (past_due / cancelled) so a failed payment never overwrites starter/pro.
+    const patch = { subscription_status: status, ...extra };
+    if (plan != null) patch.plan = plan;
     const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?owner_id=eq.${userId}`, {
       method: 'PATCH',
       headers: {
@@ -32,7 +36,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${SERVICE_KEY}`,
         'apikey': SERVICE_KEY
       },
-      body: JSON.stringify({ plan, subscription_status: status, ...extra })
+      body: JSON.stringify(patch)
     });
     return r.ok;
   };
@@ -80,14 +84,14 @@ export default async function handler(req, res) {
         const sub = event.data.object;
         const customer = await stripe.customers.retrieve(sub.customer);
         const extra = { stripe_customer_id: sub.customer || null };
-        await updateByEmail(customer.email, 'cancelled', 'cancelled', extra);
+        await updateByEmail(customer.email, null, 'cancelled', extra);
         break;
       }
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
         const customer = await stripe.customers.retrieve(invoice.customer);
         const extra = { stripe_customer_id: invoice.customer || null };
-        await updateByEmail(customer.email, 'past_due', 'past_due', extra);
+        await updateByEmail(customer.email, null, 'past_due', extra);
         break;
       }
     }
