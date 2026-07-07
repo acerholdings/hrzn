@@ -52,6 +52,29 @@ export default async function handler(req, res) {
     if (!userId) return false;
     return updateByUserId(userId, plan, status, extra);
   };
+  // Update by Stripe customer id — the PRECISE match. Status-change events
+  // (updated/deleted/payment_failed) use this so an event for one customer can
+  // never write to a different row that merely shares an email. Only touches the
+  // row whose stripe_customer_id equals this event's customer. Returns false if
+  // no row matches (e.g. first event before the id is stored — caller falls back).
+  const updateByCustomerId = async (customerId, plan, status, extra = {}) => {
+    if (!customerId) return false;
+    const patch = { subscription_status: status, ...extra };
+    if (plan != null) patch.plan = plan;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?stripe_customer_id=eq.${encodeURIComponent(customerId)}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'apikey': SERVICE_KEY,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(patch)
+    });
+    if (!r.ok) return false;
+    const rows = await r.json().catch(() => []);
+    return Array.isArray(rows) && rows.length > 0; // false if no row matched
+  };
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -77,21 +100,27 @@ export default async function handler(req, res) {
           stripe_customer_id: sub.customer || null,
           stripe_subscription_id: sub.id || null
         };
-        await updateByEmail(email, plan, status, extra);
+        // Match by customer id first (precise); fall back to email only if no row
+        // carries this customer id yet.
+        const done = await updateByCustomerId(sub.customer, plan, status, extra);
+        if (!done) await updateByEmail(email, plan, status, extra);
         break;
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object;
-        const customer = await stripe.customers.retrieve(sub.customer);
         const extra = { stripe_customer_id: sub.customer || null };
-        await updateByEmail(customer.email, null, 'cancelled', extra);
+        // Match ONLY by customer id — never fall back to email here. A cancel event
+        // for one customer must not touch a row that merely shares an email (this is
+        // the exact bug that locked out a live Starter subscriber). If no row carries
+        // this customer id, do nothing.
+        await updateByCustomerId(sub.customer, null, 'cancelled', extra);
         break;
       }
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        const customer = await stripe.customers.retrieve(invoice.customer);
         const extra = { stripe_customer_id: invoice.customer || null };
-        await updateByEmail(customer.email, null, 'past_due', extra);
+        // Match ONLY by customer id (same reasoning as subscription.deleted).
+        await updateByCustomerId(invoice.customer, null, 'past_due', extra);
         break;
       }
     }
