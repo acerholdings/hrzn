@@ -1,3 +1,5 @@
+import { sendLifecycleEmail } from './emails.js';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -45,7 +47,12 @@ export default async function handler(req, res) {
       name,
       location: location || null,
       pos_system: pos || null,
-      plan: 'trial'
+      plan: 'trial',
+      // 14-day trial end date, set explicitly at signup so (a) the entitlement
+      // checks in chat.js / sync-data.js have a real date to compare against and
+      // (b) the lifecycle emails can count down to expiry. Without this the column
+      // is NULL and a trial effectively never expires.
+      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
     };
     const createBusiness = (extra) => fetch(`${SUPABASE_URL}/rest/v1/businesses`, {
       method: 'POST',
@@ -65,6 +72,21 @@ export default async function handler(req, res) {
     }
     const [business] = await bizRes.json();
     if (!business?.id) return res.status(500).json({ error: 'Failed to create business' });
+
+    // Fire the welcome email (best-effort — never let it block or fail signup).
+    // Stamp welcome_sent_at so a re-run of setup (refresh/back) can't double-send.
+    try {
+      if (user.email && process.env.RESEND_API_KEY) {
+        const out = await sendLifecycleEmail({ type: 'welcome', to: user.email, name: name });
+        if (out.ok) {
+          await fetch(`${SUPABASE_URL}/rest/v1/businesses?id=eq.${business.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY },
+            body: JSON.stringify({ welcome_sent_at: new Date().toISOString() })
+          });
+        }
+      }
+    } catch (e) { /* swallow — signup must succeed regardless of email */ }
 
     // Update profile with business_id
     await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
