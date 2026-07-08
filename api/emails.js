@@ -154,6 +154,26 @@ export async function sendLifecycleEmail({ type, to, name, daysLeft, variant }) 
   return sendViaResend(to, email.subject, email.html);
 }
 
+// Founder signup alert — emails YOU when a new business signs up, so you know
+// immediately (esp. during beta outreach) without checking Supabase. Sends to
+// FOUNDER_ALERT_EMAIL if set, else falls back to the hello@ inbox. Best-effort.
+export async function sendFounderAlert({ businessName, email, category }) {
+  const to = process.env.FOUNDER_ALERT_EMAIL || 'hello@usehrzn.ai';
+  const subject = `🎉 New HRZN signup: ${businessName || 'Unknown'}`;
+  const html = `
+    <div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#111;">
+      <p><strong>New business just signed up on HRZN.</strong></p>
+      <ul>
+        <li><strong>Business:</strong> ${businessName || '—'}</li>
+        <li><strong>Email:</strong> ${email || '—'}</li>
+        <li><strong>Category:</strong> ${category || '—'}</li>
+        <li><strong>When:</strong> ${new Date().toISOString()}</li>
+      </ul>
+      <p style="color:#666;font-size:13px;">Sent automatically by HRZN.</p>
+    </div>`;
+  return sendViaResend(to, subject, html);
+}
+
 // ── HTTP handler (used by signup welcome + manual testing) ──
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

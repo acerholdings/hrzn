@@ -1,4 +1,4 @@
-import { sendLifecycleEmail } from './emails.js';
+import { sendLifecycleEmail, sendFounderAlert } from './emails.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -87,6 +87,17 @@ export default async function handler(req, res) {
         }
       }
     } catch (e) { /* swallow — signup must succeed regardless of email */ }
+
+    // Founder alert — notify the founder of the new signup (best-effort, never blocks).
+    try {
+      if (process.env.RESEND_API_KEY) {
+        await sendFounderAlert({
+          businessName: name,
+          email: user.email,
+          category: businessType || 'restaurant'
+        });
+      }
+    } catch (e) { /* swallow — signup must succeed regardless of alert */ }
 
     // Update profile with business_id
     await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {

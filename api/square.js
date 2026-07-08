@@ -26,6 +26,15 @@ export default async function handler(req, res) {
   // Square requires an API version header on Connect v2 calls.
   const SQUARE_VERSION = process.env.SQUARE_VERSION || '2025-01-23';
 
+  // --- Environment safety (added Jul 8) ---
+  // Detect a half-configured Square setup so a real user never hits a silent
+  // failure. `sandboxFallback` = true means SQUARE_BASE_URL was NOT set and we
+  // fell back to the sandbox default. `credsMissing` = app id/secret absent.
+  // The connect action refuses (with a clear message) if either is true, rather
+  // than kicking off a doomed OAuth against the wrong environment.
+  const sandboxFallback = !process.env.SQUARE_BASE_URL;
+  const credsMissing = !SQUARE_APP_ID || !SQUARE_APP_SECRET;
+
   // Callback is detected by presence of ?code= (redirect_uri is the clean path
   // /api/square). Otherwise route by ?action=.
   const action = req.query.code ? 'callback' : req.query.action;
@@ -51,7 +60,16 @@ export default async function handler(req, res) {
   try {
     // ── CONNECT: build the authorize URL ──────────────────────────
     if (action === 'connect') {
-      if (!SQUARE_APP_ID) return res.status(500).json({ error: 'SQUARE_APP_ID not configured' });
+      // Environment safety: refuse to start OAuth if Square isn't fully configured,
+      // rather than launching a doomed flow that fails silently for the user.
+      if (credsMissing) {
+        return res.status(500).json({ error: 'Square is not fully configured (missing app credentials). Contact support.', code: 'square_not_configured' });
+      }
+      if (sandboxFallback) {
+        // SQUARE_BASE_URL was never set → we're on the sandbox default. A real
+        // user's live Square account cannot connect here. Fail loud, not silent.
+        return res.status(500).json({ error: 'Square live connections are not enabled yet. Contact support.', code: 'square_env_unset' });
+      }
       const b = await getBusinessId();
       if (b.error) return res.status(b.code).json({ error: b.error });
       const state = Buffer.from(JSON.stringify({ b: b.businessId, t: Date.now() })).toString('base64url');
