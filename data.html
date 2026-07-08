@@ -88,9 +88,14 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
 .int-desc{font-size:11px;color:var(--text-dim);}
 .int-replaces{font-size:10px;color:var(--text-mid);margin-top:3px;}
 .int-replaces span{color:var(--gold);}
-.int-status{font-size:10px;padding:3px 10px;border-radius:20px;flex-shrink:0;}
+.int-status{font-size:10px;padding:3px 10px;border-radius:20px;flex-shrink:0;font-weight:500;letter-spacing:0.02em;}
+.int-status.st-off{background:rgba(128,128,128,0.12);color:var(--text-dim);}
+.int-status.st-on{background:var(--green-dim,rgba(46,125,82,0.12));color:var(--green,#2e7d52);}
+.int-status.st-soon{background:rgba(128,128,128,0.1);color:var(--text-mid);}
 .int-btn{font-size:11px;padding:6px 14px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;transition:all 0.15s;}
 .int-btn:hover{background:rgba(201,168,76,0.08);}
+.int-btn.int-soon{border-color:var(--border);color:var(--text-dim);cursor:default;opacity:0.7;}
+.int-btn.int-soon:hover{background:transparent;}
 .source-switcher{display:flex;gap:8px;margin-bottom:24px;}
 .source-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text-dim);transition:all 0.2s;text-align:center;}
 .source-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.06);}
@@ -179,7 +184,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
     <!-- LIVE INTEGRATIONS -->
     <div class="fade-3">
       <div class="section-title">Live Integrations</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Connect these services for automatic real-time data. They fill different parts of your numbers, so you can connect one from each group below — a POS, payroll, accounting, and delivery all work together.</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Connect these services for automatic data updates. They fill different parts of your numbers, so you can connect one from each group below — a POS, payroll, accounting, and delivery all work together.</div>
 
       <!-- POS group — mutually exclusive -->
       <div style="display:flex;align-items:center;gap:8px;margin:0 0 8px;">
@@ -194,8 +199,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Sales, orders, items, inventory, employees</div>
             <div class="int-replaces">Replaces: <span>Sales &amp; item CSV uploads</span></div>
           </div>
-          <span class="int-status" id="clover-status" style="background:var(--orange-dim);color:var(--orange);">CSV Mode</span>
-          <button class="int-btn int-live" data-int="clover" id="clover-btn" onclick="connectClover()">Connect →</button>
+          <span class="int-status st-soon" id="clover-status">Coming soon</span>
+          <button class="int-btn int-soon" data-int="clover" id="clover-btn" disabled>Coming soon</button>
         </div>
         <div class="integration-row">
           <div class="int-logo">🟩</div>
@@ -204,7 +209,7 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Sales, orders, items, payments, employees</div>
             <div class="int-replaces">Replaces: <span>Sales &amp; item CSV uploads</span></div>
           </div>
-          <span class="int-status" id="square-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
+          <span class="int-status st-off" id="square-status">Not connected</span>
           <button class="int-btn int-live" data-int="square" id="square-btn" onclick="connectSquare()">Connect →</button>
         </div>
       </div>
@@ -222,8 +227,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Real labor costs, employee hours, payroll data</div>
             <div class="int-replaces">Powers: <span>Labor page</span></div>
           </div>
-          <span class="int-status" style="background:var(--orange-dim);color:var(--orange);">Pending Approval</span>
-          <button class="int-btn int-live" data-int="gusto">Check Status →</button>
+          <span class="int-status st-soon">Coming soon</span>
+          <button class="int-btn int-soon" data-int="gusto" disabled>Coming soon</button>
         </div>
       </div>
 
@@ -240,8 +245,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Accounting, expenses, automated P&L</div>
             <div class="int-replaces">Powers: <span>P&L, Cash Flow automation</span></div>
           </div>
-          <span class="int-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn int-live" data-int="quickbooks">Connect →</button>
+          <span class="int-status st-soon">Coming soon</span>
+          <button class="int-btn int-soon" data-int="quickbooks" disabled>Coming soon</button>
         </div>
       </div>
 
@@ -258,8 +263,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Live delivery orders, revenue, customer data</div>
             <div class="int-replaces">Powers: <span>Delivery analytics</span></div>
           </div>
-          <span class="int-status" style="background:rgba(128,128,128,0.1);color:var(--text-dim);">Not Connected</span>
-          <button class="int-btn int-live" data-int="doordash">Connect →</button>
+          <span class="int-status st-soon">Coming soon</span>
+          <button class="int-btn int-soon" data-int="doordash" disabled>Coming soon</button>
         </div>
       </div>
     </div>
@@ -562,12 +567,14 @@ async function refreshCloverStatus(){
     const btn = document.getElementById('clover-btn');
     if (j.connected && status) {
       status.textContent = 'Connected';
-      status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
-      status.style.color = 'var(--green, #2e7d52)';
-      if (btn) { btn.textContent = 'Reconnect →'; }
+      status.className = 'int-status st-on';
+      // A real connection exists (e.g. sandbox testing) — surface a working
+      // disconnect path even though new Clover connects are "coming soon" for
+      // real users (app pending Clover production approval).
+      if (btn) { btn.textContent = 'Connected'; btn.disabled = true; btn.classList.add('int-soon'); }
       hrznAddDisconnectButton('clover');
     }
-  } catch(e) { /* leave default CSV Mode badge */ }
+  } catch(e) { /* leave default "Coming soon" badge */ }
 }
 
 // Handle the ?clover=... flag the callback redirects back with
@@ -626,12 +633,11 @@ async function refreshSquareStatus(){
     const btn = document.getElementById('square-btn');
     if (j.connected && status) {
       status.textContent = 'Connected';
-      status.style.background = 'var(--green-dim, rgba(46,125,82,0.12))';
-      status.style.color = 'var(--green, #2e7d52)';
+      status.className = 'int-status st-on';
       if (btn) { btn.textContent = 'Reconnect →'; }
       hrznAddDisconnectButton('square');
     }
-  } catch(e) { /* leave default Not Connected badge */ }
+  } catch(e) { /* leave default "Not connected" badge */ }
 }
 
 // Inject a small "Disconnect" button next to a connected integration's main
@@ -675,12 +681,14 @@ async function hrznDisconnect(name){
     // Reset the row UI
     const status = document.getElementById(name + '-status');
     const btn = document.getElementById(name + '-btn');
-    if (status) {
-      status.textContent = (name === 'clover') ? 'CSV Mode' : 'Not Connected';
-      status.style.background = (name === 'clover') ? 'var(--orange-dim)' : 'rgba(128,128,128,0.1)';
-      status.style.color = (name === 'clover') ? 'var(--orange)' : 'var(--text-dim)';
+    if (name === 'clover') {
+      // Clover new-connects are "coming soon" for real users (pending approval).
+      if (status) { status.textContent = 'Coming soon'; status.className = 'int-status st-soon'; }
+      if (btn) { btn.textContent = 'Coming soon'; btn.disabled = true; btn.classList.add('int-soon'); btn.classList.remove('int-live'); }
+    } else {
+      if (status) { status.textContent = 'Not connected'; status.className = 'int-status st-off'; }
+      if (btn) { btn.textContent = 'Connect →'; btn.disabled = false; }
     }
-    if (btn) btn.textContent = 'Connect →';
     if (dc) dc.remove();
   } catch(e) {
     showToast('Disconnect error: ' + e.message, true);
