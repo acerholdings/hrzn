@@ -199,8 +199,8 @@ body{-webkit-text-size-adjust:100%;background:var(--black);color:var(--text);fon
             <div class="int-desc">Sales, orders, items, inventory, employees</div>
             <div class="int-replaces">Replaces: <span>Sales &amp; item CSV uploads</span></div>
           </div>
-          <span class="int-status st-soon" id="clover-status">Coming soon</span>
-          <button class="int-btn int-soon" data-int="clover" id="clover-btn" disabled>Coming soon</button>
+          <span class="int-status st-off" id="clover-status">Not connected</span>
+          <button class="int-btn int-live" data-int="clover" id="clover-btn" onclick="connectClover()">Connect →</button>
         </div>
         <div class="integration-row">
           <div class="int-logo">🟩</div>
@@ -568,13 +568,10 @@ async function refreshCloverStatus(){
     if (j.connected && status) {
       status.textContent = 'Connected';
       status.className = 'int-status st-on';
-      // A real connection exists (e.g. sandbox testing) — surface a working
-      // disconnect path even though new Clover connects are "coming soon" for
-      // real users (app pending Clover production approval).
-      if (btn) { btn.textContent = 'Connected'; btn.disabled = true; btn.classList.add('int-soon'); }
+      if (btn) { btn.textContent = 'Reconnect →'; }
       hrznAddDisconnectButton('clover');
     }
-  } catch(e) { /* leave default "Coming soon" badge */ }
+  } catch(e) { /* leave default "Not connected" badge */ }
 }
 
 // Handle the ?clover=... flag the callback redirects back with
@@ -681,14 +678,8 @@ async function hrznDisconnect(name){
     // Reset the row UI
     const status = document.getElementById(name + '-status');
     const btn = document.getElementById(name + '-btn');
-    if (name === 'clover') {
-      // Clover new-connects are "coming soon" for real users (pending approval).
-      if (status) { status.textContent = 'Coming soon'; status.className = 'int-status st-soon'; }
-      if (btn) { btn.textContent = 'Coming soon'; btn.disabled = true; btn.classList.add('int-soon'); btn.classList.remove('int-live'); }
-    } else {
-      if (status) { status.textContent = 'Not connected'; status.className = 'int-status st-off'; }
-      if (btn) { btn.textContent = 'Connect →'; btn.disabled = false; }
-    }
+    if (status) { status.textContent = 'Not connected'; status.className = 'int-status st-off'; }
+    if (btn) { btn.textContent = 'Connect →'; btn.disabled = false; }
     if (dc) dc.remove();
   } catch(e) {
     showToast('Disconnect error: ' + e.message, true);
