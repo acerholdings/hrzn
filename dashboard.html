@@ -472,12 +472,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Check if trial expired
-      const createdAt = user.created_at ? new Date(user.created_at) : null;
-      if (createdAt) {
-        const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-        const now = new Date();
-        if (now > trialEnd && plan === 'trial') {
+      // Check if trial expired.
+      // IMPORTANT: only paywall when we actually KNOW the plan is an expired trial.
+      // An empty/unknown plan (e.g. right after a business switch clears settings,
+      // before hrznLoadFromCloud repopulates it) must NOT trigger the paywall — we
+      // fail OPEN here because the server still enforces entitlement on every data
+      // and AI call, so the client paywall is UX only and must never lock out a
+      // paying owner on uncertainty.
+      const planKnown = !!settings.plan;
+      if (planKnown && plan === 'trial') {
+        // Prefer the real trial end date from the owner profile when present;
+        // fall back to the created_at + 14d estimate only if we have no date.
+        let trialEnd = null;
+        if (settings.trial_ends_at) {
+          trialEnd = new Date(settings.trial_ends_at);
+        } else {
+          const createdAt = user.created_at ? new Date(user.created_at) : null;
+          if (createdAt) trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+        }
+        if (trialEnd && new Date() > trialEnd) {
           const modal = document.getElementById('paywall-modal');
           if (modal) modal.style.display = 'flex';
         }

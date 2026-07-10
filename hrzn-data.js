@@ -501,8 +501,13 @@ async function hrznLoadFromCloud() {
       // Plan + subscription status are AUTHORITATIVE from the database — always
       // overwrite the local copy (the badge and paywall read settings.plan, so this
       // makes the DB the single source of truth instead of stale localStorage).
-      if (data.business.plan != null) merged.plan = data.business.plan;
-      if (data.business.subscription_status != null) merged.subscription_status = data.business.subscription_status;
+      // Entitlement is OWNER-level: prefer data.owner (the profile), which is the
+      // same for all of an owner's businesses. Fall back to the business row only
+      // if the owner block isn't present (older API response).
+      const ent = data.owner || data.business || {};
+      if (ent.plan != null) merged.plan = ent.plan;
+      if (ent.subscription_status != null) merged.subscription_status = ent.subscription_status;
+      if (ent.trial_ends_at != null) merged.trial_ends_at = ent.trial_ends_at;
     }
     if (data.settings) {
       // Restore items CSV filename if available
