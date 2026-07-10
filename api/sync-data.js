@@ -150,6 +150,17 @@ export default async function handler(req, res) {
         if (biz) results.business = biz;
       }
 
+      // Owner-level entitlement. Entitlement lives on the profile now (all of an
+      // owner's businesses share one subscription), so return it separately from the
+      // business. The frontend paywall/badge should read THIS, not business.plan —
+      // otherwise a 2nd/3rd business (which has no trial date of its own) looks like
+      // an expired trial even when the owner is on Pro.
+      results.owner = {
+        plan: profile?.plan || null,
+        subscription_status: profile?.subscription_status || null,
+        trial_ends_at: profile?.trial_ends_at || null
+      };
+
       return res.status(200).json({ ok: true, data: results, businessId });
     }
 
