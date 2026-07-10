@@ -70,6 +70,9 @@ function hrznSetupSidebar() {
     if (avatarEl) avatarEl.textContent = userName.charAt(0).toUpperCase();
     const locEl = document.querySelector('.business-loc-text') || document.querySelector('.business-loc') || document.getElementById('s-biz-loc');
     if (locEl) locEl.textContent = settings.bizLocation || '—';
+    // Wire up the multi-business switcher on the sidebar business row. Best-effort:
+    // if anything fails it must never break the rest of the sidebar.
+    try { hrznRenderBusinessSwitcher(); } catch(e) {}
   } catch(e) {}
   // Nav "Alerts" badge: show the REAL count (critical + warning), one source of truth.
   // Hide the badge entirely when the count is 0 so it doesn't show a misleading dot.
@@ -82,6 +85,206 @@ function hrznSetupSidebar() {
       });
     }
   } catch(e) {}
+}
+
+// ── MULTI-BUSINESS SWITCHER ──────────────────────────────────────────
+// Turns the sidebar business row into a dropdown of the owner's businesses,
+// with an "Add business" action. Selecting a business switches the active
+// business (server-side pointer via /api/switch-business), clears the
+// business-scoped localStorage cache so the previous business's numbers can't
+// bleed through, and reloads the page so fresh data loads. Self-contained:
+// injects its own styles so it works on every page without per-page CSS.
+function hrznBusinessScopedKeys() {
+  // The localStorage keys that hold business-specific data. These MUST be cleared
+  // when switching businesses. Mirrors the data-key list in hrznLogout (the
+  // authoritative set), plus hrzn-settings (name/location/targets/plan are
+  // per-business). Auth (hrzn_token/refresh/user) and theme are deliberately kept.
+  return [
+    'hrzn-settings',
+    'hrzn-data-csv', 'hrzn-sales-data',
+    'hrzn-data-items',
+    'hrzn-data-guests',
+    'hrzn-data-employees',
+    'hrzn-data-orders',
+    'hrzn-data-discounts',
+    'hrzn-pl-data',
+    'hrzn-clover-days'
+  ];
+}
+
+function hrznClearBusinessCache() {
+  try { hrznBusinessScopedKeys().forEach(k => localStorage.removeItem(k)); } catch(e) {}
+}
+
+function hrznInjectSwitcherStyles() {
+  if (document.getElementById('hrzn-switcher-styles')) return;
+  const css = document.createElement('style');
+  css.id = 'hrzn-switcher-styles';
+  css.textContent = [
+    '.hrzn-switcher-menu{position:absolute;left:12px;right:12px;top:100%;margin-top:4px;background:var(--surface3,#1f1f1f);border:1px solid var(--border-hi,rgba(255,255,255,0.12));border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,0.5);z-index:500;overflow:hidden;}',
+    '.hrzn-switcher-item{padding:9px 12px;font-size:12px;color:var(--text,#e8e8e8);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border,rgba(255,255,255,0.07));}',
+    '.hrzn-switcher-item:last-child{border-bottom:none;}',
+    '.hrzn-switcher-item:hover{background:var(--surface4,#242424);}',
+    '.hrzn-switcher-item .hrzn-sw-loc{font-size:10px;color:var(--text-dim,#666);margin-top:1px;}',
+    '.hrzn-switcher-item .hrzn-sw-check{color:var(--gold,#C9A84C);font-size:12px;}',
+    '.hrzn-switcher-add{padding:9px 12px;font-size:12px;color:var(--gold,#C9A84C);cursor:pointer;background:var(--surface2,#171717);}',
+    '.hrzn-switcher-add:hover{background:var(--surface4,#242424);}',
+    '.hrzn-switcher-form{padding:10px 12px;background:var(--surface2,#171717);display:flex;flex-direction:column;gap:6px;}',
+    '.hrzn-switcher-form input,.hrzn-switcher-form select{width:100%;box-sizing:border-box;background:var(--surface,#131313);border:1px solid var(--border-hi,rgba(255,255,255,0.12));border-radius:5px;color:var(--text,#e8e8e8);font-size:12px;padding:6px 8px;}',
+    '.hrzn-switcher-form button{background:var(--gold,#C9A84C);color:#060606;border:none;border-radius:5px;font-size:12px;font-weight:600;padding:7px;cursor:pointer;}',
+    '.hrzn-switcher-form .hrzn-sw-cancel{background:transparent;color:var(--text-dim,#666);border:1px solid var(--border,rgba(255,255,255,0.07));}',
+    '.hrzn-switcher-msg{padding:8px 12px;font-size:11px;color:var(--text-mid,#999);}'
+  ].join('');
+  document.head.appendChild(css);
+}
+
+async function hrznRenderBusinessSwitcher() {
+  if (hrznIsDemo()) return;
+  const row = document.querySelector('.sidebar-business');
+  if (!row) return;
+  // Avoid double-wiring if the sidebar setup runs more than once on a page.
+  if (row.dataset.hrznSwitcherWired === '1') return;
+  row.dataset.hrznSwitcherWired = '1';
+  hrznInjectSwitcherStyles();
+  // The row needs to be a positioning context for the absolutely-positioned menu.
+  if (getComputedStyle(row).position === 'static') row.style.position = 'relative';
+
+  const token = hrznGetToken();
+  if (!token) return;
+
+  // Fetch the owner's businesses.
+  let data;
+  try {
+    const r = await fetch('/api/list-businesses', { headers: { Authorization: 'Bearer ' + token } });
+    data = await r.json();
+  } catch (e) { return; }
+  if (!data || !data.ok || !Array.isArray(data.businesses)) return;
+
+  const businesses = data.businesses;
+  const activeId = data.activeBusinessId;
+
+  // With only one business and (implicitly) no reason to switch, we still allow the
+  // menu so the owner can Add a business — the chevron already invites a click.
+
+  let menu = null;
+  const closeMenu = () => { if (menu) { menu.remove(); menu = null; } document.removeEventListener('click', onDocClick, true); };
+  const onDocClick = (ev) => { if (menu && !menu.contains(ev.target) && !row.contains(ev.target)) closeMenu(); };
+
+  // Perform the actual switch: point active business at `id`, clear the previous
+  // business's cache, reload for fresh data.
+  const doSwitch = async (id, itemEl) => {
+    if (itemEl) itemEl.style.opacity = '0.5';
+    try {
+      const r = await fetch('/api/switch-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: hrznGetToken(), businessId: id })
+      });
+      const res = await r.json();
+      if (res && res.ok) {
+        hrznClearBusinessCache();
+        window.location.reload();
+      } else {
+        if (itemEl) itemEl.style.opacity = '1';
+        alert(res && res.error ? res.error : 'Could not switch business.');
+      }
+    } catch (e) {
+      if (itemEl) itemEl.style.opacity = '1';
+      alert('Could not switch business.');
+    }
+  };
+
+  // Fill a menu element with one row per business + the Add action.
+  const fillMenu = (el) => {
+    el.innerHTML = '';
+    businesses.forEach(b => {
+      const item = document.createElement('div');
+      item.className = 'hrzn-switcher-item';
+      const isActive = b.id === activeId;
+      const left = document.createElement('div');
+      const nm = document.createElement('div'); nm.textContent = b.name || 'Business';
+      const loc = document.createElement('div'); loc.className = 'hrzn-sw-loc'; loc.textContent = b.location || '—';
+      left.appendChild(nm); left.appendChild(loc); item.appendChild(left);
+      if (isActive) { const chk = document.createElement('span'); chk.className = 'hrzn-sw-check'; chk.textContent = '✓'; item.appendChild(chk); }
+      item.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (isActive) { closeMenu(); return; }
+        doSwitch(b.id, item);
+      });
+      el.appendChild(item);
+    });
+    const add = document.createElement('div');
+    add.className = 'hrzn-switcher-add';
+    add.textContent = '+ Add business';
+    add.addEventListener('click', (ev) => { ev.stopPropagation(); showAddForm(); });
+    el.appendChild(add);
+  };
+
+  const buildMenu = () => {
+    hrznInjectSwitcherStyles();
+    menu = document.createElement('div');
+    menu.className = 'hrzn-switcher-menu';
+    fillMenu(menu);
+    row.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
+  };
+
+  const showAddForm = () => {
+    if (!menu) return;
+    menu.innerHTML = '';
+    const form = document.createElement('div');
+    form.className = 'hrzn-switcher-form';
+    const name = document.createElement('input');
+    name.placeholder = 'Business name';
+    const loc = document.createElement('input');
+    loc.placeholder = 'Location (optional)';
+    const cat = document.createElement('select');
+    [['restaurant','Restaurant'],['retail','Retail'],['online','Online / E-commerce'],['service','Service'],['other','Other']]
+      .forEach(([v,label]) => { const o = document.createElement('option'); o.value = v; o.textContent = label; cat.appendChild(o); });
+    const save = document.createElement('button');
+    save.textContent = 'Create business';
+    const cancel = document.createElement('button');
+    cancel.className = 'hrzn-sw-cancel';
+    cancel.textContent = 'Cancel';
+    form.appendChild(name); form.appendChild(loc); form.appendChild(cat); form.appendChild(save); form.appendChild(cancel);
+    menu.appendChild(form);
+
+    cancel.addEventListener('click', (ev) => { ev.stopPropagation(); closeMenu(); });
+    save.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      if (!name.value.trim()) { name.focus(); return; }
+      save.disabled = true; save.textContent = 'Creating…';
+      try {
+        const r = await fetch('/api/add-business', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: hrznGetToken(), name: name.value.trim(), location: loc.value.trim() || null, businessType: cat.value })
+        });
+        const res = await r.json();
+        if (res && res.ok) {
+          // New business created but NOT switched to (server didn't change active).
+          // Show a brief note, then refresh the menu so it appears in the list.
+          menu.innerHTML = '<div class="hrzn-switcher-msg">Business created. Select it above to switch.</div>';
+          businesses.push({ id: res.business_id, name: name.value.trim(), location: loc.value.trim() || '—', business_type: cat.value });
+          setTimeout(() => { if (menu) fillMenu(menu); }, 900);
+        } else {
+          save.disabled = false; save.textContent = 'Create business';
+          const msg = document.createElement('div');
+          msg.className = 'hrzn-switcher-msg';
+          msg.textContent = res && res.error ? res.error : 'Could not create business.';
+          form.appendChild(msg);
+        }
+      } catch (e) {
+        save.disabled = false; save.textContent = 'Create business';
+      }
+    });
+  };
+
+  row.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (menu) { closeMenu(); return; }
+    buildMenu();
+  });
 }
 
 function hrznRequireAuth() {
