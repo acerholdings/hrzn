@@ -377,7 +377,7 @@ async function hrznAskWidget(prompt) {
       response.textContent = data.error || 'Your plan does not include the AI Operator.';
       return;
     }
-    response.textContent = data.content?.[0]?.text || 'Unable to respond.';
+    { const _t = data.content?.[0]?.text || 'Unable to respond.'; response.innerHTML = (typeof hrznMarkdown==='function' ? hrznMarkdown(_t) : _t); }
   } catch(e) {
     response.textContent = 'Connection error. Try again.';
   }
@@ -598,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await r.json();
       if (r.status === 401 || r.status === 403) { if(summaryEl) summaryEl.textContent = data.error || 'Upgrade to use AI insights.'; return; }
-      if(summaryEl) summaryEl.textContent = data.content?.[0]?.text || 'Ready to analyze your business.';
+      if(summaryEl){ const _s = data.content?.[0]?.text || 'Ready to analyze your business.'; summaryEl.innerHTML = (typeof hrznMarkdown==='function' ? hrznMarkdown(_s) : _s); }
     } catch(e) {
       if(summaryEl) summaryEl.textContent = 'Ready. Ask me anything about your business.';
     }

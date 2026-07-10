@@ -3,6 +3,104 @@
 // Single source of truth for all pages
 // ─────────────────────────────────────────────
 
+// ── MARKDOWN RENDERER ────────────────────────────────────────
+// The AI (Claude) replies in Markdown — **bold**, ## headers, - lists,
+// | tables |, --- rules. Rendering that with .textContent shows the raw
+// asterisks and pipes, which looks cluttered. hrznMarkdown converts a safe
+// subset to HTML. SECURITY: we escape all HTML first, so nothing in the AI
+// text can inject markup — only our own generated tags are ever emitted.
+function hrznMarkdown(src) {
+  if (src == null) return '';
+  let s = String(src);
+  // 1) Escape HTML so raw text can never inject tags.
+  const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  s = esc(s);
+
+  // 2) Extract fenced code blocks first so their contents aren't formatted.
+  const codeBlocks = [];
+  s = s.replace(/```[\s\S]*?```/g, (m) => {
+    const body = m.replace(/^```[^\n]*\n?/, '').replace(/```$/, '');
+    codeBlocks.push('<pre style="background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow-x:auto;font-family:monospace;font-size:12px;line-height:1.5;margin:8px 0;">' + body + '</pre>');
+    return '\u0000CODE' + (codeBlocks.length - 1) + '\u0000';
+  });
+
+  const lines = s.split('\n');
+  const out = [];
+  let i = 0;
+  const inline = (t) => t
+    // bold then italic (order matters)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+)`/g, '<code style="background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-family:monospace;font-size:0.92em;">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color:var(--gold);text-decoration:underline;">$1</a>');
+
+  while (i < lines.length) {
+    let line = lines[i];
+
+    // Code placeholder passthrough
+    if (/^\u0000CODE\d+\u0000$/.test(line.trim())) { out.push(line.trim()); i++; continue; }
+
+    // Horizontal rule
+    if (/^\s*---+\s*$/.test(line)) { out.push('<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">'); i++; continue; }
+
+    // Headings (#, ##, ###) -> sized/weighted lines
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const lvl = h[1].length;
+      const size = lvl === 1 ? 16 : lvl === 2 ? 14 : 13;
+      out.push('<div style="font-size:' + size + 'px;font-weight:600;color:var(--text);margin:12px 0 4px;">' + inline(h[2]) + '</div>');
+      i++; continue;
+    }
+
+    // Tables: a header row of pipes followed by a |---|---| separator
+    if (/\|/.test(line) && i + 1 < lines.length && /^\s*\|?[\s:-]*-{2,}[\s:|-]*\|?\s*$/.test(lines[i + 1])) {
+      const parseRow = (r) => r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
+      const headers = parseRow(line);
+      i += 2; // skip header + separator
+      const bodyRows = [];
+      while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim() !== '') { bodyRows.push(parseRow(lines[i])); i++; }
+      let tbl = '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;">';
+      tbl += '<thead><tr>' + headers.map(hc => '<th style="text-align:left;padding:6px 10px;border-bottom:1px solid var(--border-hi);color:var(--text-dim);font-weight:500;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;">' + inline(hc) + '</th>').join('') + '</tr></thead>';
+      tbl += '<tbody>' + bodyRows.map(row => '<tr>' + row.map(c => '<td style="padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);">' + inline(c) + '</td>').join('') + '</tr>').join('') + '</tbody>';
+      tbl += '</table>';
+      out.push(tbl);
+      continue;
+    }
+
+    // Unordered list
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*[-*]\s+/, '')); i++; }
+      out.push('<ul style="margin:6px 0 6px 2px;padding-left:16px;line-height:1.7;">' + items.map(it => '<li style="margin:2px 0;">' + inline(it) + '</li>').join('') + '</ul>');
+      continue;
+    }
+
+    // Ordered list
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*\d+\.\s+/, '')); i++; }
+      out.push('<ol style="margin:6px 0 6px 2px;padding-left:18px;line-height:1.7;">' + items.map(it => '<li style="margin:2px 0;">' + inline(it) + '</li>').join('') + '</ol>');
+      continue;
+    }
+
+    // Blank line -> spacing
+    if (line.trim() === '') { out.push('<div style="height:6px;"></div>'); i++; continue; }
+
+    // Paragraph (collect consecutive non-special lines)
+    const para = [line];
+    i++;
+    while (i < lines.length && lines[i].trim() !== '' && !/^\s*(#{1,4}\s|[-*]\s|\d+\.\s|---+\s*$|\|)/.test(lines[i]) && !/^\u0000CODE\d+\u0000$/.test(lines[i].trim())) {
+      para.push(lines[i]); i++;
+    }
+    out.push('<div style="margin:2px 0;line-height:1.7;">' + inline(para.join(' ')) + '</div>');
+  }
+
+  let html = out.join('');
+  // Restore code blocks
+  html = html.replace(/\u0000CODE(\d+)\u0000/g, (m, n) => codeBlocks[+n] || '');
+  return html;
+}
+
 // ── AUTH HELPERS ─────────────────────────────────────────────
 function hrznGetToken() {
   return localStorage.getItem('hrzn_token');
