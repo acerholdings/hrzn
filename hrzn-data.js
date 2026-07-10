@@ -507,6 +507,11 @@ async function hrznLoadFromCloud() {
       if (data.business.name) merged.businessName = merged.businessName || data.business.name;
       if (data.business.name) merged.bizName = merged.bizName || data.business.name;
       if (data.business.location) merged.bizLocation = merged.bizLocation || data.business.location;
+      // Category (restaurant/retail/online/service/other) drives benchmarks, labels,
+      // and gated features. It's authoritative from the business row — always apply it
+      // so a non-restaurant business isn't silently treated as a restaurant. Without
+      // this, getBenchmarks() falls back to 'restaurant' for every business.
+      if (data.business.business_type) merged.businessType = data.business.business_type;
       // Plan + subscription status are AUTHORITATIVE from the database — always
       // overwrite the local copy (the badge and paywall read settings.plan, so this
       // makes the DB the single source of truth instead of stale localStorage).
