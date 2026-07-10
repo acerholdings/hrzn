@@ -233,6 +233,11 @@ async function hrznRenderBusinessSwitcher() {
     hrznInjectSwitcherStyles();
     menu = document.createElement('div');
     menu.className = 'hrzn-switcher-menu';
+    // Clicks inside the menu (business items, and especially the Add-form inputs)
+    // must NOT bubble up to the row's toggle handler, which would close the menu.
+    // This is what made clicking into the "Business name" field close the form.
+    menu.addEventListener('click', (ev) => ev.stopPropagation());
+    menu.addEventListener('mousedown', (ev) => ev.stopPropagation());
     fillMenu(menu);
     row.appendChild(menu);
     setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
