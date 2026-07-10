@@ -75,6 +75,48 @@ export default async function handler(req, res) {
     const rows = await r.json().catch(() => []);
     return Array.isArray(rows) && rows.length > 0; // false if no row matched
   };
+  // ---- OWNER-LEVEL (profiles) DUAL-WRITE ----------------------------------
+  // During the multi-business migration, subscription state is being moved from
+  // the per-business row up to the per-owner profiles row. We write BOTH places
+  // for now (dual-write) so nothing breaks mid-migration. profiles.id = auth
+  // user id = businesses.owner_id. Same column discipline as above: a null plan
+  // means "don't touch the tier".
+  const updateProfileByUserId = async (userId, plan, status, extra = {}) => {
+    if (!userId) return false;
+    const patch = { subscription_status: status, ...extra };
+    if (plan != null) patch.plan = plan;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'apikey': SERVICE_KEY
+      },
+      body: JSON.stringify(patch)
+    });
+    return r.ok;
+  };
+  // Resolve a Stripe customer id to the owning user id via the businesses row
+  // that carries it (businesses.stripe_customer_id → owner_id). Used by the
+  // customer-id events, which don't carry a user id, so we can also write the
+  // owner's profile. Returns null if no business carries this customer id yet.
+  const ownerIdForCustomer = async (customerId) => {
+    if (!customerId) return null;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/businesses?stripe_customer_id=eq.${encodeURIComponent(customerId)}&select=owner_id`, {
+      headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY }
+    });
+    if (!r.ok) return null;
+    const rows = await r.json().catch(() => []);
+    return Array.isArray(rows) && rows[0] ? rows[0].owner_id : null;
+  };
+  // Mirror a customer-id-matched write to the owner's profile. Resolves the
+  // owner first, then writes. No-op if the owner can't be resolved.
+  const updateProfileByCustomerId = async (customerId, plan, status, extra = {}) => {
+    const userId = await ownerIdForCustomer(customerId);
+    if (!userId) return false;
+    return updateProfileByUserId(userId, plan, status, extra);
+  };
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -88,6 +130,10 @@ export default async function handler(req, res) {
         };
         const updated = await updateByUserId(userId, plan, 'active', extra);
         if (!updated) await updateByEmail(email, plan, 'active', extra);
+        // Dual-write to the owner's profile. Prefer the user id from metadata;
+        // fall back to resolving via the customer id.
+        if (userId) await updateProfileByUserId(userId, plan, 'active', extra);
+        else if (session.customer) await updateProfileByCustomerId(session.customer, plan, 'active', extra);
         break;
       }
       case 'customer.subscription.updated': {
@@ -104,6 +150,8 @@ export default async function handler(req, res) {
         // carries this customer id yet.
         const done = await updateByCustomerId(sub.customer, plan, status, extra);
         if (!done) await updateByEmail(email, plan, status, extra);
+        // Dual-write to the owner's profile (resolve owner via customer id).
+        await updateProfileByCustomerId(sub.customer, plan, status, extra);
         break;
       }
       case 'customer.subscription.deleted': {
@@ -114,6 +162,9 @@ export default async function handler(req, res) {
         // the exact bug that locked out a live Starter subscriber). If no row carries
         // this customer id, do nothing.
         await updateByCustomerId(sub.customer, null, 'cancelled', extra);
+        // Mirror to the owner's profile. Same discipline: null plan, so the tier
+        // is never overwritten — only the status flips to cancelled.
+        await updateProfileByCustomerId(sub.customer, null, 'cancelled', extra);
         break;
       }
       case 'invoice.payment_failed': {
@@ -121,6 +172,8 @@ export default async function handler(req, res) {
         const extra = { stripe_customer_id: invoice.customer || null };
         // Match ONLY by customer id (same reasoning as subscription.deleted).
         await updateByCustomerId(invoice.customer, null, 'past_due', extra);
+        // Mirror to the owner's profile (null plan → tier untouched, status only).
+        await updateProfileByCustomerId(invoice.customer, null, 'past_due', extra);
         break;
       }
     }
