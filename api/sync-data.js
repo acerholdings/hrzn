@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     if (!user.id) return res.status(401).json({ error: 'Invalid token' });
 
     // Get business_id for this user
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id`, {
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id,plan,subscription_status,trial_ends_at`, {
       headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY }
     });
     const [profile] = await profileRes.json();
@@ -139,18 +139,15 @@ export default async function handler(req, res) {
       // expired-trial account may still LOAD its own data (GET, above, stays open
       // so the app can read the plan and enforce the paywall) but may NOT write new
       // data. Allowed: active starter/pro (not cancelled/past_due) OR active trial.
+      // Entitlement is read at the OWNER level (the profile row) so that all of an
+      // owner's businesses share one subscription — read from `profile` fetched above.
       {
-        const bizAuthRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}&select=plan,subscription_status,trial_ends_at`,
-          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
-        );
-        const [bizAuth] = await bizAuthRes.json();
-        const plan = (bizAuth?.plan || 'trial').toLowerCase();
-        const status = (bizAuth?.subscription_status || '').toLowerCase();
+        const plan = (profile?.plan || 'trial').toLowerCase();
+        const status = (profile?.subscription_status || '').toLowerCase();
         const paidActive = (plan === 'starter' || plan === 'pro') && status !== 'cancelled' && status !== 'past_due';
         let trialActive = false;
         if (plan === 'trial') {
-          trialActive = bizAuth?.trial_ends_at ? (new Date(bizAuth.trial_ends_at).getTime() > Date.now()) : true;
+          trialActive = profile?.trial_ends_at ? (new Date(profile.trial_ends_at).getTime() > Date.now()) : true;
         }
         if (!paidActive && !trialActive) {
           return res.status(403).json({ error: 'Your plan does not include saving data. Upgrade to continue.', code: 'not_entitled' });

@@ -41,12 +41,14 @@ export default async function handler(req, res) {
     });
     const user = await userRes.json();
     if (!user.id) return { error: 'Invalid token', code: 401 };
-    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id`, {
+    const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id,plan,subscription_status`, {
       headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY }
     });
     const [profile] = await profileRes.json();
     if (!profile?.business_id) return { error: 'No business found for user', code: 400 };
-    return { businessId: profile.business_id };
+    // plan/status now live at the OWNER level (profile) so all of an owner's
+    // businesses share one subscription — carry them out for the Pro check.
+    return { businessId: profile.business_id, plan: profile.plan, subscriptionStatus: profile.subscription_status };
   }
 
   try {
@@ -78,14 +80,10 @@ export default async function handler(req, res) {
       // ── ENTITLEMENT: live integrations are PRO-only ──────────────────
       // Connecting a POS is a Pro feature. Starter/trial/cancelled cannot connect.
       // Enforced server-side so the connect URL can't be obtained directly.
+      // Read at the OWNER level (profile plan/status carried by getBusinessId).
       {
-        const _bizRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/businesses?id=eq.${b.businessId}&select=plan,subscription_status`,
-          { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
-        );
-        const [_biz] = await _bizRes.json();
-        const _plan = (_biz?.plan || '').toLowerCase();
-        const _status = (_biz?.subscription_status || '').toLowerCase();
+        const _plan = (b.plan || '').toLowerCase();
+        const _status = (b.subscriptionStatus || '').toLowerCase();
         const _proActive = _plan === 'pro' && _status !== 'cancelled' && _status !== 'past_due';
         if (!_proActive) {
           return res.status(403).json({ error: 'Live integrations are available on the Pro plan.', code: 'pro_required' });

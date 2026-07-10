@@ -35,9 +35,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid session. Please sign in again.' });
     }
 
-    // 2) Find the user's business row (carries plan + subscription_status).
+    // 2) Find the user's profile row (now carries plan + subscription_status at
+    //    the OWNER level, so all of an owner's businesses share one subscription).
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=business_id,plan,subscription_status,trial_ends_at`,
       { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
     );
     const [profile] = await profileRes.json();
@@ -46,21 +47,12 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'No active business found for this account.' });
     }
 
-    const bizRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/businesses?id=eq.${businessId}&select=plan,subscription_status,trial_ends_at`,
-      { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
-    );
-    const [biz] = await bizRes.json();
-    if (!biz) {
-      return res.status(403).json({ error: 'No active business found for this account.' });
-    }
-
-    // 3) Decide entitlement.
+    // 3) Decide entitlement from the owner's profile.
     //    Allowed: active paid plan (starter/pro) that is NOT cancelled/past_due,
     //             OR a trial that has not yet expired.
     //    Blocked: cancelled, past_due, expired trial, unknown.
-    const plan = (biz.plan || 'trial').toLowerCase();
-    const status = (biz.subscription_status || '').toLowerCase();
+    const plan = (profile.plan || 'trial').toLowerCase();
+    const status = (profile.subscription_status || '').toLowerCase();
 
     const paidActive =
       (plan === 'starter' || plan === 'pro') &&
@@ -68,8 +60,8 @@ export default async function handler(req, res) {
 
     let trialActive = false;
     if (plan === 'trial') {
-      if (biz.trial_ends_at) {
-        trialActive = new Date(biz.trial_ends_at).getTime() > Date.now();
+      if (profile.trial_ends_at) {
+        trialActive = new Date(profile.trial_ends_at).getTime() > Date.now();
       } else {
         // No explicit trial end on the row — allow (trial just started / legacy row).
         trialActive = true;
