@@ -2549,8 +2549,17 @@ async function hrznCheckTrialAndPaywall() {
 
   const user = hrznGetUser();
   const settings = JSON.parse(localStorage.getItem('hrzn-settings') || '{}');
-  const plan = settings.plan || 'trial';
-  const status = settings.subscription_status || '';
+
+  // FAIL OPEN on an unknown plan. An empty settings.plan means we don't yet know
+  // the owner's plan — this happens right after a business switch (settings is
+  // cleared) and before hrznLoadFromCloud repopulates it. We must NOT paywall on
+  // uncertainty: the server enforces entitlement on every data/AI call, so this
+  // client paywall is UX only and must never lock out a paying owner. Once cloud
+  // load runs and writes the real (owner-level) plan, this re-evaluates correctly.
+  if (!settings.plan) return;
+
+  const plan = settings.plan.toLowerCase();
+  const status = (settings.subscription_status || '').toLowerCase();
 
   // Active paid plan — full access. (Stripe keeps a cancelled sub 'active' until the
   // period ends, so a user who cancels keeps access until 'cancelled' actually arrives.)
@@ -2563,15 +2572,17 @@ async function hrznCheckTrialAndPaywall() {
     return;
   }
 
-  // Check if trial expired
-  const createdAt = user?.created_at ? new Date(user.created_at) : null;
-  if (!createdAt) return;
-
-  const trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const now = new Date();
-  const daysLeft = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
-
-  if (now <= trialEnd) return; // Trial still active
+  // Trial: prefer the real trial end date (owner profile → settings.trial_ends_at);
+  // fall back to the created_at + 14d estimate only when we have no explicit date.
+  let trialEnd = null;
+  if (settings.trial_ends_at) {
+    trialEnd = new Date(settings.trial_ends_at);
+  } else {
+    const createdAt = user?.created_at ? new Date(user.created_at) : null;
+    if (createdAt) trialEnd = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+  }
+  if (!trialEnd) return;              // no way to know → fail open
+  if (new Date() <= trialEnd) return; // trial still active
 
   // Trial expired — show paywall
   hrznShowPaywall(user.email);
