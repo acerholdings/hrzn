@@ -25,7 +25,32 @@ export default async function handler(req, res) {
       headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY }
     });
     const [profile] = await profileRes.json();
-    const businessId = profile?.business_id;
+    const defaultBusinessId = profile?.business_id;
+
+    // ── ACTIVE-BUSINESS RESOLUTION + OWNERSHIP VALIDATION ────────────────
+    // For multi-business, the client may request a SPECIFIC business by id
+    // (?business_id=… on GET, or body.businessId on POST). We must NEVER trust
+    // that id blindly — a user could pass another owner's business id and read
+    // their financials. So: if a business_id is requested, verify the row's
+    // owner_id matches THIS user before using it. If none is requested, fall
+    // back to the profile's default business (current single-business behaviour,
+    // so nothing changes for users until the switcher UI starts sending an id).
+    const requestedBusinessId =
+      (req.method === 'GET' ? req.query?.business_id : req.body?.businessId) || null;
+
+    let businessId = defaultBusinessId;
+    if (requestedBusinessId && requestedBusinessId !== defaultBusinessId) {
+      const ownRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/businesses?id=eq.${requestedBusinessId}&owner_id=eq.${user.id}&select=id`,
+        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+      );
+      const ownRows = await ownRes.json().catch(() => []);
+      if (!Array.isArray(ownRows) || ownRows.length === 0) {
+        // The requested business either doesn't exist or isn't owned by this user.
+        return res.status(403).json({ error: 'You do not have access to that business.', code: 'not_owner' });
+      }
+      businessId = requestedBusinessId;
+    }
 
     // ── GET: Load user's data from Supabase ──────────────────────
     if (req.method === 'GET') {

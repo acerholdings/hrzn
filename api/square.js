@@ -56,7 +56,26 @@ export default async function handler(req, res) {
     if (!profile?.business_id) return { error: 'No business found for user', code: 400 };
     // plan/status now live at the OWNER level (profile) so all of an owner's
     // businesses share one subscription — carry them out for the Pro check.
-    return { businessId: profile.business_id, plan: profile.plan, subscriptionStatus: profile.subscription_status };
+    const plan = profile.plan, subscriptionStatus = profile.subscription_status;
+
+    // Active-business resolution + ownership validation. If the client requests a
+    // specific business (?business_id=… or body.businessId), verify it belongs to
+    // this user before using it — never trust a client-supplied id blindly, or a
+    // user could connect/read a POS under a business they don't own. No id → fall
+    // back to the profile default (current single-business behaviour).
+    const requestedBusinessId = req.query?.business_id || req.body?.businessId || null;
+    if (requestedBusinessId && requestedBusinessId !== profile.business_id) {
+      const ownRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/businesses?id=eq.${requestedBusinessId}&owner_id=eq.${user.id}&select=id`,
+        { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } }
+      );
+      const ownRows = await ownRes.json().catch(() => []);
+      if (!Array.isArray(ownRows) || ownRows.length === 0) {
+        return { error: 'You do not have access to that business.', code: 403 };
+      }
+      return { businessId: requestedBusinessId, plan, subscriptionStatus };
+    }
+    return { businessId: profile.business_id, plan, subscriptionStatus };
   }
 
   try {
