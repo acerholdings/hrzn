@@ -2104,7 +2104,7 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
 
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
             <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Want to upload a new CSV?</div>
-            <button onclick="document.getElementById('hrzn-source-modal').remove();window.location.href='data.html'" style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;">Go to Data Sources →</button>
+            <button onclick="document.getElementById('hrzn-source-modal').remove();window.location.href='data.html'" style="font-size:11px;padding:7px 14px;background:transparent;border:1px solid var(--border-gold);color:var(--gold);border-radius:6px;cursor:pointer;font-family:var(--font-body,'Inter',sans-serif);">Go to Data Sources →</button>
           </div>
         </div>
       </div>`;
@@ -2255,7 +2255,7 @@ function hrznInjectFloatingAI() {
       display: flex; flex-direction: column; align-items: flex-end; gap: 0;
     }
     #hrzn-float-btn {
-      width: 52px; height: 52px; border-radius: 50%;
+      width: 56px; height: 56px; border-radius: 50%;
       background: var(--gold, #C9A84C);
       box-shadow: 0 4px 24px rgba(201,168,76,0.4), 0 2px 8px rgba(0,0,0,0.5);
       border: none; cursor: pointer; display: flex; align-items: center;
@@ -2272,11 +2272,11 @@ function hrznInjectFloatingAI() {
     }
     #hrzn-float-btn svg { width: 22px; height: 22px; }
     #hrzn-float-panel {
-      position: fixed; bottom: 92px; right: 28px;
-      width: 360px; max-height: 480px;
+      position: fixed; bottom: 100px; right: 28px;
+      width: 400px; max-height: 560px;
       background: var(--surface, #0f0f0f);
-      border: 1px solid rgba(201,168,76,0.3);
-      border-radius: 12px;
+      border: 1px solid var(--border-gold, rgba(201,168,76,0.3));
+      border-radius: 14px;
       box-shadow: 0 -4px 48px rgba(0,0,0,0.6), 0 8px 32px rgba(0,0,0,0.4);
       display: flex; flex-direction: column; overflow: hidden;
       transform: scale(0.9) translateY(12px); opacity: 0; pointer-events: none;
@@ -2295,7 +2295,7 @@ function hrznInjectFloatingAI() {
     #hrzn-panel-title {
       display: flex; align-items: center; gap: 8px;
       font-size: 12px; font-weight: 500; color: var(--text, #e8e8e8);
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body, 'Inter', sans-serif);
     }
     .hrzn-pulse {
       width: 7px; height: 7px; border-radius: 50%;
@@ -2323,13 +2323,13 @@ function hrznInjectFloatingAI() {
     .hrzn-msg-ai {
       background: rgba(255,255,255,0.04); border-radius: 8px;
       padding: 9px 12px; font-size: 12px; line-height: 1.6;
-      color: var(--text-mid, #999); max-width: 92%; font-family: 'DM Sans', sans-serif;
+      color: var(--text-mid, #999); max-width: 92%; font-family: var(--font-body, 'Inter', sans-serif);
     }
     .hrzn-msg-user {
       background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
       border-radius: 8px; padding: 8px 12px; font-size: 12px;
       color: var(--text, #e8e8e8); align-self: flex-end; max-width: 88%;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body, 'Inter', sans-serif);
     }
     .hrzn-msg-thinking {
       display: flex; gap: 4px; padding: 12px;
@@ -2352,7 +2352,7 @@ function hrznInjectFloatingAI() {
       font-size: 10px; color: var(--text-dim, #666);
       background: rgba(128,128,128,0.06); border: 1px solid rgba(255,255,255,0.06);
       padding: 4px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap;
-      font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+      font-family: var(--font-body, 'Inter', sans-serif); transition: all 0.15s;
     }
     .hrzn-chip:hover {
       color: var(--gold, #C9A84C); border-color: rgba(201,168,76,0.3);
@@ -2366,7 +2366,7 @@ function hrznInjectFloatingAI() {
       flex: 1; background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;
       padding: 7px 12px; font-size: 12px; color: var(--text, #e8e8e8);
-      font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+      font-family: var(--font-body, 'Inter', sans-serif); outline: none; transition: border-color 0.2s;
     }
     #hrzn-panel-input:focus { border-color: rgba(201,168,76,0.4); }
     #hrzn-panel-send {
@@ -2382,7 +2382,7 @@ function hrznInjectFloatingAI() {
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 6px; padding: 5px 10px;
       font-size: 11px; color: var(--text-dim, #666);
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body, 'Inter', sans-serif);
       white-space: nowrap; pointer-events: none;
       opacity: 0; transition: opacity 0.2s; z-index: 8998;
     }
@@ -2525,7 +2525,7 @@ function hrznInjectFloatingAI() {
       const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t process that.';
       const aiDiv = document.createElement('div');
       aiDiv.className = 'hrzn-msg-ai';
-      aiDiv.textContent = reply;
+      aiDiv.innerHTML = (typeof hrznMarkdown === 'function' ? hrznMarkdown(reply) : reply);
       msgs.appendChild(aiDiv);
     } catch(e) {
       thinkDiv.remove();
@@ -2715,7 +2715,7 @@ function hrznShowPaywall(email) {
     'position:fixed', 'inset:0', 'z-index:99999',
     'background:rgba(8,8,8,0.96)',
     'display:flex', 'align-items:center', 'justify-content:center',
-    "font-family:DM Sans,sans-serif",
+    "font-family:var(--font-body,'Inter',sans-serif)",
     'padding:20px'
   ].join(';');
 
@@ -2758,7 +2758,7 @@ function hrznShowPaywall(email) {
         </div>
       </div>
 
-      <button onclick="hrznUpgrade('pro')" style="width:100%;padding:14px;background:#C9A84C;color:#000;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.02em;margin-bottom:12px;transition:opacity 0.2s;"
+      <button onclick="hrznUpgrade('pro')" style="width:100%;padding:14px;background:#C9A84C;color:#000;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font-body,'Inter',sans-serif);letter-spacing:0.02em;margin-bottom:12px;transition:opacity 0.2s;"
               onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
         Upgrade Now →
       </button>
