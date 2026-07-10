@@ -2288,7 +2288,7 @@ function hrznInjectFloatingAI() {
       transform: scale(1) translateY(0); opacity: 1; pointer-events: all;
     }
     #hrzn-panel-header {
-      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 13px 16px; border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0;
     }
@@ -2316,14 +2316,14 @@ function hrznInjectFloatingAI() {
     }
     #hrzn-panel-close:hover { background: rgba(128,128,128,0.2); }
     #hrzn-panel-msgs {
-      flex: 1; overflow-y: auto; padding: 12px 14px;
-      display: flex; flex-direction: column; gap: 8px;
+      flex: 1; overflow-y: auto; padding: 16px 14px 12px;
+      display: flex; flex-direction: column; gap: 10px;
       scrollbar-width: thin;
     }
     .hrzn-msg-ai {
       background: rgba(255,255,255,0.04); border-radius: 8px;
-      padding: 9px 12px; font-size: 12px; line-height: 1.6;
-      color: var(--text-mid, #999); max-width: 92%; font-family: var(--font-body, 'Inter', sans-serif);
+      padding: 11px 13px; font-size: 12px; line-height: 1.7;
+      color: var(--text, #e8e8e8); max-width: 94%; font-family: var(--font-body, 'Inter', sans-serif);
     }
     .hrzn-msg-user {
       background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
@@ -2508,7 +2508,7 @@ function hrznInjectFloatingAI() {
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 600,
-          system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d) : HRZN.getSystemPrompt(d)) + '\nRespond concisely in 2-4 sentences. Be direct and specific with dollar amounts.',
+          system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d) : HRZN.getSystemPrompt(d)) + '\nThis is a quick-glance chat widget. Keep answers to 2-3 short sentences with the single most important number and next action. For deeper analysis the user can open the full AI Operator.',
           messages: [{ role: 'user', content: text }]
         })
       });
