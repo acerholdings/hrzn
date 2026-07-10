@@ -171,7 +171,7 @@ async function hrznRenderBusinessSwitcher() {
   const onDocClick = (ev) => { if (menu && !menu.contains(ev.target) && !row.contains(ev.target)) closeMenu(); };
 
   // Perform the actual switch: point active business at `id`, clear the previous
-  // business's cache, reload for fresh data.
+  // business's cache, load the new business's data from the cloud, then reload.
   const doSwitch = async (id, itemEl) => {
     if (itemEl) itemEl.style.opacity = '0.5';
     try {
@@ -182,7 +182,16 @@ async function hrznRenderBusinessSwitcher() {
       });
       const res = await r.json();
       if (res && res.ok) {
+        // 1) Clear the previous business's cached data so its numbers/settings
+        //    can't bleed into the new business.
         hrznClearBusinessCache();
+        // 2) Repopulate localStorage from the cloud for the NOW-active business
+        //    (settings incl. owner plan + business name, plus any saved data).
+        //    Without this the reloaded page has empty settings and falls back to
+        //    "My Restaurant" / "Trial". Best-effort — reload regardless so a
+        //    transient load failure doesn't strand the user on a half-state.
+        try { if (typeof hrznLoadFromCloud === 'function') await hrznLoadFromCloud(); } catch (e) {}
+        // 3) Reload so the page renders with the new business's data.
         window.location.reload();
       } else {
         if (itemEl) itemEl.style.opacity = '1';
@@ -2685,3 +2694,31 @@ if (document.readyState === 'loading') {
 } else {
   hrznCheckTrialAndPaywall();
 }
+
+// Self-heal: if the user is logged in but localStorage has no settings (e.g. right
+// after a business switch, or any entry point that didn't preload the cloud), pull
+// the active business's data from the cloud and re-run the plan/paywall check so the
+// sidebar name, plan badge, and gating reflect reality instead of the "My Restaurant"
+// / "Trial" empty-state fallbacks. Guarded so it only fires when actually needed and
+// never in demo mode. Best-effort.
+(function hrznSelfHealSettings() {
+  try {
+    if (hrznIsDemo() || !hrznIsLoggedIn()) return;
+    const hasSettings = !!localStorage.getItem('hrzn-settings');
+    if (hasSettings) return;
+    if (typeof hrznLoadFromCloud !== 'function') return;
+    const run = async () => {
+      try {
+        const ok = await hrznLoadFromCloud();
+        if (ok) {
+          // Refresh the sidebar (name/plan badge) and re-evaluate the paywall now
+          // that settings is populated with the owner's real plan.
+          try { if (typeof hrznSetupSidebar === 'function') hrznSetupSidebar(); } catch (e) {}
+          try { hrznCheckTrialAndPaywall(); } catch (e) {}
+        }
+      } catch (e) {}
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+  } catch (e) {}
+})();
