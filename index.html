@@ -32,7 +32,8 @@
   /* ---------- NAV ---------- */
   header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.82);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--border);}
   .nav{display:flex;align-items:center;justify-content:space-between;height:66px;}
-  .logo{font-family:var(--display);font-weight:500;font-size:20px;letter-spacing:0.34em;color:var(--ink);padding-left:2px;}
+  .logo{display:flex;align-items:center;padding-left:2px;}
+  .logo svg{display:block;}
   .nav-links{display:flex;gap:30px;list-style:none;}
   .nav-links a{font-size:14px;color:var(--text-soft);font-weight:500;transition:color .15s;}
   .nav-links a:hover{color:var(--text);}
@@ -165,7 +166,7 @@
   .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px;}
   .price{background:var(--paper);border:1px solid var(--paper-line);border-radius:var(--radius);padding:28px 26px;position:relative;transition:transform .2s,box-shadow .2s,border-color .2s;}
   .price:hover{transform:translateY(-3px);box-shadow:0 18px 44px -20px rgba(0,0,0,0.18);}
-  .price.feat{border-color:rgba(201,168,76,0.45);box-shadow:0 18px 48px -22px rgba(201,168,76,0.35);}
+  .price.featured{border-color:rgba(201,168,76,0.45);box-shadow:0 18px 48px -22px rgba(201,168,76,0.35);}
   .price-badge{position:absolute;top:-11px;left:26px;background:var(--gold);color:#000;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:4px 11px;border-radius:7px;}
   .price h4{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
   .price .amt{font-family:var(--display);font-size:38px;font-weight:600;color:var(--ink);letter-spacing:-0.02em;}
@@ -192,7 +193,8 @@
   /* ---------- FOOTER ---------- */
   footer{background:var(--ink);border-top:1px solid var(--border-dark);color:var(--on-dark-soft);padding:40px 0 34px;}
   .footer-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px;}
-  .footer-logo{font-family:var(--display);font-weight:500;font-size:17px;letter-spacing:0.3em;color:var(--on-dark);}
+  .footer-logo{display:flex;align-items:center;}
+  .footer-logo svg{display:block;}
   .footer-nav{display:flex;gap:26px;flex-wrap:wrap;}
   .footer-nav a{font-size:13.5px;color:var(--on-dark-soft);transition:color .15s;}
   .footer-nav a:hover{color:var(--on-dark);}
@@ -228,7 +230,9 @@
 <!-- NAV -->
 <header>
   <div class="wrap nav">
-    <div class="logo">HRZN</div>
+    <a href="index.html" class="logo" aria-label="HRZN home">
+      <svg viewBox="0 0 190 40" height="26" role="img" aria-label="HRZN"><text x="0" y="30" font-family="'Space Grotesk',sans-serif" font-weight="500" font-size="34" letter-spacing="9"><tspan fill="#141418">HR</tspan><tspan fill="#c9a84c">Z</tspan><tspan fill="#141418">N</tspan></text></svg>
+    </a>
     <ul class="nav-links">
       <li><a href="product.html">Product</a></li>
       <li><a href="solutions.html">Solutions</a></li>
@@ -436,7 +440,7 @@
         </ul>
         <a href="signup.html" class="btn btn-ghost">Start Free Trial</a>
       </div>
-      <div class="price feat">
+      <div class="price featured">
         <span class="price-badge">Most popular</span>
         <h4>Pro</h4>
         <div class="amt num">$299<small>/mo</small></div>
@@ -483,7 +487,9 @@
 <!-- FOOTER -->
 <footer>
   <div class="wrap footer-row">
-    <div class="footer-logo">HRZN</div>
+    <div class="footer-logo">
+      <svg viewBox="0 0 175 36" height="22" role="img" aria-label="HRZN"><text x="0" y="27" font-family="'Space Grotesk',sans-serif" font-weight="500" font-size="30" letter-spacing="8"><tspan fill="#f2f2f2">HR</tspan><tspan fill="#c9a84c">Z</tspan><tspan fill="#f2f2f2">N</tspan></text></svg>
+    </div>
     <nav class="footer-nav">
       <a href="product.html">Product</a>
       <a href="pricing.html">Pricing</a>
