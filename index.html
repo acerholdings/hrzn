@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HRZN — The AI business operator</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
 <meta name="description" content="HRZN turns your sales and cost data into plain-English answers and clear next steps. No spreadsheets, no analyst required.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,19 +118,19 @@
   .step-line{position:absolute;top:27px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent);}
 
   /* ---------- LIGHT BAND: ANSWERS / CHAT ---------- */
-  .answers-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;}
-  .chat-demo{display:flex;flex-direction:column;gap:12px;}
-  .bubble{max-width:82%;padding:13px 16px;border-radius:16px;font-size:14px;line-height:1.55;}
-  .bubble.q{align-self:flex-end;background:var(--ink);color:var(--on-dark);border-bottom-right-radius:4px;}
-  .bubble.a{align-self:flex-start;background:var(--paper-warm);border:1px solid var(--paper-line);color:var(--text);border-bottom-left-radius:4px;}
+  .answers-stack{max-width:720px;margin:0 auto;}
+  .chat-demo{display:flex;flex-direction:column;gap:14px;margin-bottom:56px;}
+  .bubble{max-width:78%;padding:14px 18px;border-radius:18px;font-size:14.5px;line-height:1.55;}
+  .bubble.q{align-self:flex-end;background:var(--ink);color:var(--on-dark);border-bottom-right-radius:5px;}
+  .bubble.a{align-self:flex-start;background:var(--paper-warm);border:1px solid var(--paper-line);color:var(--text);border-bottom-left-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,0.03);}
   .bubble.a b{color:var(--ink);font-weight:600;}
   .bubble.a .gd{color:var(--gold-deep);font-weight:600;}
-  .chat-more{font-size:13.5px;color:var(--gold-deep);font-weight:600;margin-top:4px;cursor:pointer;align-self:flex-start;}
-  .feats{display:flex;flex-direction:column;gap:22px;}
+  .feats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;padding-top:44px;border-top:1px solid var(--paper-line);}
+  .feats-row .feat{flex-direction:column;gap:14px;text-align:left;}
   .feat{display:flex;gap:15px;align-items:flex-start;}
-  .feat-ic{width:42px;height:42px;border-radius:11px;background:var(--gold-soft);border:1px solid rgba(201,168,76,0.28);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .feat-ic svg{width:19px;height:19px;stroke:var(--gold-deep);fill:none;stroke-width:1.6;}
-  .feat h4{font-size:16px;font-weight:600;margin-bottom:4px;color:var(--ink);}
+  .feat-ic{width:44px;height:44px;border-radius:12px;background:var(--gold-soft);border:1px solid rgba(201,168,76,0.28);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .feat-ic svg{width:20px;height:20px;stroke:var(--gold-deep);fill:none;stroke-width:1.6;}
+  .feat h4{font-size:16px;font-weight:600;margin-bottom:5px;color:var(--ink);}
   .feat p{font-size:14px;color:var(--text-soft);line-height:1.55;}
 
   /* ---------- FEATURE ROWS ---------- */
@@ -202,7 +206,8 @@
 
   /* ---------- RESPONSIVE ---------- */
   @media(max-width:920px){
-    .hero-grid,.answers-grid,.frow,.frow.flip{grid-template-columns:1fr;gap:40px;}
+    .hero-grid,.frow,.frow.flip{grid-template-columns:1fr;gap:40px;}
+    .feats-row{grid-template-columns:1fr;gap:28px;}
     .frow.flip .fr-media{order:0;}
     .hero h1{font-size:48px;}
     .steps{grid-template-columns:1fr;gap:34px;}
@@ -231,7 +236,7 @@
 <header>
   <div class="wrap nav">
     <a href="index.html" class="logo" aria-label="HRZN home">
-      <svg viewBox="0 0 190 40" height="26" role="img" aria-label="HRZN"><text x="0" y="30" font-family="'Space Grotesk',sans-serif" font-weight="500" font-size="34" letter-spacing="9"><tspan fill="#141418">HR</tspan><tspan fill="#c9a84c">Z</tspan><tspan fill="#141418">N</tspan></text></svg>
+      <img src="hrzn-logo-nav.png" alt="HRZN" height="30" style="display:block;height:30px;width:auto;">
     </a>
     <ul class="nav-links">
       <li><a href="product.html">Product</a></li>
@@ -341,15 +346,14 @@
       <h2>Answers you can actually use.</h2>
       <p>Not another dashboard to interpret. Ask a real question, get a real answer with the number and the next move.</p>
     </div>
-    <div class="answers-grid">
+    <div class="answers-stack">
       <div class="chat-demo">
         <div class="bubble q">What should I focus on this week?</div>
         <div class="bubble a">Revenue is running <b>17% below your $12,000 target</b> — a <span class="gd">$2,048/week gap</span>. Your average check of <b>$13.70</b> is $1.30 under goal, so lifting it just that much across ~727 items/week recovers roughly <b>$945/week</b> without a single new customer.</div>
         <div class="bubble q">Should I add more beef items to the menu?</div>
         <div class="bubble a">You already have strong beef performers — <b>Wagyu Shortribs ($6,186)</b> and <b>Shortrib Don ($4,392)</b> both rank in your top 10. Optimize those first with a <b>5–8% price test</b> before expanding. If you do add one, a <span class="gd">mid-price wagyu option (~$18–22)</span> would bridge the gap.</div>
-        <div class="chat-more">See more examples →</div>
       </div>
-      <div class="feats">
+      <div class="feats-row">
         <div class="feat">
           <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
           <div><h4>Plain-English insights</h4><p>No jargon, no charts to decode. Just what's happening and what to do about it.</p></div>
@@ -488,7 +492,7 @@
 <footer>
   <div class="wrap footer-row">
     <div class="footer-logo">
-      <svg viewBox="0 0 175 36" height="22" role="img" aria-label="HRZN"><text x="0" y="27" font-family="'Space Grotesk',sans-serif" font-weight="500" font-size="30" letter-spacing="8"><tspan fill="#f2f2f2">HR</tspan><tspan fill="#c9a84c">Z</tspan><tspan fill="#f2f2f2">N</tspan></text></svg>
+      <img src="hrzn-logo-footer.png" alt="HRZN" height="26" style="display:block;height:26px;width:auto;">
     </div>
     <nav class="footer-nav">
       <a href="product.html">Product</a>
