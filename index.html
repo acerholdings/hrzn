@@ -228,6 +228,28 @@
     .wrap{padding:0 20px;}
   }
   @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto;}.mock{transform:none;}}
+
+  /* --- mobile nav (fixed) --- */
+  @media(max-width:860px){
+    .nav-links{
+      display:none; position:absolute; top:66px; left:0; right:0;
+      flex-direction:column; gap:0; background:var(--paper);
+      border-bottom:1px solid var(--border); padding:8px 20px 16px;
+      box-shadow:0 14px 30px -12px rgba(0,0,0,0.14); z-index:200;
+    }
+    .nav-links.open{display:flex;}
+    .nav-links li{width:100%;}
+    .nav-links a{display:block;padding:13px 4px;border-bottom:1px solid var(--border);font-size:15px;}
+    .nav-links li:last-child a{border-bottom:none;}
+    .nav-cta .btn-ghost{display:none;}
+    .nav-toggle{display:flex;}
+    header{position:relative;}
+  }
+  @media(max-width:400px){
+    .nav-cta .btn-gold{padding:8px 12px;font-size:13px;}
+    .logo img{height:26px;}
+  }
+
 </style>
 </head>
 <body>
@@ -248,7 +270,7 @@
     <div class="nav-cta">
       <a href="login.html" class="btn btn-ghost">Sign in</a>
       <a href="signup.html" class="btn btn-gold">Start Free Trial →</a>
-      <button class="nav-toggle" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')"><span></span><span></span><span></span></button>
+      <button class="nav-toggle" aria-label="Menu" aria-expanded="false" onclick="var m=document.querySelector('.nav-links');var o=m.classList.toggle('open');this.setAttribute('aria-expanded',o);"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
@@ -506,5 +528,6 @@
   </div>
 </footer>
 
+<script data-navfix>document.querySelectorAll(".nav-links a").forEach(function(a){a.addEventListener("click",function(){var m=document.querySelector(".nav-links");if(m)m.classList.remove("open");var t=document.querySelector(".nav-toggle");if(t)t.setAttribute("aria-expanded","false");});});</script>
 </body>
 </html>
