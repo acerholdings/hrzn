@@ -251,6 +251,25 @@
   }
 
 </style>
+
+<style>
+/* --- mobile consistency pass (match solutions/integrations/company) --- */
+@media(max-width:640px){
+  .feats-row .feat{align-items:center;text-align:center;gap:16px;padding:6px 0;}
+  .feats-row .feat-ic{margin-left:auto;margin-right:auto;}
+  .feats-row .feat h3{margin-bottom:6px;}
+  .logo img{height:24px!important;}
+  .nav-cta{gap:8px;}
+  .nav-cta .btn-gold{padding:9px 14px;font-size:13.5px;}
+
+  .footer-row{flex-direction:column;justify-content:center;text-align:center;gap:22px;}
+  .footer-nav{justify-content:center;gap:18px 22px;}
+}
+@media(max-width:380px){
+  .logo img{height:21px!important;}
+  .nav-cta .btn-gold{padding:8px 11px;font-size:12.5px;}
+}
+</style>
 </head>
 <body>
 
