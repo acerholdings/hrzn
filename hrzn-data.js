@@ -114,7 +114,64 @@ function hrznIsDemo() {
   return new URLSearchParams(window.location.search).get('demo') === 'true';
 }
 
+// ── CENTRAL BRANDING (logo + favicons) ──────────────────────────────
+// One place that brands every app page. Runs from hrznSetupSidebar() (which
+// every app page calls), so no per-page edits are needed:
+//  1. Swaps #sidebarLogo to the correct transparent PNG for the active theme
+//     (dark = white wordmark, light = black wordmark). This replaces the old
+//     per-page base64 blob + brightness(0.15) filter approach.
+//  2. Injects a style that kills any leftover per-page logo filter — CSS
+//     !important beats the inline style each page's applyTheme() still sets,
+//     so the gold Z stays gold in light mode without touching every page.
+//  3. Injects favicon <link> tags (app pages historically had none).
+//  4. Watches <body> class changes so theme toggles re-swap the logo live.
+// Assets live in the repo root (deployed with the marketing site):
+// hrzn-logo-footer.png (white+gold), hrzn-logo-nav.png (black+gold), favicons.
+function hrznApplyBranding() {
+  try {
+    // (2) Neutralise per-page inline filters on the logo, once per page.
+    if (!document.getElementById('hrzn-brand-style')) {
+      const st = document.createElement('style');
+      st.id = 'hrzn-brand-style';
+      st.textContent = '#sidebarLogo{filter:none !important;}';
+      document.head.appendChild(st);
+    }
+    // (3) Favicons, once per page. Skip any that already exist.
+    if (!document.querySelector('link[rel="icon"]')) {
+      [
+        { rel: 'icon', href: 'favicon.ico', sizes: 'any' },
+        { rel: 'icon', href: 'favicon-32.png', type: 'image/png', sizes: '32x32' },
+        { rel: 'icon', href: 'favicon-16.png', type: 'image/png', sizes: '16x16' },
+        { rel: 'apple-touch-icon', href: 'favicon-180.png', sizes: '180x180' }
+      ].forEach(a => {
+        const l = document.createElement('link');
+        Object.keys(a).forEach(k => l.setAttribute(k, a[k]));
+        document.head.appendChild(l);
+      });
+    }
+    // (1) Point the sidebar logo at the right asset for the current theme.
+    const setLogo = () => {
+      const lg = document.getElementById('sidebarLogo');
+      if (!lg) return;
+      const light = document.body.classList.contains('light');
+      const want = light ? 'hrzn-logo-nav.png' : 'hrzn-logo-footer.png';
+      // getAttribute (not .src) so we compare the relative path, not the
+      // resolved absolute URL, and never touch the DOM without a real change.
+      if (lg.getAttribute('src') !== want) lg.setAttribute('src', want);
+    };
+    setLogo();
+    // (4) Re-swap whenever the theme class on <body> flips. Guard against
+    // double-observing if hrznSetupSidebar runs more than once on a page.
+    if (!window.__hrznBrandObserver) {
+      window.__hrznBrandObserver = new MutationObserver(setLogo);
+      window.__hrznBrandObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+  } catch (e) {}
+}
+
 function hrznSetupSidebar() {
+  // Brand the page first — must run even in demo mode (which returns early).
+  hrznApplyBranding();
   // In demo mode show demo branding, otherwise show real user info
   if (hrznIsDemo()) {
     document.querySelectorAll('.business-name').forEach(el => el.textContent = 'Demo Restaurant');
