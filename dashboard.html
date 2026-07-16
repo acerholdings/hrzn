@@ -368,7 +368,7 @@ async function hrznAskWidget(prompt) {
       method: 'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+(_tok||'')},
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 500,
-        system: HRZN.getSystemPrompt(d) + '\nRespond in 2-3 sentences. Be direct and specific with dollar amounts.',
+        system: (typeof HRZN.getAIContext === 'function' ? HRZN.getAIContext(d) : HRZN.getSystemPrompt(d)) + '\nRespond in 2-3 sentences. Be direct and specific with dollar amounts.',
         messages: [{ role: 'user', content: text }]
       })
     });

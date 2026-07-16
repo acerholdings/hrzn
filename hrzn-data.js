@@ -2102,7 +2102,10 @@ CRITICAL — DO NOT FABRICATE TARGETS OR NUMBERS:
     try {
       const itemsData = this.getItems();
       if (itemsData && itemsData.allItems && itemsData.allItems.length) {
+        // Sort by revenue so "top 10" is the true top 10 regardless of stored order.
         const top10 = itemsData.allItems
+          .slice()
+          .sort((a, b) => (b.netSales || 0) - (a.netSales || 0))
           .slice(0, 10)
           .map((i, idx) => (idx+1) + '. ' + i.name + ' (' + (i.category||'uncategorized') + '): ' + (i.sold||0).toLocaleString() + ' sold, $' + Math.round(i.netSales||0).toLocaleString() + ' revenue')
           .join('\n');
