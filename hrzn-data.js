@@ -129,11 +129,18 @@ function hrznIsDemo() {
 // hrzn-logo-footer.png (white+gold), hrzn-logo-nav.png (black+gold), favicons.
 function hrznApplyBranding() {
   try {
-    // (2) Neutralise per-page inline filters on the logo, once per page.
+    // (2) Central logo sizing + filter kill, once per page. The old base64
+    // blob had large built-in margins, so pages sized it width:150px and
+    // pulled .logo-sub up with a negative margin. The real brand PNGs are
+    // tight crops, so: size by HEIGHT (crop-proof for a wordmark), and give
+    // the sub-line a positive gap. #id selector outranks the per-page
+    // .sidebar-logo img rule; !important beats the inline filter.
     if (!document.getElementById('hrzn-brand-style')) {
       const st = document.createElement('style');
       st.id = 'hrzn-brand-style';
-      st.textContent = '#sidebarLogo{filter:none !important;}';
+      st.textContent =
+        '#sidebarLogo{width:auto;height:auto;max-width:150px;max-height:26px;filter:none !important;}' +
+        '.sidebar-logo .logo-sub{margin-top:7px !important;}';
       document.head.appendChild(st);
     }
     // (3) Favicons, once per page. Skip any that already exist.
