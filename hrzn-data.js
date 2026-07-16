@@ -516,10 +516,12 @@ function hrznGetUser() {
 
 // ── DATA STATE HELPERS ───────────────────────────────────────
 function hrznHasData() {
-  return !!(
-    localStorage.getItem('hrzn-data-csv') ||
-    localStorage.getItem('hrzn-sales-data')
-  );
+  // CSV uploads count as data...
+  if (localStorage.getItem('hrzn-data-csv') || localStorage.getItem('hrzn-sales-data')) return true;
+  // ...and so does a live POS integration. Without this, the "No data yet"
+  // banner (and every other new-user check) shows on top of live numbers.
+  if (localStorage.getItem('hrzn-data-api')) return true;
+  return false;
 }
 
 // ── Demo-toggle globals (used by the shared no-data banner) ──
